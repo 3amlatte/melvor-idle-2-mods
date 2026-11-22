@@ -1,8 +1,8 @@
 NO NEGATIVE GEAR 0.1.0
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
 
-Removes the negative stats and bonuses from equipment. Adamant Gloves normally give
--10 Attack Bonus; with this mod they give no penalty. Positive values are untouched.
+Removes the negative stats and bonuses from equipment. A Rune Platebody normally gives
+-100 Accurate Attack Bonus; with this mod it gives no penalty. Positive values are untouched.
 
 By default only armour is changed (anything without a Weapon capability). Weapons are
 left alone; set "IncludeWeapons": true in settings.json to include them too.
@@ -35,3 +35,6 @@ WHAT IT DOES
 
 This is a cheat: it makes gear stronger than designed. Nothing is written into the save.
 Unofficial, fan-made. Not affiliated with Games by Malcs or Jagex.
+
+LICENSE
+  MIT: free to use, change and share. See the repository's LICENSE file.
