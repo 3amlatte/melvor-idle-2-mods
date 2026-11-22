@@ -1,0 +1,11 @@
+# Build output
+obj/
+bin/
+dist/
+
+# Editor / IDE
+.vs/
+*.user
+
+# Written by mods into the game's mods folder
+last-run.txt

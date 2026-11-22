@@ -1,0 +1,12 @@
+<Project>
+  <!-- Shared by every mod in this folder. Override on the command line with -p:GameDir="...". -->
+  <PropertyGroup>
+    <GameDir Condition="'$(GameDir)' == ''">G:\SteamLibrary\steamapps\common\Melvor Idle 2</GameDir>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DebugType>none</DebugType>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+</Project>
