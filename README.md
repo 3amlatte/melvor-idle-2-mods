@@ -11,6 +11,7 @@ zips on Nexus, which contain exactly the files the game needs.
 |:--|:--|:--|
 | [NoNegativeGear](NoNegativeGear) | Removes negative stats and bonuses from armour (weapons optional). | [Nexus](https://www.nexusmods.com/melvoridle2/mods/25) |
 | [SeedReturn](SeedReturn) | Harvesting crops can return seeds; chance scales from 1% to 20% with Farming level. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/26) |
+| [UnlimitedOffline](UnlimitedOffline) | Removes the 24-hour offline progress cap. | Not published yet |
 
 Tested with game **0.11.6-alpha.1** and Melvor Mod Loader **0.2.0**.
 
