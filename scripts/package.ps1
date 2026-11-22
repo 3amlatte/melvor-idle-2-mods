@@ -63,9 +63,10 @@ foreach ($mod in $Mods) {
         if (Test-Path $from) {
             Copy-Item -Path $from -Destination (Join-Path $modStage $file)
         }
-        else {
-            Write-Warning "$mod has no $file; the package will not include it."
+        elseif ($file -eq 'README.txt') {
+            Write-Warning "$mod has no README.txt; the package will not include one."
         }
+        # settings.json is optional: mods without settings simply do not ship one.
     }
 
     $zip = Join-Path $distDir ($mod + '-' + $version + '.zip')
