@@ -9,7 +9,7 @@ zips on Nexus, which contain exactly the files the game needs.
 
 | Mod | What it does | Install |
 |:--|:--|:--|
-| [NoNegativeGear](NoNegativeGear) | Removes negative stats and bonuses from armour (weapons optional). | Nexus (link when published) |
+| [NoNegativeGear](NoNegativeGear) | Removes negative stats and bonuses from armour (weapons optional). | [Nexus](https://www.nexusmods.com/melvoridle2/mods/25) |
 
 Tested with game **0.11.6-alpha.1** and Melvor Mod Loader **0.2.0**.
 
