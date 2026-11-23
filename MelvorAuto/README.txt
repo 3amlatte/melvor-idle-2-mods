@@ -55,7 +55,7 @@ SETTINGS
     AutoBuryBones=true, AutoOpenItems=true,
     AutoFarm=true, AutoHarvest=true, AutoCompost=true, AutoWater=true, AutoPlant=true,
     AutoMill=true, AutoRanchMaintenance=true, AutoRanchPets=true.
-  available.json lists the bones and openable items the hub shows in its checklists.
+  available.json lists the bones and openable items Mod Viewer shows as icon cards.
 
 INSTALL
   Put this folder under the game's mods folder, so the file ends up as

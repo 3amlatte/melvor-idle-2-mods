@@ -12,7 +12,7 @@ GROUPS
 THEMES
   The Theme drop-down in the header switches the whole viewer palette:
     AI        the original dark navy + gold look (default)
-    Dark      black + cyan
+    Dark      black + grey
     Light     warm paper + dark text
     Midnight  deep blue + periwinkle
     Forest    dark green + mint
@@ -37,8 +37,9 @@ SETTINGS AND MOD WINDOWS
   Hover over an option for a short explanation.
     - Mods with a settings.json show an editor: checkboxes for true/false, text boxes for
       numbers/strings.
-    - Melvor Auto has a dedicated settings page: its toggles, a checkbox per bone bigger than
-      Big Bone, and a checkbox per openable item. Those lists come from available.json.
+    - Melvor Auto has a dedicated settings page: its toggles, collapsible Auto Farmer and
+      Auto Ranching groups, and icon-card checklists for bones and openables. Those lists
+      come from available.json.
     - TimeSkip has no settings file, so clicking its name opens its skip window.
     - Astrology Knowledge Multiplier does not register a loader window; Mod Viewer opens its
       panel through the loaded mod instance.

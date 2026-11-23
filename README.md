@@ -32,8 +32,9 @@ Tested with game **0.11.6-alpha.1** and Melvor Mod Loader **0.2.0**.
 3. Extract it into the game folder (Steam → Melvor Idle 2 → Manage → Browse local files), so the
    files end up under `mods\<ModName>\`.
 
-There is no installer and no in-game settings window. A mod with options reads
-`settings.json` from its own folder; delete the mod's folder to uninstall it.
+There is no installer. Install [Mod Viewer](ModViewer) for an in-game mod list, settings,
+enable/disable and quick restarts. Without it, a mod with options reads `settings.json` from
+its own folder; delete the mod's folder to uninstall it.
 
 ## License
 
