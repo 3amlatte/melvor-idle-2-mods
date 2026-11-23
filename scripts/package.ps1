@@ -58,7 +58,7 @@ foreach ($mod in $Mods) {
     $dll = Join-Path $modStage ($mod + '.dll')
     if (-not (Test-Path $dll)) { throw "Build did not produce $dll" }
 
-    foreach ($file in @('README.txt', 'settings.json')) {
+    foreach ($file in @('README.txt', 'settings.json', '3am.mod')) {
         $from = Join-Path $projectDir $file
         if (Test-Path $from) {
             Copy-Item -Path $from -Destination (Join-Path $modStage $file)
@@ -66,7 +66,7 @@ foreach ($mod in $Mods) {
         elseif ($file -eq 'README.txt') {
             Write-Warning "$mod has no README.txt; the package will not include one."
         }
-        # settings.json is optional: mods without settings simply do not ship one.
+        # settings.json and 3am.mod are optional.
     }
 
     $zip = Join-Path $distDir ($mod + '-' + $version + '.zip')
