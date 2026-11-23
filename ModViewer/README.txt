@@ -19,7 +19,8 @@ THEMES
     Sakura    plum + pink
     Contrast  black + yellow
   The choice is saved in ModViewer\settings.json. When TimeSkip is installed, its window
-  uses the same theme.
+  uses the same theme. Buttons, checkboxes and text fields are themed too, so the green
+  default controls no longer stand out.
 
 FOLDER
   The "Mods Folder" button in the footer opens the game's mods folder in Explorer.

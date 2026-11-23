@@ -182,6 +182,13 @@ internal sealed class ViewerWindow
         _themeLabel.AddThemeColorOverride("font_color", palette.Muted);
         _status.AddThemeColorOverride("font_color", palette.Muted);
 
+        Theme theme = ViewerTheme.BuildControlTheme();
+        Font? font = _panel.GetThemeFont("font");
+        if (font != null) theme.DefaultFont = font;
+        int fontSize = _panel.GetThemeFontSize("font_size");
+        if (fontSize > 0) theme.DefaultFontSize = fontSize;
+        _panel.Theme = theme;
+
         if (refresh) Refresh();
     }
 
@@ -265,7 +272,6 @@ internal sealed class ViewerWindow
         row.AddChild(info);
 
         var enabled = new CheckBox { Text = "Enabled", ButtonPressed = entry.Enabled };
-        ViewerTheme.StyleCheckBox(enabled);
         enabled.Toggled += pressed =>
         {
             if (Mods.SetEnabled(entry, pressed, out string error))

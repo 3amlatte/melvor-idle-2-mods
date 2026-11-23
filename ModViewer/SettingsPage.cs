@@ -41,17 +41,7 @@ internal static class SettingsPage
         else
             BuildGeneric(path, column, log, status);
 
-        StyleChecks(column);
         return column;
-    }
-
-    static void StyleChecks(Node node)
-    {
-        foreach (Node child in node.GetChildren())
-        {
-            if (child is CheckBox check) ViewerTheme.StyleCheckBox(check);
-            StyleChecks(child);
-        }
     }
 
     static JsonObject LoadObject(string path, Action<string> log)

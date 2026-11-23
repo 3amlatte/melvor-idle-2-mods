@@ -103,12 +103,91 @@ internal static class ViewerTheme
         return 0;
     }
 
-    public static void StyleCheckBox(CheckBox box)
+    /// <summary>Button, checkbox and input styling for the selected palette.</summary>
+    public static Theme BuildControlTheme()
     {
-        box.AddThemeColorOverride("font_color", Current.Text);
-        box.AddThemeColorOverride("font_hover_color", Current.Accent);
-        box.AddThemeColorOverride("font_pressed_color", Current.Accent);
+        ViewerPalette palette = Current;
+        bool dark = Luminance(palette.Panel) < 0.5f;
+
+        Color control = dark
+            ? palette.Panel.Lightened(0.10f)
+            : palette.Panel.Darkened(0.07f);
+        Color hover = dark ? control.Lightened(0.06f) : control.Darkened(0.05f);
+        Color pressed = control.Lerp(palette.Accent, 0.30f);
+        Color disabled = control;
+        disabled.A = 0.55f;
+
+        Color border = palette.Muted;
+        border.A = 0.35f;
+        Color hoverBorder = palette.Accent;
+        hoverBorder.A = 0.65f;
+        Color pressedText = Contrast(pressed);
+
+        StyleBoxFlat normal = Box(control, border);
+        StyleBoxFlat hoverBox = Box(hover, hoverBorder);
+        StyleBoxFlat pressedBox = Box(pressed, palette.Accent);
+        StyleBoxFlat disabledBox = Box(disabled, border);
+        StyleBoxFlat focusBox = Box(new Color(0, 0, 0, 0), palette.Accent);
+
+        var theme = new Theme();
+        theme.SetColor("font_color", "Label", palette.Text);
+
+        StyleControls(theme, "Button", normal, hoverBox, pressedBox, disabledBox, focusBox,
+            palette, pressedText);
+        StyleControls(theme, "CheckBox", normal, hoverBox, pressedBox, disabledBox, focusBox,
+            palette, pressedText);
+        StyleControls(theme, "OptionButton", normal, hoverBox, pressedBox, disabledBox, focusBox,
+            palette, pressedText);
+
+        theme.SetColor("font_color", "LineEdit", palette.Text);
+        theme.SetColor("font_placeholder_color", "LineEdit", palette.Muted);
+        theme.SetColor("caret_color", "LineEdit", palette.Accent);
+        Color selection = palette.Accent;
+        selection.A = 0.35f;
+        theme.SetColor("selection_color", "LineEdit", selection);
+        theme.SetStylebox("normal", "LineEdit", Box(control, border));
+        theme.SetStylebox("focus", "LineEdit", Box(control, palette.Accent));
+        theme.SetStylebox("read_only", "LineEdit", Box(disabled, border));
+
+        return theme;
     }
+
+    static void StyleControls(Theme theme, string type,
+        StyleBox normal, StyleBox hover, StyleBox pressed, StyleBox disabled, StyleBox focus,
+        ViewerPalette palette, Color pressedText)
+    {
+        theme.SetStylebox("normal", type, normal);
+        theme.SetStylebox("hover", type, hover);
+        theme.SetStylebox("pressed", type, pressed);
+        theme.SetStylebox("hover_pressed", type, pressed);
+        theme.SetStylebox("disabled", type, disabled);
+        theme.SetStylebox("focus", type, focus);
+
+        theme.SetColor("font_color", type, palette.Text);
+        theme.SetColor("font_hover_color", type, palette.Text);
+        theme.SetColor("font_pressed_color", type, pressedText);
+        theme.SetColor("font_disabled_color", type, palette.Muted);
+        theme.SetColor("font_focus_color", type, palette.Text);
+        theme.SetColor("icon_normal_color", type, palette.Text);
+        theme.SetColor("icon_hover_color", type, palette.Text);
+        theme.SetColor("icon_pressed_color", type, pressedText);
+        theme.SetColor("icon_disabled_color", type, palette.Muted);
+    }
+
+    static StyleBoxFlat Box(Color background, Color border)
+    {
+        var box = new StyleBoxFlat { BgColor = background, BorderColor = border };
+        box.SetBorderWidthAll(1);
+        box.SetCornerRadiusAll(5);
+        box.SetContentMarginAll(6);
+        return box;
+    }
+
+    static float Luminance(Color color) =>
+        0.2126f * color.R + 0.7152f * color.G + 0.0722f * color.B;
+
+    static Color Contrast(Color background) =>
+        Luminance(background) < 0.55f ? new Color(1, 1, 1) : new Color(0, 0, 0);
 
     static ViewerPalette? Find(string id) =>
         All.FirstOrDefault(t => string.Equals(t.Id, id, StringComparison.OrdinalIgnoreCase));
