@@ -1,9 +1,9 @@
 MELVOR AUTO 0.1.0
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
 
-Three conveniences in one mod. Everything uses the game's own bury, open, plant, harvest,
-water, compost and mill calls, so XP, Prayer Points, bonuses, statistics and offline progress
-stay correct.
+Several conveniences in one mod. Everything uses the game's own bury, open, plant, harvest,
+water, compost, mill, repair and pet actions, so XP, Prayer Points, bonuses, statistics and
+offline progress stay correct.
 
 AUTO BONE BURIAL
   Any bone received in the bank is buried immediately. Bones worth more than Big Bone are
@@ -34,12 +34,27 @@ AUTO FARMER
   off; if it is stopped, the selected recipe (or the first affordable one) is started. This
   part can be switched off with AutoMill.
 
+AUTO RANCHING
+  Two independent toggles:
+    AutoRanchMaintenance (default on)
+      Runs whenever the game lowers enclosure maintenance (about once an hour) and repairs
+      every enclosure that needs it through the game's own Repair all. It also repairs on
+      character load. If a repair cannot be afforded, the log names the enclosure and lists
+      exactly what is missing, for example:
+        Auto Ranching: could not repair Meadow (Basic Enclosure, 82%). Missing 3x Maple Logs
+        (have 1), 1,200 GP (have 300).
+      Repairs are done after offline progress finishes, not repeatedly during it.
+
+    AutoRanchPets (default on)
+      Whenever an animal wants petting, all animals that accept pets are petted through the
+      game's own Pet all animals action. Petting waits until offline progress has finished.
+
 SETTINGS
   settings.json next to the DLL. The Mod Viewer edits the same file. Bone/open changes apply
   while the game runs; the farming automation flags are read when a character opens. Defaults:
     AutoBuryBones=true, AutoOpenItems=true,
     AutoFarm=true, AutoHarvest=true, AutoCompost=true, AutoWater=true, AutoPlant=true,
-    AutoMill=true.
+    AutoMill=true, AutoRanchMaintenance=true, AutoRanchPets=true.
   available.json lists the bones and openable items the hub shows in its checklists.
 
 INSTALL

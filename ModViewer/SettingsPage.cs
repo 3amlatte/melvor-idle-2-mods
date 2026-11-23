@@ -13,7 +13,8 @@ internal static class SettingsPage
     static readonly string[] MelvorAutoBools =
     {
         "AutoBuryBones", "AutoOpenItems", "AutoFarm", "AutoHarvest",
-        "AutoCompost", "AutoWater", "AutoPlant", "AutoMill"
+        "AutoCompost", "AutoWater", "AutoPlant", "AutoMill",
+        "AutoRanchMaintenance", "AutoRanchPets"
     };
 
     public static Control Build(ModEntry entry, Action<string> log, Action<string> status)

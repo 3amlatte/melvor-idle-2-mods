@@ -19,6 +19,8 @@ public sealed class Settings
     public bool AutoWater { get; set; } = true;
     public bool AutoPlant { get; set; } = true;
     public bool AutoMill { get; set; } = true;
+    public bool AutoRanchMaintenance { get; set; } = true;
+    public bool AutoRanchPets { get; set; } = true;
 
     /// <summary>Character name -> Unix time of the last mill stocking.</summary>
     public Dictionary<string, long> MillStockedAtUnix { get; set; } = new();

@@ -7,11 +7,14 @@ using GamesByMalcs.Melvor2;
 using GamesByMalcs.Melvor2.Components.CombatEffects;
 using GamesByMalcs.Melvor2.Components.Inventories;
 using GamesByMalcs.Melvor2.Components.ItemBurying;
+using GamesByMalcs.Melvor2.Core;
+using GamesByMalcs.Melvor2.Core.CostTracking;
 using GamesByMalcs.Melvor2.Data;
 using GamesByMalcs.Melvor2.Data.Items;
 using GamesByMalcs.Melvor2.Entities;
 using GamesByMalcs.Melvor2.Entities.Bank;
 using GamesByMalcs.Melvor2.Entities.Farming;
+using GamesByMalcs.Melvor2.Entities.Ranching;
 using GamesByMalcs.Melvor2.Localization;
 using GamesByMalcs.Melvor2.Modifiers;
 using Godot;
@@ -20,12 +23,11 @@ using MelvorModLoader;
 namespace MelvorAuto;
 
 /// <summary>
-/// Three small conveniences in one mod:
+/// Small conveniences in one mod:
 ///   - bones received in the bank are buried automatically (with per-bone exclusions);
 ///   - openable items received in the bank are opened automatically (with an exclusion list);
-///   - Farming plots are harvested, composted, planted and watered automatically, and the
-///     grain mill is stocked and started.
-/// It reacts to the game's farming "needs attention" flag, which is the red sidebar badge.
+///   - Farming plots are automated for free, and the grain mill is stocked every 2 hours;
+///   - Ranching enclosures are repaired and animals are petted automatically.
 /// </summary>
 public sealed class MelvorAutoMod : IMod
 {
@@ -54,10 +56,15 @@ public sealed class MelvorAutoMod : IMod
     FarmingEntity? _farming;
     FarmingPassiveComponent? _passive;
     FarmingGrainMillComponent? _mill;
+    RanchingEntity? _ranching;
+    RanchingPassiveComponent? _ranchPassive;
     ModifierSystem? _mods;
 
     int _frame;
     int _depth;
+    bool _ranchRepairPending;
+    bool _ranchPetPending;
+    bool _inRanchPet;
     readonly HashSet<string> _logged = new();
     readonly HashSet<string> _loggedAutomation = new();
 
@@ -91,6 +98,16 @@ public sealed class MelvorAutoMod : IMod
         // picked up on the next launch, as requested. The mill is checked against a real
         // two-hour timer while the game is open.
         TryStockMill();
+
+        // Repairs and petting are event-driven, but are held back during offline progress and
+        // applied once when the game is back online.
+        if ((_ranchRepairPending || _ranchPetPending) && !GameAccess.IsComputingOffline)
+        {
+            _ranchRepairPending = false;
+            _ranchPetPending = false;
+            TryRepairRanch();
+            TryPetRanchAnimals();
+        }
     }
 
     void TryBind()
@@ -121,6 +138,22 @@ public sealed class MelvorAutoMod : IMod
 
         _bank.Inventory.ItemQuantityChanged += OnItemQuantityChanged;
 
+        if (game.Entities.TryGetObjectById("MelvorBase:Ranching", out GameEntity? ranchEntity) &&
+            ranchEntity is RanchingEntity ranching)
+        {
+            _ranching = ranching;
+            _ranchPassive = ranching.Passive;
+            _ranchPassive.MaintenanceUpdated += OnRanchMaintenanceUpdated;
+            _ranchPassive.AnimalsWantingPetsChanged += OnRanchAnimalsWantingPets;
+
+            TryRepairRanch();
+            TryPetRanchAnimals();
+        }
+        else
+        {
+            LogOnce("The Ranching entity was not found; ranch maintenance and petting are off for this character.");
+        }
+
         AddFreeAutomation(game);
         ApplyAutomation();
         TryStockMill();
@@ -138,10 +171,19 @@ public sealed class MelvorAutoMod : IMod
         {
             try { _bank.Inventory.ItemQuantityChanged -= OnItemQuantityChanged; } catch { }
         }
+        if (_ranchPassive != null)
+        {
+            try { _ranchPassive.MaintenanceUpdated -= OnRanchMaintenanceUpdated; } catch { }
+            try { _ranchPassive.AnimalsWantingPetsChanged -= OnRanchAnimalsWantingPets; } catch { }
+        }
         _bank = null;
         _farming = null;
         _passive = null;
         _mill = null;
+        _ranching = null;
+        _ranchPassive = null;
+        _ranchRepairPending = false;
+        _ranchPetPending = false;
         _mods = null;
         _game = null;
     }
@@ -157,6 +199,10 @@ public sealed class MelvorAutoMod : IMod
             _settingsStamp = File.GetLastWriteTimeUtc(_settingsPath);
             RebuildSets();
             _ctx.Log("settings.json reloaded.");
+
+            // A toggle may just have been switched on; apply it straight away.
+            TryRepairRanch();
+            TryPetRanchAnimals();
         }
         catch (Exception e)
         {
@@ -380,6 +426,127 @@ public sealed class MelvorAutoMod : IMod
         {
             LogOnce("Grain mill stocking failed: " + e.Message);
         }
+    }
+
+    // ------------------------------------------------------------------ ranching
+
+    void OnRanchMaintenanceUpdated(object? sender, EventArgs e)
+    {
+        if (!_settings.AutoRanchMaintenance) return;
+        if (GameAccess.IsComputingOffline)
+        {
+            _ranchRepairPending = true;
+            return;
+        }
+
+        TryRepairRanch();
+    }
+
+    void OnRanchAnimalsWantingPets(object? sender, ValueChangedEventArgs<int> e)
+    {
+        if (!_settings.AutoRanchPets || e.NewValue <= 0) return;
+        if (GameAccess.IsComputingOffline)
+        {
+            _ranchPetPending = true;
+            return;
+        }
+
+        TryPetRanchAnimals();
+    }
+
+    void TryRepairRanch()
+    {
+        if (!_settings.AutoRanchMaintenance || _ranchPassive == null) return;
+        if (GameAccess.IsComputingOffline)
+        {
+            _ranchRepairPending = true;
+            return;
+        }
+
+        var worn = new List<(ActiveRanchingLand Land, ActiveRanchingEnclosure Enclosure)>();
+        foreach (ActiveRanchingLand land in _ranchPassive.ActiveLand.Values)
+        {
+            if (!land.IsPurchased || land.ActiveEnclosure is not { } enclosure) continue;
+            if (enclosure.Maintenance >= 1.0) continue;
+            worn.Add((land, enclosure));
+        }
+        if (worn.Count == 0) return;
+
+        try { _ranchPassive.RepairAllEnclosures(); }
+        catch (Exception e)
+        {
+            LogOnce("Ranch repair failed: " + e.Message);
+            return;
+        }
+
+        foreach (var (land, enclosure) in worn)
+        {
+            if (enclosure.Maintenance >= 1.0) continue;
+
+            try
+            {
+                string missing = MissingRepairCosts(enclosure);
+                if (missing.Length == 0) continue;
+
+                _ctx.Log("Auto Ranching: could not repair " +
+                         $"{land.Land.DisplayName.Text} ({enclosure.CurrentEnclosure.DisplayName.Text}, " +
+                         $"{enclosure.Maintenance:P0}). Missing {missing}.");
+            }
+            catch (Exception e)
+            {
+                LogOnce("Ranch repair cost check failed: " + e.Message);
+            }
+        }
+    }
+
+    string MissingRepairCosts(ActiveRanchingEnclosure enclosure)
+    {
+        using CostTracker costs = _ranchPassive!.GetRepairCostTracker(
+            enclosure.CurrentEnclosure.Costs, enclosure.Maintenance);
+
+        var missing = new List<string>();
+        foreach (ItemCostTracker item in costs.Items)
+        {
+            int shortfall = item.Quantity - item.CurrentQuantity;
+            if (shortfall > 0)
+                missing.Add($"{shortfall:N0}x {item.Item.DisplayName.GetPluralText(shortfall)} (have {item.CurrentQuantity:N0})");
+        }
+
+        foreach (CurrencyCostTracker currency in costs.Currencies)
+        {
+            long shortfall = currency.Quantity - currency.CurrentQuantity;
+            if (shortfall > 0)
+                missing.Add($"{shortfall:N0} {currency.Currency.DisplayName.Text} (have {currency.CurrentQuantity:N0})");
+        }
+
+        return string.Join(", ", missing);
+    }
+
+    void TryPetRanchAnimals()
+    {
+        if (!_settings.AutoRanchPets || _ranchPassive == null || _inRanchPet) return;
+        if (GameAccess.IsComputingOffline)
+        {
+            _ranchPetPending = true;
+            return;
+        }
+
+        int wanting = _ranchPassive.GetAnimalsRequiringPets();
+        if (wanting <= 0) return;
+
+        _inRanchPet = true;
+        try
+        {
+            // Petting one animal changes the count, which raises the event again; the guard
+            // above stops that from re-entering this method.
+            _ranchPassive.PetAllAnimals();
+            _ctx.Log($"Auto Ranching: petted the animals that wanted attention ({wanting}).");
+        }
+        catch (Exception e)
+        {
+            LogOnce("Ranch petting failed: " + e.Message);
+        }
+        finally { _inRanchPet = false; }
     }
 
     static ModifierValues FreeValues(Game game)
