@@ -25,7 +25,7 @@ internal static class ViewerTheme
         new ViewerPalette("AI", "AI",
             Hex("#12141C"), Hex("#EDBF59"), Hex("#FFFFFF"), Hex("#B0B0B0")),
         new ViewerPalette("Dark", "Dark",
-            Hex("#0B0D10"), Hex("#4FC3F7"), Hex("#E6EDF3"), Hex("#8B949E")),
+            Hex("#0B0D10"), Hex("#8B949E"), Hex("#E6EDF3"), Hex("#8B949E")),
         new ViewerPalette("Light", "Light",
             Hex("#F4F1EA"), Hex("#8A5A00"), Hex("#211F1B"), Hex("#6B665C")),
         new ViewerPalette("Midnight", "Midnight",
@@ -48,16 +48,20 @@ internal static class ViewerTheme
 
         try
         {
-            if (!File.Exists(_path)) return;
-
-            JsonNode? root = JsonNode.Parse(File.ReadAllText(_path));
-            if (root?["Theme"] is JsonValue value && value.TryGetValue(out string? id))
-                Current = Find(id) ?? All[0];
+            if (File.Exists(_path))
+            {
+                JsonNode? root = JsonNode.Parse(File.ReadAllText(_path));
+                if (root?["Theme"] is JsonValue value && value.TryGetValue(out string? id))
+                    Current = Find(id) ?? All[0];
+            }
         }
         catch (Exception e)
         {
             log("Mod Viewer settings could not be read: " + e.Message);
         }
+
+        // Also refresh the resolved colours used by TimeSkip.
+        Save(log);
     }
 
     public static void Select(string id)
