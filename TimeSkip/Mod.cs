@@ -43,21 +43,30 @@ public sealed class TimeSkipMod : IMod
     public void OnLoad(ModContext ctx)
     {
         _ctx = ctx;
-        TimeSkipTheme.Initialize(Directory.GetParent(ctx.Directory)?.FullName ?? "");
+        string modsFolder = Directory.GetParent(ctx.Directory)?.FullName ?? "";
+        TimeSkipTheme.Initialize(modsFolder);
         _window = new TimeSkipWindow(ctx, Skip);
 
-        try
+        bool modViewerInstalled = File.Exists(
+            Path.Combine(modsFolder, "ModViewer", "ModViewer.dll"));
+
+        if (!modViewerInstalled)
         {
-            // No default key: Mod Viewer (F2) and the loader's Mods menu open this window.
-            ctx.AddWindow("TimeSkip", Toggle);
-        }
-        catch (Exception e)
-        {
-            ctx.Log($"Loader window registration failed ({e.GetType().Name}); TimeSkip will not have a window.");
+            try
+            {
+                // No default key: the loader's Mods menu can still open this window.
+                ctx.AddWindow("TimeSkip", Toggle);
+            }
+            catch (Exception e)
+            {
+                ctx.Log($"Loader window registration failed ({e.GetType().Name}); TimeSkip will not have a window.");
+            }
         }
 
         ctx.Frame += OnFrame;
-        ctx.Log("Loaded. Open TimeSkip from Mod Viewer (F2).");
+        ctx.Log(modViewerInstalled
+            ? "Loaded. Mod Viewer is installed; open TimeSkip by clicking its name there."
+            : "Loaded. Open TimeSkip from the loader's Mods menu (F1).");
     }
 
     void Toggle()

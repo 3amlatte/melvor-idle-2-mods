@@ -37,8 +37,9 @@ UNINSTALL
   Delete the folder mods\TimeSkip
   Nothing is written to your save.
 
-TimeSkip has no hotkey. Open it from Mod Viewer (F2) by clicking its name, or from the loader's
-Mods menu (F1).
+TimeSkip has no hotkey. If Mod Viewer is installed, open it by clicking TimeSkip there; it
+does not add an entry to the loader's Mods menu. Without Mod Viewer, it appears in the
+loader's Mods menu (F1) as a no-key window.
 
 Unofficial, fan-made. Not affiliated with Games by Malcs or Jagex.
 
