@@ -45,6 +45,12 @@ internal static class UiAccess
             return false;
         }
 
+        if (GameAccess.CurrentGame is not { IsSaveLoaded: true })
+        {
+            message = "Open a character first.";
+            return false;
+        }
+
         ModWindow? window = WindowFor(entry);
         if (window != null)
         {
