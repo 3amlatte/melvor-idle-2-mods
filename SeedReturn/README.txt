@@ -1,8 +1,11 @@
-SEED RETURN 0.1.0
+SEED RETURN LITE 0.1.1
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
 
 Every successful harvest has a chance to return seeds of the crop you planted, in addition
 to the crop. Harvesting never has to stop because you ran out of seeds.
+
+This is the Lite version: 1% to 20%. The same page also has Seed Return (20% to 60%) and
+Seed Return Max (60% to 150%). Install only one of the three.
 
 CHANCE
   1% at Farming 1, rising to 20% at Farming 99, rounded to whole percent. The curve is
@@ -17,7 +20,7 @@ CHANCE
     Levels 38-42   7%      Levels 76-79  15%
     Levels 43-47   8%
 
-The full table is in the Farming milestones window: click "Seed Return" below The Mill.
+The full table is in the Farming milestones window: click "Seed Return Lite" below The Mill.
 
 SEEDS RETURNED
   Allotments      3 seeds
@@ -32,6 +35,9 @@ The roll happens once per harvest, including regrown orchard crops and automated
 The seeds are the ones used to plant the crop, and they go into the bank like any other drop.
 If the bank is full, only as many as fit are added.
 
+Above 100% (not reached in Lite) one batch is guaranteed per full 100%, and the remainder is
+a chance for one more batch.
+
 INSTALL
   Put this folder under the game's mods folder, so the file ends up as
   mods\SeedReturn\SeedReturn.dll
@@ -41,7 +47,7 @@ UNINSTALL
   Delete the folder mods\SeedReturn
   Nothing is written to your save.
 
-This is a cheat: it makes seeds self-sustaining. 
+This is a cheat: it makes seeds self-sustaining.
 Unofficial, fan-made. Not affiliated with Games by Malcs or Jagex.
 
 LICENSE

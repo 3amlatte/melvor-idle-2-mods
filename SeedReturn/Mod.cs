@@ -109,7 +109,6 @@ public sealed class SeedReturnMod : IMod
 
         FarmingRecipe recipe = e.Recipe;
         int percent = Chance.Percent(_passive.Experience.Level);
-        if (Random.Shared.Next(100) >= percent) return;
 
         int count = SeedCountFor(recipe.Category);
         if (count <= 0) return;
@@ -122,7 +121,18 @@ public sealed class SeedReturnMod : IMod
             return;
         }
 
-        int added = _passive.Inventory.AddQuantity(seed, count);
+        // Below 100%: one roll. At or above 100%: one guaranteed batch per 100%, with the
+        // remainder as a chance for one more batch.
+        int guaranteed = percent / 100;
+        int remainder = percent % 100;
+        int added = 0;
+
+        for (int i = 0; i < guaranteed; i++)
+            added += _passive.Inventory.AddQuantity(seed, count);
+
+        if (remainder > 0 && Random.Shared.Next(100) < remainder)
+            added += _passive.Inventory.AddQuantity(seed, count);
+
         if (added > 0)
         {
             _ctx.Log($"+{added} {seed.DisplayName.GetPluralText(added)} from {recipe.DisplayName.Text} " +

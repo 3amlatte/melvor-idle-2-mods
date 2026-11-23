@@ -13,8 +13,15 @@ param(
     [string] $FileDescription = 'Removes negative stats and bonuses from armour.',
     [string] $GameDomain = 'melvoridle2',
 
-    # Existing mod file id: add a new version to it. Omit to create the mod's first file.
+    # Existing mod file id: add a new version to it. Omit to create a new file.
     [string] $FileId,
+
+    # main / optional / miscellaneous. Optional files are listed separately on the page.
+    [ValidateSet('main', 'optional', 'miscellaneous')]
+    [string] $FileCategory = 'main',
+
+    # Only for main files: leave the file as "not the primary mod-manager download".
+    [switch] $NotPrimary,
 
     # Personal API key, one line of text. Never commit this file.
     [string] $ApiKeyFile = (Join-Path $env:APPDATA 'nexus-api-key.txt'),
@@ -151,7 +158,7 @@ if ($FileId) {
         name               = $Name
         version            = $Version
         description        = $FileDescription
-        file_category      = 'main'
+        file_category      = $FileCategory
         update_mod_version = [bool] $UpdateModVersion
     }
     $versionId = [string] $created.data.version.id
@@ -163,8 +170,8 @@ else {
         name                         = $Name
         version                      = $Version
         description                  = $FileDescription
-        file_category                = 'main'
-        primary_mod_manager_download = $true
+        file_category                = $FileCategory
+        primary_mod_manager_download = ($FileCategory -eq 'main' -and -not $NotPrimary)
         allow_mod_manager_download   = $true
         update_mod_version           = [bool] $UpdateModVersion
     }

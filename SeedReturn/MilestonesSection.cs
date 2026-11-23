@@ -8,7 +8,7 @@ using MelvorModLoader;
 namespace SeedReturn;
 
 /// <summary>
-/// Adds a "Seed Return" entry below the milestone categories (after The Mill). Clicking it
+/// Adds a "Seed Return Lite" entry below the milestone categories (after The Mill). Clicking it
 /// replaces the right-hand milestone list with the full chance table; choosing any real
 /// category or "View All Milestones" brings the list back. The entry's label shows the
 /// player's current chance, so the value is visible without opening the table.
@@ -72,7 +72,7 @@ internal sealed class MilestonesSection
             }
 
             refs.Button.Visible = true;
-            refs.Button.Text = $"Seed Return - {percent}%";
+            refs.Button.Text = $"Seed Return Lite - {percent}%";
             refs.Current.Text = $"Your chance: {percent}% at Farming {level}";
             refs.Next.Text = next > 0
                 ? $"Next: {Chance.Percent(next)}% at Farming {next}"
@@ -111,7 +111,7 @@ internal sealed class MilestonesSection
         ScrollContainer? list = FindByName<ScrollContainer>(view, "MilestonesScrollContainer");
         if (list?.GetParent() is not Node rightHost)
         {
-            _ctx.Log("Could not find the milestones list; the Seed Return section was not added.");
+            _ctx.Log("Could not find the milestones list; the Seed Return Lite section was not added.");
             return null;
         }
 
@@ -146,7 +146,7 @@ internal sealed class MilestonesSection
             var button = new Button
             {
                 Name = "SeedReturnButton",
-                Text = "Seed Return",
+                Text = "Seed Return Lite",
                 ToggleMode = true,
                 Alignment = HorizontalAlignment.Left,
                 ExpandIcon = true,
@@ -172,13 +172,13 @@ internal sealed class MilestonesSection
             };
 
             if (leftColumn != null) leftColumn.AddChild(button);
-            else _ctx.Log("Could not find the milestone category column; the Seed Return entry was not added.");
+            else _ctx.Log("Could not find the milestone category column; the Seed Return Lite entry was not added.");
 
             return refs;
         }
         catch (Exception e)
         {
-            _ctx.Log($"Could not add the Seed Return section: {e.Message}");
+            _ctx.Log($"Could not add the Seed Return Lite section: {e.Message}");
             return null;
         }
     }
@@ -202,7 +202,7 @@ internal sealed class MilestonesSection
         column.AddThemeConstantOverride("separation", 6);
         scroll.AddChild(column);
 
-        var title = new Label { Text = "Seed Return" };
+        var title = new Label { Text = "Seed Return Lite" };
         title.AddThemeFontSizeOverride("font_size", 20);
         title.AddThemeColorOverride("font_color", new Color(0.93f, 0.75f, 0.35f));
         column.AddChild(title);

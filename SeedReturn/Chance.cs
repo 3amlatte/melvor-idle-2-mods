@@ -10,15 +10,16 @@ namespace SeedReturn;
 internal static class Chance
 {
     public const int MaxLevel = 99;
+    public const int MinPercent = 1;
     public const int MaxPercent = 20;
 
     public static int Percent(int level)
     {
-        if (level <= 1) return 1;
+        if (level <= 1) return MinPercent;
         if (level >= MaxLevel) return MaxPercent;
 
         double t = (level - 1) / (double)(MaxLevel - 1);
-        return (int)Math.Round(1 + (MaxPercent - 1) * Math.Pow(t, 1.25), MidpointRounding.AwayFromZero);
+        return (int)Math.Round(MinPercent + (MaxPercent - MinPercent) * Math.Pow(t, 1.25), MidpointRounding.AwayFromZero);
     }
 
     /// <summary>The next level at which the rounded chance goes up, or 0 if already at the cap.</summary>
