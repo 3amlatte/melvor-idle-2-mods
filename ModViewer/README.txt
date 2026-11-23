@@ -1,4 +1,4 @@
-MOD VIEWER 0.1.0
+MOD VIEWER 0.1.1
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
 
 Press F2 (or pick it in the loader's Mods menu) to open a list of every installed mod, both
@@ -7,7 +7,7 @@ enabled and disabled.
 GROUPS
   Mods whose folder contains a "3am.mod" marker file are listed under "3am Mods". Everything
   else is under "Other mods". The marker is included in every 3am mod package, so no name
-  list needs maintaining. Click the "3am Mods" heading to collapse or expand it.
+  list needs maintaining. Click either group heading to collapse or expand it.
 
 THEMES
   The Theme drop-down in the header switches the whole viewer palette:

@@ -27,6 +27,7 @@ internal sealed class ViewerWindow
     readonly ScrollContainer _settingsScroll;
     readonly Label _status;
     bool _collapsed3am;
+    bool _collapsedOther;
 
     public ViewerWindow(ModContext ctx, Action restart, Action<string> log)
     {
@@ -246,15 +247,23 @@ internal sealed class ViewerWindow
             if (!any) _list.AddChild(TextLabel("No 3am mods found."));
         }
 
-        AddHeader("Other mods");
-        bool anyOther = false;
-        foreach (ModEntry entry in entries)
+        AddGroupHeader("Other mods", _collapsedOther, () =>
         {
-            if (entry.Is3am) continue;
-            _list.AddChild(Row(entry));
-            anyOther = true;
+            _collapsedOther = !_collapsedOther;
+            Refresh();
+        });
+
+        if (!_collapsedOther)
+        {
+            bool anyOther = false;
+            foreach (ModEntry entry in entries)
+            {
+                if (entry.Is3am) continue;
+                _list.AddChild(Row(entry));
+                anyOther = true;
+            }
+            if (!anyOther) _list.AddChild(TextLabel("No other mods found."));
         }
-        if (!anyOther) _list.AddChild(TextLabel("No other mods found."));
     }
 
     void AddGroupHeader(string text, bool collapsed, Action toggle)
@@ -274,15 +283,6 @@ internal sealed class ViewerWindow
         button.AddThemeColorOverride("font_hover_color", ViewerTheme.Current.Accent.Lightened(0.16f));
         button.Pressed += toggle;
         _list.AddChild(button);
-    }
-
-    void AddHeader(string text)
-    {
-        var label = new Label { Text = text };
-        label.AddThemeFontSizeOverride("font_size", 16);
-        label.AddThemeColorOverride("font_color", ViewerTheme.Current.Accent);
-        _list.AddChild(new HSeparator());
-        _list.AddChild(label);
     }
 
     Control Row(ModEntry entry)
