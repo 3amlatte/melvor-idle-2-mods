@@ -416,7 +416,7 @@ public sealed class MelvorAutoMod : IMod
                 _settingsStamp = File.GetLastWriteTimeUtc(_settingsPath);
 
             if (started)
-                _ctx.Log($"Grain mill stocked and started for {character}. Next stock in 2 hours.");
+                _ctx.Log($"Grain mill stocked and started for {character}.");
             else if (_mill.IsActive)
                 _ctx.Log($"Grain mill stocked for {character}; it was already running, so it was left running.");
             else

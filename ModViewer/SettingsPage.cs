@@ -10,10 +10,13 @@ namespace ModViewer;
 
 internal static class SettingsPage
 {
-    static readonly string[] MelvorAutoBools =
+    static readonly string[] FarmerKeys =
     {
-        "AutoBuryBones", "AutoOpenItems", "AutoFarm", "AutoHarvest",
-        "AutoCompost", "AutoWater", "AutoPlant", "AutoMill",
+        "AutoFarm", "AutoHarvest", "AutoCompost", "AutoWater", "AutoPlant", "AutoMill"
+    };
+
+    static readonly string[] RanchKeys =
+    {
         "AutoRanchMaintenance", "AutoRanchPets"
     };
 
@@ -140,17 +143,18 @@ internal static class SettingsPage
         column.AddChild(title);
 
         var toggles = new List<(string Key, CheckBox Box)>();
-        foreach (string key in MelvorAutoBools)
-        {
-            var check = new CheckBox
-            {
-                Text = Label(key),
-                ButtonPressed = Bool(settings, key, true),
-                TooltipText = Description(key)
-            };
-            toggles.Add((key, check));
-            column.AddChild(check);
-        }
+        AddToggle(column, toggles, settings, "AutoBuryBones");
+        AddToggle(column, toggles, settings, "AutoOpenItems");
+
+        var farmerBody = new VBoxContainer();
+        farmerBody.AddThemeConstantOverride("separation", 6);
+        AddSectionHeader(column, "Auto Farmer", farmerBody,
+            "Show or hide the Farming automation options.");
+        foreach (string key in FarmerKeys)
+            AddToggle(farmerBody, toggles, settings, key);
+
+        foreach (string key in RanchKeys)
+            AddToggle(column, toggles, settings, key);
 
         column.AddChild(new HSeparator());
         column.AddChild(TextLabel("Bones bigger than Big Bone (checked = do not auto-bury)"));
@@ -233,6 +237,44 @@ internal static class SettingsPage
         column.AddChild(save);
     }
 
+    static void AddToggle(VBoxContainer parent, List<(string Key, CheckBox Box)> toggles,
+        JsonObject settings, string key)
+    {
+        var check = new CheckBox
+        {
+            Text = Label(key),
+            ButtonPressed = Bool(settings, key, true),
+            TooltipText = Description(key)
+        };
+        toggles.Add((key, check));
+        parent.AddChild(check);
+    }
+
+    static void AddSectionHeader(VBoxContainer column, string title, VBoxContainer body,
+        string tooltip)
+    {
+        var header = new Button
+        {
+            Text = "▼  " + title,
+            Flat = true,
+            Alignment = HorizontalAlignment.Left,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+            TooltipText = tooltip
+        };
+        header.AddThemeFontSizeOverride("font_size", 14);
+        header.AddThemeColorOverride("font_color", ViewerTheme.Current.Accent);
+        header.AddThemeColorOverride("font_hover_color", ViewerTheme.Current.Accent.Lightened(0.16f));
+        header.Pressed += () =>
+        {
+            body.Visible = !body.Visible;
+            header.Text = (body.Visible ? "▼  " : "▶  ") + title;
+        };
+
+        column.AddChild(header);
+        column.AddChild(body);
+    }
+
     static bool Bool(JsonObject obj, string key, bool fallback) =>
         obj[key] is JsonValue value && value.TryGetValue(out bool b) ? b : fallback;
 
@@ -245,7 +287,7 @@ internal static class SettingsPage
         "AutoCompost" => "Auto compost",
         "AutoWater" => "Auto water",
         "AutoPlant" => "Auto plant",
-        "AutoMill" => "Grain mill stocking (every 2 hours)",
+        "AutoMill" => "Grain mill stocking",
         "AutoRanchMaintenance" => "Auto Ranching: repair all enclosures",
         "AutoRanchPets" => "Auto Ranching: pet all animals",
         _ => key
@@ -260,7 +302,7 @@ internal static class SettingsPage
         "AutoCompost" => "Compost a plot automatically before replanting.",
         "AutoWater" => "Water crops automatically.",
         "AutoPlant" => "Replant harvested plots with the selected crop.",
-        "AutoMill" => "Stock the grain mill every 2 hours and start it if stopped.",
+        "AutoMill" => "Stock the grain mill from the bank and start it if stopped.",
         "AutoRanchMaintenance" => "Repair all enclosures after each hourly maintenance tick.",
         "AutoRanchPets" => "Pet animals as soon as they want attention.",
         _ => ""
