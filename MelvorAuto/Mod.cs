@@ -380,7 +380,7 @@ public sealed class MelvorAutoMod : IMod
         if (colon >= 0) local = local[(colon + 1)..];
 
         string guess = "res://Assets/Items/" + local + ".png";
-        return ResourceLoader.Exists(guess) ? guess : "";
+        return guess;
     }
 
     void ApplyBoneDefaults(List<BoneInfo> bones)

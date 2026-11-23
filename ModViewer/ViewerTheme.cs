@@ -108,26 +108,32 @@ internal static class ViewerTheme
     {
         ViewerPalette palette = Current;
         bool dark = Luminance(palette.Panel) < 0.5f;
+        bool neutralGrey = string.Equals(palette.Id, "Dark", StringComparison.OrdinalIgnoreCase);
 
-        Color control = dark
-            ? palette.Panel.Lightened(0.10f)
-            : palette.Panel.Darkened(0.07f);
-        Color hover = dark ? control.Lightened(0.06f) : control.Darkened(0.05f);
-        Color pressed = control.Lerp(palette.Accent, 0.30f);
+        Color control = neutralGrey
+            ? Hex("#2A2E35")
+            : dark ? palette.Panel.Lightened(0.10f) : palette.Panel.Darkened(0.07f);
+        Color hover = neutralGrey
+            ? Hex("#3A3F48")
+            : dark ? control.Lightened(0.06f) : control.Darkened(0.05f);
+        Color pressed = neutralGrey
+            ? Hex("#4A505B")
+            : control.Lerp(palette.Accent, 0.30f);
         Color disabled = control;
         disabled.A = 0.55f;
 
-        Color border = palette.Muted;
-        border.A = 0.35f;
-        Color hoverBorder = palette.Accent;
-        hoverBorder.A = 0.65f;
+        Color border = neutralGrey ? Hex("#434850") : palette.Muted;
+        if (!neutralGrey) border.A = 0.35f;
+        Color hoverBorder = neutralGrey ? Hex("#6A707A") : palette.Accent;
+        if (!neutralGrey) hoverBorder.A = 0.65f;
+        Color focusBorder = neutralGrey ? Hex("#8A909A") : palette.Accent;
         Color pressedText = Contrast(pressed);
 
         StyleBoxFlat normal = Box(control, border);
         StyleBoxFlat hoverBox = Box(hover, hoverBorder);
-        StyleBoxFlat pressedBox = Box(pressed, palette.Accent);
+        StyleBoxFlat pressedBox = Box(pressed, hoverBorder);
         StyleBoxFlat disabledBox = Box(disabled, border);
-        StyleBoxFlat focusBox = Box(new Color(0, 0, 0, 0), palette.Accent);
+        StyleBoxFlat focusBox = Box(new Color(0, 0, 0, 0), focusBorder);
 
         var theme = new Theme();
         theme.SetColor("font_color", "Label", palette.Text);
@@ -146,7 +152,7 @@ internal static class ViewerTheme
         selection.A = 0.35f;
         theme.SetColor("selection_color", "LineEdit", selection);
         theme.SetStylebox("normal", "LineEdit", Box(control, border));
-        theme.SetStylebox("focus", "LineEdit", Box(control, palette.Accent));
+        theme.SetStylebox("focus", "LineEdit", Box(control, focusBorder));
         theme.SetStylebox("read_only", "LineEdit", Box(disabled, border));
 
         return theme;
