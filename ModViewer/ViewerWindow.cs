@@ -18,6 +18,9 @@ internal sealed class ViewerWindow
     readonly Label _themeLabel;
     readonly HBoxContainer _themeGroup;
     readonly OptionButton _themePicker;
+    readonly PanelContainer _restartBanner;
+    readonly StyleBoxFlat _restartStyle;
+    readonly Label _restartText;
     readonly VBoxContainer _list;
     readonly VBoxContainer _settings;
     readonly ScrollContainer _listScroll;
@@ -94,6 +97,28 @@ internal sealed class ViewerWindow
         };
         _hint.AddThemeFontSizeOverride("font_size", 12);
         column.AddChild(_hint);
+
+        _restartStyle = new StyleBoxFlat
+        {
+            BgColor = new Color(palette.Accent.R, palette.Accent.G, palette.Accent.B, 0.14f),
+            BorderColor = palette.Accent
+        };
+        _restartStyle.SetBorderWidthAll(1);
+        _restartStyle.SetCornerRadiusAll(6);
+        _restartStyle.SetContentMarginAll(8);
+
+        _restartText = new Label
+        {
+            Text = "Restart Melvor Idle 2 to apply the change and view the updated mod list.",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        _restartText.AddThemeFontSizeOverride("font_size", 12);
+        _restartText.AddThemeColorOverride("font_color", palette.Accent);
+
+        _restartBanner = new PanelContainer { Visible = false };
+        _restartBanner.AddThemeStyleboxOverride("panel", _restartStyle);
+        _restartBanner.AddChild(_restartText);
+        column.AddChild(_restartBanner);
 
         var body = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         column.AddChild(body);
@@ -181,6 +206,11 @@ internal sealed class ViewerWindow
         _hint.AddThemeColorOverride("font_color", palette.Muted);
         _themeLabel.AddThemeColorOverride("font_color", palette.Muted);
         _status.AddThemeColorOverride("font_color", palette.Muted);
+
+        _restartStyle.BgColor = new Color(palette.Accent.R, palette.Accent.G, palette.Accent.B, 0.14f);
+        _restartStyle.BorderColor = palette.Accent;
+        _restartBanner.AddThemeStyleboxOverride("panel", _restartStyle);
+        _restartText.AddThemeColorOverride("font_color", palette.Accent);
 
         Theme theme = ViewerTheme.BuildControlTheme();
         Font? font = _panel.GetThemeFont("font");
@@ -276,7 +306,8 @@ internal sealed class ViewerWindow
         {
             if (Mods.SetEnabled(entry, pressed, out string error))
             {
-                SetStatus("Restart required to apply the change.");
+                _restartBanner.Visible = true;
+                SetStatus("Restart required to apply the change and refresh the list.");
                 Refresh();
             }
             else

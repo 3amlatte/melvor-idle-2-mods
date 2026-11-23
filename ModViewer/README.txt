@@ -28,8 +28,9 @@ FOLDER
 ENABLED / DISABLED
   Unchecking Enabled moves the mod's folder (or loose DLL) from mods\ to mods-disabled\.
   Checking it moves it back. The loader only scans mods\, so a disabled mod does not load on
-  the next start. A running mod keeps running until then, so the window asks you to restart.
-  The "Restart Game" button quits and launches Melvor Idle 2 again through Steam.
+  the next start. A running mod keeps running until then, and a banner reminds you to restart
+  to see the updated list. The "Restart Game" button quits and launches Melvor Idle 2 again
+  through Steam.
 
 SETTINGS AND MOD WINDOWS
   Click a mod's name to open its settings, or, if it has no settings, its own window.
