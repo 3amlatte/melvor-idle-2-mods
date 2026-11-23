@@ -157,7 +157,7 @@ internal static class SettingsPage
             AddToggle(column, toggles, settings, key);
 
         column.AddChild(new HSeparator());
-        column.AddChild(TextLabel("Bones bigger than Big Bone (checked = do not auto-bury)"));
+        column.AddChild(TextLabel("Do not bury"));
 
         var boneChecks = new List<(string Id, CheckBox Box)>();
         var openChecks = new List<(string Id, CheckBox Box)>();
