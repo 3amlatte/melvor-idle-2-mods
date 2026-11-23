@@ -7,13 +7,14 @@ using GamesByMalcs.Melvor2.Components.CombatEffects;
 using GamesByMalcs.Melvor2.Data;
 using GamesByMalcs.Melvor2.Localization;
 using GamesByMalcs.Melvor2.Modifiers;
+using Godot;
 using MelvorModLoader;
 
 namespace TimeSkip;
 
 /// <summary>
-/// A window that skips the character forward by a chosen amount of time. It has no hotkey;
-/// open it from Mod Viewer (F2) or the loader's Mods menu.
+/// A window that skips the character forward by a chosen amount of time. When Mod Viewer is
+/// installed it has no hotkey and opens from there; without Mod Viewer, F4 opens it.
 /// The skip goes through the game's own offline progress: it pauses, simulates the ticks,
 /// and shows the normal offline summary. A temporary FlatOfflineTime bonus raises the cap
 /// just long enough for the requested duration to be accepted, then it is removed.
@@ -54,8 +55,8 @@ public sealed class TimeSkipMod : IMod
         {
             try
             {
-                // No default key: the loader's Mods menu can still open this window.
-                ctx.AddWindow("TimeSkip", Toggle);
+                // No Mod Viewer: F4 opens it, and the loader's Mods menu lists it too.
+                ctx.AddWindow("TimeSkip", Toggle, Key.F4);
             }
             catch (Exception e)
             {
@@ -66,7 +67,7 @@ public sealed class TimeSkipMod : IMod
         ctx.Frame += OnFrame;
         ctx.Log(modViewerInstalled
             ? "Loaded. Mod Viewer is installed; open TimeSkip by clicking its name there."
-            : "Loaded. Open TimeSkip from the loader's Mods menu (F1).");
+            : "Loaded. Press F4 to open TimeSkip.");
     }
 
     void Toggle()
