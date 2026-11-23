@@ -178,6 +178,13 @@ internal sealed class ViewerWindow
         info.AddChild(sub);
         row.AddChild(info);
 
+        if (entry.HasSettings)
+        {
+            var settings = new Button { Text = "Settings" };
+            settings.Pressed += () => ShowSettings(entry);
+            row.AddChild(settings);
+        }
+
         var enabled = new CheckBox { Text = "Enabled", ButtonPressed = entry.Enabled };
         enabled.Toggled += pressed =>
         {
@@ -193,13 +200,6 @@ internal sealed class ViewerWindow
             }
         };
         row.AddChild(enabled);
-
-        if (entry.HasSettings)
-        {
-            var settings = new Button { Text = "Settings" };
-            settings.Pressed += () => ShowSettings(entry);
-            row.AddChild(settings);
-        }
 
         return row;
     }
