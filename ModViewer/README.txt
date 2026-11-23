@@ -32,6 +32,7 @@ ENABLED / DISABLED
 
 SETTINGS AND MOD WINDOWS
   Click a mod's name to open its settings, or, if it has no settings, its own window.
+  Hover over an option for a short explanation.
     - Mods with a settings.json show an editor: checkboxes for true/false, text boxes for
       numbers/strings.
     - Melvor Auto has a dedicated settings page: its toggles, a checkbox per bone bigger than

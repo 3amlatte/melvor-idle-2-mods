@@ -29,7 +29,7 @@ internal static class SettingsPage
 
         if (!File.Exists(path))
         {
-            column.AddChild(new Label { Text = "This mod has no settings.json." });
+            column.AddChild(TextLabel("This mod has no settings.json."));
             return column;
         }
 
@@ -70,7 +70,7 @@ internal static class SettingsPage
             string key = pair.Key;
             if (pair.Value is not JsonValue value)
             {
-                column.AddChild(new Label { Text = $"{key}: lists/objects are not editable here." });
+                column.AddChild(TextLabel($"{key}: lists/objects are not editable here."));
                 continue;
             }
 
@@ -83,7 +83,9 @@ internal static class SettingsPage
             else if (value.TryGetValue<string>(out string? text))
             {
                 var row = new HBoxContainer();
-                row.AddChild(new Label { Text = key, CustomMinimumSize = new Vector2(220, 0) });
+                var label = TextLabel(key);
+                label.CustomMinimumSize = new Vector2(220, 0);
+                row.AddChild(label);
                 var edit = new LineEdit { Text = text, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
                 edit.TextChanged += changed => settings[key] = JsonValue.Create(changed);
                 row.AddChild(edit);
@@ -92,7 +94,9 @@ internal static class SettingsPage
             else if (value.TryGetValue<double>(out double number))
             {
                 var row = new HBoxContainer();
-                row.AddChild(new Label { Text = key, CustomMinimumSize = new Vector2(220, 0) });
+                var label = TextLabel(key);
+                label.CustomMinimumSize = new Vector2(220, 0);
+                row.AddChild(label);
                 var edit = new LineEdit
                 {
                     Text = number.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -109,7 +113,7 @@ internal static class SettingsPage
             }
             else
             {
-                column.AddChild(new Label { Text = $"{key}: {value.ToJsonString()}" });
+                column.AddChild(TextLabel($"{key}: {value.ToJsonString()}"));
             }
         }
 
@@ -141,14 +145,15 @@ internal static class SettingsPage
             var check = new CheckBox
             {
                 Text = Label(key),
-                ButtonPressed = Bool(settings, key, true)
+                ButtonPressed = Bool(settings, key, true),
+                TooltipText = Description(key)
             };
             toggles.Add((key, check));
             column.AddChild(check);
         }
 
         column.AddChild(new HSeparator());
-        column.AddChild(new Label { Text = "Bones bigger than Big Bone (checked = do not auto-bury)" });
+        column.AddChild(TextLabel("Bones bigger than Big Bone (checked = do not auto-bury)"));
 
         var boneChecks = new List<(string Id, CheckBox Box)>();
         var openChecks = new List<(string Id, CheckBox Box)>();
@@ -156,10 +161,7 @@ internal static class SettingsPage
         string availablePath = Path.Combine(folder, "available.json");
         if (!File.Exists(availablePath))
         {
-            column.AddChild(new Label
-            {
-                Text = "Open a character once so Melvor Auto can write its bone/openable list."
-            });
+            column.AddChild(TextLabel("Open a character once so Melvor Auto can write its bone/openable list."));
         }
         else
         {
@@ -177,14 +179,19 @@ internal static class SettingsPage
                     int points = Int(bone, "Points");
                     if (id == "" || points <= 6) continue;
 
-                    var check = new CheckBox { Text = $"{name} ({points} points)", ButtonPressed = excludedBones.Contains(id) };
+                    var check = new CheckBox
+                    {
+                        Text = $"{name} ({points} points)",
+                        ButtonPressed = excludedBones.Contains(id),
+                        TooltipText = "Leave this bone in the bank instead of auto-burying it."
+                    };
                     boneChecks.Add((id, check));
                     column.AddChild(check);
                 }
             }
 
             column.AddChild(new HSeparator());
-            column.AddChild(new Label { Text = "Openable items (checked = do not auto-open)" });
+            column.AddChild(TextLabel("Openable items (checked = do not auto-open)"));
             if (available["Openables"] is JsonArray openables)
             {
                 foreach (JsonNode? node in openables)
@@ -194,7 +201,12 @@ internal static class SettingsPage
                     string name = String(openable, "Name");
                     if (id == "") continue;
 
-                    var check = new CheckBox { Text = name, ButtonPressed = excludedOpen.Contains(id) };
+                    var check = new CheckBox
+                    {
+                        Text = name,
+                        ButtonPressed = excludedOpen.Contains(id),
+                        TooltipText = "Leave this item unopened."
+                    };
                     openChecks.Add((id, check));
                     column.AddChild(check);
                 }
@@ -238,6 +250,28 @@ internal static class SettingsPage
         "AutoRanchPets" => "Auto Ranching: pet all animals",
         _ => key
     };
+
+    static string Description(string key) => key switch
+    {
+        "AutoBuryBones" => "Bury every bone that reaches the bank, except the exclusions below.",
+        "AutoOpenItems" => "Open chests and other openables as soon as they arrive.",
+        "AutoFarm" => "Master switch for all Farming automation.",
+        "AutoHarvest" => "Harvest ripe crops automatically.",
+        "AutoCompost" => "Compost a plot automatically before replanting.",
+        "AutoWater" => "Water crops automatically.",
+        "AutoPlant" => "Replant harvested plots with the selected crop.",
+        "AutoMill" => "Stock the grain mill every 2 hours and start it if stopped.",
+        "AutoRanchMaintenance" => "Repair all enclosures after each hourly maintenance tick.",
+        "AutoRanchPets" => "Pet animals as soon as they want attention.",
+        _ => ""
+    };
+
+    static Label TextLabel(string text)
+    {
+        var label = new Label { Text = text };
+        label.AddThemeColorOverride("font_color", ViewerTheme.Current.Text);
+        return label;
+    }
 
     static string String(JsonObject obj, string key) =>
         obj[key] is JsonValue value && value.TryGetValue(out string? text) ? text : "";

@@ -182,15 +182,6 @@ internal sealed class ViewerWindow
         _themeLabel.AddThemeColorOverride("font_color", palette.Muted);
         _status.AddThemeColorOverride("font_color", palette.Muted);
 
-        // Labels and checkboxes are used by the generic settings pages, so theme them from
-        // one inherited Theme resource rather than colouring each control by hand.
-        var theme = new Theme();
-        theme.SetColor("font_color", "Label", palette.Text);
-        theme.SetColor("font_color", "CheckBox", palette.Text);
-        theme.SetColor("font_hover_color", "CheckBox", palette.Accent);
-        theme.SetColor("font_pressed_color", "CheckBox", palette.Accent);
-        _panel.Theme = theme;
-
         if (refresh) Refresh();
     }
 
@@ -215,7 +206,7 @@ internal sealed class ViewerWindow
                 _list.AddChild(Row(entry));
                 any = true;
             }
-            if (!any) _list.AddChild(new Label { Text = "No 3am mods found." });
+            if (!any) _list.AddChild(TextLabel("No 3am mods found."));
         }
 
         AddHeader("Other mods");
@@ -226,7 +217,7 @@ internal sealed class ViewerWindow
             _list.AddChild(Row(entry));
             anyOther = true;
         }
-        if (!anyOther) _list.AddChild(new Label { Text = "No other mods found." });
+        if (!anyOther) _list.AddChild(TextLabel("No other mods found."));
     }
 
     void AddGroupHeader(string text, bool collapsed, Action toggle)
@@ -299,6 +290,7 @@ internal sealed class ViewerWindow
         {
             var label = new Label { Text = entry.Name };
             label.AddThemeFontSizeOverride("font_size", 15);
+            label.AddThemeColorOverride("font_color", ViewerTheme.Current.Text);
             return label;
         }
 
@@ -387,6 +379,13 @@ internal sealed class ViewerWindow
     void SetStatus(string text)
     {
         _status.Text = text;
+    }
+
+    static Label TextLabel(string text)
+    {
+        var label = new Label { Text = text };
+        label.AddThemeColorOverride("font_color", ViewerTheme.Current.Text);
+        return label;
     }
 
     static void Clear(Node parent)
