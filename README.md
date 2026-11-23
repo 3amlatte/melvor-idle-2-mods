@@ -14,6 +14,7 @@ zips on Nexus, which contain exactly the files the game needs.
 | [UnlimitedOffline](UnlimitedOffline) | Removes the 24-hour offline progress cap. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/27) |
 | [TimeSkip](TimeSkip) | F4 window to skip the character forward by 1 hour up to 7 days. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/28) |
 | [PassiveSmelting](PassiveSmelting) | Runs the selected smelting recipe passively while you train another skill; 1–3 bars by level. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/34) |
+| [BiggerPastures](BiggerPastures) | Doubles the animal limit of every Ranching enclosure. | Not published yet |
 
 Tested with game **0.11.6-alpha.1** and Melvor Mod Loader **0.2.0**.
 
