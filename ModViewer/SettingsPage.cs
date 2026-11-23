@@ -130,7 +130,7 @@ internal static class SettingsPage
         {
             var check = new CheckBox
             {
-                Text = key,
+                Text = Label(key),
                 ButtonPressed = Bool(settings, key, true)
             };
             toggles.Add((key, check));
@@ -213,6 +213,21 @@ internal static class SettingsPage
 
     static bool Bool(JsonObject obj, string key, bool fallback) =>
         obj[key] is JsonValue value && value.TryGetValue(out bool b) ? b : fallback;
+
+    static string Label(string key) => key switch
+    {
+        "AutoBuryBones" => "Auto bone burial",
+        "AutoOpenItems" => "Auto opener",
+        "AutoFarm" => "Auto farmer (master)",
+        "AutoHarvest" => "Auto harvest",
+        "AutoCompost" => "Auto compost",
+        "AutoWater" => "Auto water",
+        "AutoPlant" => "Auto plant",
+        "AutoMill" => "Grain mill stocking (every 2 hours)",
+        "AutoRanchMaintenance" => "Auto Ranching: repair all enclosures",
+        "AutoRanchPets" => "Auto Ranching: pet all animals",
+        _ => key
+    };
 
     static string String(JsonObject obj, string key) =>
         obj[key] is JsonValue value && value.TryGetValue(out string? text) ? text : "";
