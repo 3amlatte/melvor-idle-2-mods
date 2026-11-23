@@ -34,7 +34,6 @@ internal static class TimeSkipTheme
         catch { stamp = DateTime.MinValue; }
 
         if (stamp == _stamp) return false;
-        _stamp = stamp;
 
         Color next = DefaultAccent;
         if (stamp != DateTime.MinValue)
@@ -45,9 +44,14 @@ internal static class TimeSkipTheme
                 if (root?["AccentColor"] is JsonValue value && value.TryGetValue(out string? hex))
                     next = Parse(hex);
             }
-            catch { }
+            catch
+            {
+                // Mod Viewer may be halfway through writing the file; try again next tick.
+                return false;
+            }
         }
 
+        _stamp = stamp;
         if (next == Accent) return false;
         Accent = next;
         return true;
