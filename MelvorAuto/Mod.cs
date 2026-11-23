@@ -272,6 +272,50 @@ public sealed class MelvorAutoMod : IMod
 
     // ------------------------------------------------------------------ available lists
 
+    // Curated rarest-first order for the openable card grid. Anything not listed sorts last,
+    // alphabetically, so new items still appear without breaking the build.
+    static readonly string[] OpenableRarityOrder =
+    {
+        "MelvorBase:BlackDragonChest",
+        "MelvorBase:KrakenChest",
+        "MelvorBase:WurmChest",
+        "MelvorBase:VenomChest",
+        "MelvorBase:BloodSanctumChest",
+        "MelvorBase:BlightedScarChest",
+        "MelvorBase:ShiftsandChest",
+        "MelvorBase:MurkwoodChest",
+        "MelvorBase:GlowsquidChest",
+        "MelvorBase:BlackstoneChest",
+        "MelvorBase:HobgolbinChest",
+        "MelvorBase:HarvestFarmChest",
+        "MelvorBase:MidnightEscapeRewardBox",
+        "MelvorBase:MoonlightDashRewardBox",
+        "MelvorBase:NightClimbRewardBox",
+        "MelvorBase:CharitableGiftOfCeedyr",
+        "MelvorBase:SimpleGiftOfCeedyr",
+        "MelvorBase:EagleNest",
+        "MelvorBase:BirdNest",
+        "MelvorBase:LargeSurveyFindings",
+        "MelvorBase:MediumSurveyFindings",
+        "MelvorBase:SmallSurveyFindings",
+        "MelvorBase:ScorchedGeode",
+        "MelvorBase:Geode",
+        "MelvorBase:ElementalRunePackII",
+        "MelvorBase:SecondaryRunePackII",
+        "MelvorBase:HerbSeedPackII",
+        "MelvorBase:ElementalRunePackI",
+        "MelvorBase:SecondaryRunePackI",
+        "MelvorBase:HerbSeedPackI",
+        "MelvorBase:SeaweedClump",
+        "MelvorBase:BaitBox",
+        "MelvorBase:AmmoPackIIArrows",
+        "MelvorBase:AmmoPackIIBolts",
+        "MelvorBase:AmmoPackIIBoomerangs",
+        "MelvorBase:AmmoPackIArrows",
+        "MelvorBase:AmmoPackIBolts",
+        "MelvorBase:AmmoPackIBoomerangs"
+    };
+
     Available BuildAvailable(Game game)
     {
         var available = new Available();
@@ -301,8 +345,25 @@ public sealed class MelvorAutoMod : IMod
         }
 
         available.Bones.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
-        available.Openables.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        available.Openables.Sort((a, b) =>
+        {
+            int rank = OpenableRank(a.Id).CompareTo(OpenableRank(b.Id));
+            return rank != 0
+                ? rank
+                : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+        });
         return available;
+    }
+
+    static int OpenableRank(string id)
+    {
+        for (int i = 0; i < OpenableRarityOrder.Length; i++)
+        {
+            if (string.Equals(OpenableRarityOrder[i], id, StringComparison.OrdinalIgnoreCase))
+                return i;
+        }
+
+        return OpenableRarityOrder.Length;
     }
 
     void ApplyBoneDefaults(List<BoneInfo> bones)
