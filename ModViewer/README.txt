@@ -9,6 +9,10 @@ GROUPS
   else is under "Other mods". The marker is included in every 3am mod package, so no name
   list needs maintaining. Click the "3am Mods" heading to collapse or expand it.
 
+COLOUR
+  The Accent swatch in the header opens a colour picker. It recolours the title, group
+  headings, border and clickable-name hover, and is saved in ModViewer\settings.json.
+
 ENABLED / DISABLED
   Unchecking Enabled moves the mod's folder (or loose DLL) from mods\ to mods-disabled\.
   Checking it moves it back. The loader only scans mods\, so a disabled mod does not load on

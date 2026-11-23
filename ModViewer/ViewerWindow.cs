@@ -11,6 +11,11 @@ internal sealed class ViewerWindow
     readonly Action _restart;
     readonly Action<string> _log;
     readonly CanvasLayer _layer;
+    readonly PanelContainer _panel;
+    readonly StyleBoxFlat _panelStyle;
+    readonly Label _title;
+    readonly HBoxContainer _accentGroup;
+    readonly ColorPickerButton _accentPicker;
     readonly VBoxContainer _list;
     readonly VBoxContainer _settings;
     readonly ScrollContainer _listScroll;
@@ -24,34 +29,55 @@ internal sealed class ViewerWindow
         _restart = restart;
         _log = log;
 
+        ViewerTheme.Load(ctx.Directory, log);
         _layer = new CanvasLayer { Layer = 120, Visible = false };
 
         var center = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         center.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         _layer.AddChild(center);
 
-        var panel = new PanelContainer { CustomMinimumSize = new Vector2(820, 620) };
-        var style = new StyleBoxFlat
+        _panel = new PanelContainer { CustomMinimumSize = new Vector2(820, 620) };
+        _panelStyle = new StyleBoxFlat
         {
             BgColor = new Color(0.07f, 0.08f, 0.11f, 0.98f),
-            BorderColor = new Color(0.85f, 0.70f, 0.30f)
+            BorderColor = ViewerTheme.Accent
         };
-        style.SetBorderWidthAll(1);
-        style.SetCornerRadiusAll(8);
-        style.SetContentMarginAll(18);
-        panel.AddThemeStyleboxOverride("panel", style);
-        center.AddChild(panel);
+        _panelStyle.SetBorderWidthAll(1);
+        _panelStyle.SetCornerRadiusAll(8);
+        _panelStyle.SetContentMarginAll(18);
+        _panel.AddThemeStyleboxOverride("panel", _panelStyle);
+        center.AddChild(_panel);
 
         var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", 8);
-        panel.AddChild(column);
+        _panel.AddChild(column);
 
         var header = new HBoxContainer();
-        var title = new Label { Text = "Mod Viewer" };
-        title.AddThemeFontSizeOverride("font_size", 22);
-        title.AddThemeColorOverride("font_color", new Color(0.93f, 0.75f, 0.35f));
-        header.AddChild(title);
+        _title = new Label { Text = "Mod Viewer" };
+        _title.AddThemeFontSizeOverride("font_size", 22);
+        _title.AddThemeColorOverride("font_color", ViewerTheme.Accent);
+        header.AddChild(_title);
         header.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+
+        _accentGroup = new HBoxContainer();
+        _accentGroup.AddThemeConstantOverride("separation", 6);
+        var accentLabel = new Label { Text = "Accent" };
+        accentLabel.AddThemeFontSizeOverride("font_size", 12);
+        accentLabel.AddThemeColorOverride("font_color", new Color(0.70f, 0.70f, 0.70f));
+        _accentGroup.AddChild(accentLabel);
+
+        _accentPicker = new ColorPickerButton
+        {
+            Color = ViewerTheme.Accent,
+            EditAlpha = false,
+            CustomMinimumSize = new Vector2(46, 0),
+            TooltipText = "Choose the Mod Viewer accent colour"
+        };
+        _accentPicker.ColorChanged += OnAccentChanged;
+        _accentPicker.PopupClosed += OnAccentPopupClosed;
+        _accentGroup.AddChild(_accentPicker);
+        header.AddChild(_accentGroup);
+
         var close = new Button { Text = "Close" };
         close.Pressed += Hide;
         header.AddChild(close);
@@ -116,6 +142,7 @@ internal sealed class ViewerWindow
 
         _settingsScroll.Visible = false;
         _listScroll.Visible = true;
+        _accentGroup.Visible = true;
         Refresh();
         _layer.Visible = true;
     }
@@ -123,6 +150,20 @@ internal sealed class ViewerWindow
     public void Hide()
     {
         _layer.Visible = false;
+    }
+
+    void OnAccentChanged(Color color)
+    {
+        ViewerTheme.SetAccent(color);
+        _panelStyle.BorderColor = color;
+        _panel.AddThemeStyleboxOverride("panel", _panelStyle);
+        _title.AddThemeColorOverride("font_color", color);
+    }
+
+    void OnAccentPopupClosed()
+    {
+        Refresh();
+        ViewerTheme.Save(_log);
     }
 
     void Refresh()
@@ -173,8 +214,8 @@ internal sealed class ViewerWindow
             MouseDefaultCursorShape = Control.CursorShape.PointingHand
         };
         button.AddThemeFontSizeOverride("font_size", 16);
-        button.AddThemeColorOverride("font_color", new Color(0.93f, 0.75f, 0.35f));
-        button.AddThemeColorOverride("font_hover_color", new Color(1.0f, 0.85f, 0.45f));
+        button.AddThemeColorOverride("font_color", ViewerTheme.Accent);
+        button.AddThemeColorOverride("font_hover_color", ViewerTheme.Accent.Lightened(0.16f));
         button.Pressed += toggle;
         _list.AddChild(button);
     }
@@ -183,7 +224,7 @@ internal sealed class ViewerWindow
     {
         var label = new Label { Text = text };
         label.AddThemeFontSizeOverride("font_size", 16);
-        label.AddThemeColorOverride("font_color", new Color(0.93f, 0.75f, 0.35f));
+        label.AddThemeColorOverride("font_color", ViewerTheme.Accent);
         _list.AddChild(new HSeparator());
         _list.AddChild(label);
     }
@@ -243,8 +284,8 @@ internal sealed class ViewerWindow
         };
         button.AddThemeFontSizeOverride("font_size", 15);
         button.AddThemeColorOverride("font_color", new Color(0.90f, 0.90f, 0.90f));
-        button.AddThemeColorOverride("font_hover_color", new Color(0.93f, 0.75f, 0.35f));
-        button.AddThemeColorOverride("font_pressed_color", new Color(0.93f, 0.75f, 0.35f));
+        button.AddThemeColorOverride("font_hover_color", ViewerTheme.Accent);
+        button.AddThemeColorOverride("font_pressed_color", ViewerTheme.Accent);
         button.Pressed += () => Open(entry);
         return button;
     }
@@ -273,6 +314,7 @@ internal sealed class ViewerWindow
         Clear(_settings);
         _listScroll.Visible = false;
         _settingsScroll.Visible = true;
+        _accentGroup.Visible = false;
 
         var back = new Button { Text = "Back to mods", SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd };
         back.Pressed += Back;
@@ -280,7 +322,7 @@ internal sealed class ViewerWindow
 
         var title = new Label { Text = entry.Name };
         title.AddThemeFontSizeOverride("font_size", 18);
-        title.AddThemeColorOverride("font_color", new Color(0.93f, 0.75f, 0.35f));
+        title.AddThemeColorOverride("font_color", ViewerTheme.Accent);
         _settings.AddChild(title);
 
         _settings.AddChild(SettingsPage.Build(entry, _log, SetStatus));
@@ -291,6 +333,7 @@ internal sealed class ViewerWindow
         Clear(_settings);
         _settingsScroll.Visible = false;
         _listScroll.Visible = true;
+        _accentGroup.Visible = true;
         Refresh();
     }
 

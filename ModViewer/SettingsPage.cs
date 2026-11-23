@@ -122,7 +122,7 @@ internal static class SettingsPage
 
         var title = new Label { Text = "Melvor Auto" };
         title.AddThemeFontSizeOverride("font_size", 18);
-        title.AddThemeColorOverride("font_color", new Color(0.93f, 0.75f, 0.35f));
+        title.AddThemeColorOverride("font_color", ViewerTheme.Accent);
         column.AddChild(title);
 
         var toggles = new List<(string Key, CheckBox Box)>();
