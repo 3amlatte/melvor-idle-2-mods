@@ -16,6 +16,7 @@ internal sealed class ViewerWindow
     readonly ScrollContainer _listScroll;
     readonly ScrollContainer _settingsScroll;
     readonly Label _status;
+    bool _collapsed3am;
 
     public ViewerWindow(ModContext ctx, Action restart, Action<string> log)
     {
@@ -58,7 +59,7 @@ internal sealed class ViewerWindow
 
         var hint = new Label
         {
-            Text = "Every folder in mods and mods-disabled. Turn a mod off to move it out of the loader's path; restart to apply.",
+            Text = "Every folder in mods and mods-disabled. Click a mod's name for its settings or window. Turn a mod off to move it out of the loader's path; restart to apply.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         hint.AddThemeFontSizeOverride("font_size", 12);
@@ -130,25 +131,52 @@ internal sealed class ViewerWindow
 
         List<ModEntry> entries = Mods.Scan();
 
-        AddHeader("3am Mods");
-        bool any = false;
-        foreach (ModEntry entry in entries)
+        AddGroupHeader("3am Mods", _collapsed3am, () =>
         {
-            if (!entry.Is3am) continue;
-            _list.AddChild(Row(entry));
-            any = true;
+            _collapsed3am = !_collapsed3am;
+            Refresh();
+        });
+
+        if (!_collapsed3am)
+        {
+            bool any = false;
+            foreach (ModEntry entry in entries)
+            {
+                if (!entry.Is3am) continue;
+                _list.AddChild(Row(entry));
+                any = true;
+            }
+            if (!any) _list.AddChild(new Label { Text = "No 3am mods found." });
         }
-        if (!any) _list.AddChild(new Label { Text = "No 3am mods found." });
 
         AddHeader("Other mods");
-        any = false;
+        bool anyOther = false;
         foreach (ModEntry entry in entries)
         {
             if (entry.Is3am) continue;
             _list.AddChild(Row(entry));
-            any = true;
+            anyOther = true;
         }
-        if (!any) _list.AddChild(new Label { Text = "No other mods found." });
+        if (!anyOther) _list.AddChild(new Label { Text = "No other mods found." });
+    }
+
+    void AddGroupHeader(string text, bool collapsed, Action toggle)
+    {
+        _list.AddChild(new HSeparator());
+
+        var button = new Button
+        {
+            Text = (collapsed ? "▶  " : "▼  ") + text,
+            Flat = true,
+            Alignment = HorizontalAlignment.Left,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand
+        };
+        button.AddThemeFontSizeOverride("font_size", 16);
+        button.AddThemeColorOverride("font_color", new Color(0.93f, 0.75f, 0.35f));
+        button.AddThemeColorOverride("font_hover_color", new Color(1.0f, 0.85f, 0.45f));
+        button.Pressed += toggle;
+        _list.AddChild(button);
     }
 
     void AddHeader(string text)
@@ -166,9 +194,7 @@ internal sealed class ViewerWindow
         row.AddThemeConstantOverride("separation", 8);
 
         var info = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        var name = new Label { Text = entry.Name };
-        name.AddThemeFontSizeOverride("font_size", 15);
-        info.AddChild(name);
+        info.AddChild(NameControl(entry));
 
         string detail = entry.Version == "" ? "" : $"v{entry.Version}  ";
         detail += entry.Enabled ? "enabled" : "disabled";
@@ -177,13 +203,6 @@ internal sealed class ViewerWindow
         sub.AddThemeColorOverride("font_color", new Color(0.65f, 0.65f, 0.65f));
         info.AddChild(sub);
         row.AddChild(info);
-
-        if (entry.HasSettings)
-        {
-            var settings = new Button { Text = "Settings" };
-            settings.Pressed += () => ShowSettings(entry);
-            row.AddChild(settings);
-        }
 
         var enabled = new CheckBox { Text = "Enabled", ButtonPressed = entry.Enabled };
         enabled.Toggled += pressed =>
@@ -202,6 +221,51 @@ internal sealed class ViewerWindow
         row.AddChild(enabled);
 
         return row;
+    }
+
+    Control NameControl(ModEntry entry)
+    {
+        if (!UiAccess.CanOpen(entry))
+        {
+            var label = new Label { Text = entry.Name };
+            label.AddThemeFontSizeOverride("font_size", 15);
+            return label;
+        }
+
+        var button = new Button
+        {
+            Text = entry.Name,
+            Flat = true,
+            Alignment = HorizontalAlignment.Left,
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+            TooltipText = entry.HasSettings ? "Open settings" : "Open this mod's window"
+        };
+        button.AddThemeFontSizeOverride("font_size", 15);
+        button.AddThemeColorOverride("font_color", new Color(0.90f, 0.90f, 0.90f));
+        button.AddThemeColorOverride("font_hover_color", new Color(0.93f, 0.75f, 0.35f));
+        button.AddThemeColorOverride("font_pressed_color", new Color(0.93f, 0.75f, 0.35f));
+        button.Pressed += () => Open(entry);
+        return button;
+    }
+
+    void Open(ModEntry entry)
+    {
+        if (entry.HasSettings)
+        {
+            ShowSettings(entry);
+            return;
+        }
+
+        if (UiAccess.TryOpenWindow(entry, out string message))
+        {
+            // Get out of the way of the mod's own window.
+            Hide();
+        }
+        else
+        {
+            SetStatus(message);
+        }
     }
 
     void ShowSettings(ModEntry entry)

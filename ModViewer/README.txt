@@ -7,7 +7,7 @@ enabled and disabled.
 GROUPS
   Mods whose folder contains a "3am.mod" marker file are listed under "3am Mods". Everything
   else is under "Other mods". The marker is included in every 3am mod package, so no name
-  list needs maintaining.
+  list needs maintaining. Click the "3am Mods" heading to collapse or expand it.
 
 ENABLED / DISABLED
   Unchecking Enabled moves the mod's folder (or loose DLL) from mods\ to mods-disabled\.
@@ -15,11 +15,15 @@ ENABLED / DISABLED
   the next start. A running mod keeps running until then, so the window asks you to restart.
   The "Restart Game" button quits and launches Melvor Idle 2 again through Steam.
 
-SETTINGS
-  Mods with a settings.json get a Settings button.
-    - Generic files show checkboxes for true/false and text boxes for numbers/strings.
-    - Melvor Auto has a dedicated page: its toggles, a checkbox per bone bigger than Big Bone,
-      and a checkbox per openable item. Those lists come from Melvor Auto's available.json.
+SETTINGS AND MOD WINDOWS
+  Click a mod's name to open its settings, or, if it has no settings, its own window.
+    - Mods with a settings.json show an editor: checkboxes for true/false, text boxes for
+      numbers/strings.
+    - Melvor Auto has a dedicated settings page: its toggles, a checkbox per bone bigger than
+      Big Bone, and a checkbox per openable item. Those lists come from available.json.
+    - TimeSkip has no settings file, so clicking its name opens its skip window.
+    - Astrology Knowledge Multiplier does not register a loader window; Mod Viewer opens its
+      panel through the loaded mod instance.
   Settings changes are written immediately. Melvor Auto reloads them while the game runs;
   other mods may need the restart.
 

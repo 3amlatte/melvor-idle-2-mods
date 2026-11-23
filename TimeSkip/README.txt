@@ -1,7 +1,7 @@
 TIMESKIP 0.1.0
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
 
-Press F4 to open a small window. Pick how far to skip, then click Skip Forward. The game
+Open Mod Viewer (F2) and click TimeSkip. Pick how far to skip, then click Skip Forward. The game
 pauses, simulates that much time, and shows its normal offline progress summary.
 
 OPTIONS
@@ -33,8 +33,8 @@ UNINSTALL
   Delete the folder mods\TimeSkip
   Nothing is written to your save.
 
-F4 can be changed in the loader's Mods menu (F1). With a loader older than 0.2.0 the mod
-falls back to reading F4 directly.
+TimeSkip has no hotkey. Open it from Mod Viewer (F2) by clicking its name, or from the loader's
+Mods menu (F1).
 
 Unofficial, fan-made. Not affiliated with Games by Malcs or Jagex.
 

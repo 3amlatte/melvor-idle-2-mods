@@ -4,7 +4,7 @@ using MelvorModLoader;
 
 namespace TimeSkip;
 
-/// <summary>The F4 window: pick a duration, then press Skip Forward.</summary>
+/// <summary>The TimeSkip window opened from Mod Viewer.</summary>
 internal sealed class TimeSkipWindow
 {
     static readonly (string Label, double Hours)[] Options =

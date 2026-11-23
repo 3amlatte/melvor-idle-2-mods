@@ -9,6 +9,7 @@ namespace ModViewer;
 internal sealed class ModEntry
 {
     public string Name = "";
+    public string Assembly = "";
     public string Path = "";
     public string Dll = "";
     public bool Enabled;
@@ -46,37 +47,46 @@ internal static class Mods
             string dll = dlls.FirstOrDefault(f =>
                             Path.GetFileNameWithoutExtension(f).Equals(folder, StringComparison.OrdinalIgnoreCase))
                         ?? dlls[0];
+            var info = AssemblyInfoOf(dll);
 
             list.Add(new ModEntry
             {
                 Name = folder,
+                Assembly = info.Name,
                 Path = sub,
                 Dll = dll,
                 Enabled = enabled,
                 Is3am = File.Exists(Path.Combine(sub, "3am.mod")),
                 HasSettings = File.Exists(Path.Combine(sub, "settings.json")),
-                Version = VersionOf(dll)
+                Version = info.Version
             });
         }
 
         foreach (string dll in Directory.GetFiles(dir, "*.dll"))
         {
+            var info = AssemblyInfoOf(dll);
+
             list.Add(new ModEntry
             {
                 Name = Path.GetFileNameWithoutExtension(dll),
+                Assembly = info.Name,
                 Path = dll,
                 Dll = dll,
                 Enabled = enabled,
                 HasSettings = File.Exists(Path.Combine(dir, "settings.json")),
-                Version = VersionOf(dll)
+                Version = info.Version
             });
         }
     }
 
-    static string VersionOf(string dll)
+    static (string Name, string Version) AssemblyInfoOf(string dll)
     {
-        try { return AssemblyName.GetAssemblyName(dll).Version?.ToString(3) ?? ""; }
-        catch { return ""; }
+        try
+        {
+            AssemblyName name = AssemblyName.GetAssemblyName(dll);
+            return (name.Name ?? "", name.Version?.ToString(3) ?? "");
+        }
+        catch { return ("", ""); }
     }
 
     public static bool SetEnabled(ModEntry entry, bool enabled, out string error)

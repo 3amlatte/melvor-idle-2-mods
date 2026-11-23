@@ -14,11 +14,11 @@ zips on Nexus, which contain exactly the files the game needs.
 | [SeedReturn Standard](SeedReturnStandard) | 20–60% seed return. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/26) — file “Seed Return” |
 | [SeedReturn Max](SeedReturnMax) | 60–150% seed return; above 100% adds a chance for an extra batch. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/26) — file “Seed Return Max” |
 | [UnlimitedOffline](UnlimitedOffline) | Removes the 24-hour offline progress cap. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/27) |
-| [TimeSkip](TimeSkip) | F4 window to skip the character forward by 1 hour up to 7 days. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/28) |
+| [TimeSkip](TimeSkip) | Skip the character forward by 1 hour up to 7 days; opened from Mod Viewer. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/28) |
 | [PassiveSmelting](PassiveSmelting) | Runs the selected smelting recipe passively while you train another skill; 1–3 bars by level. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/34) |
 | [BiggerPastures](BiggerPastures) | Doubles the animal limit of every Ranching enclosure. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/41) |
 | [MelvorAuto](MelvorAuto) | Auto bone burial, auto opener, free farming automation, mill stocking, ranch repairs and petting. | Not published yet |
-| [ModViewer](ModViewer) | F2 mod list, enable/disable, settings and restart. | Not published yet |
+| [ModViewer](ModViewer) | F2 mod list, enable/disable, settings, mod windows, restart. | Not published yet |
 
 Tested with game **0.11.6-alpha.1** and Melvor Mod Loader **0.2.0**.
 

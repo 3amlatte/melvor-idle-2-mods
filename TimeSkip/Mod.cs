@@ -6,13 +6,13 @@ using GamesByMalcs.Melvor2.Components.CombatEffects;
 using GamesByMalcs.Melvor2.Data;
 using GamesByMalcs.Melvor2.Localization;
 using GamesByMalcs.Melvor2.Modifiers;
-using Godot;
 using MelvorModLoader;
 
 namespace TimeSkip;
 
 /// <summary>
-/// F4 opens a window that skips the character forward by a chosen amount of time.
+/// A window that skips the character forward by a chosen amount of time. It has no hotkey;
+/// open it from Mod Viewer (F2) or the loader's Mods menu.
 /// The skip goes through the game's own offline progress: it pauses, simulates the ticks,
 /// and shows the normal offline summary. A temporary FlatOfflineTime bonus raises the cap
 /// just long enough for the requested duration to be accepted, then it is removed.
@@ -28,9 +28,6 @@ public sealed class TimeSkipMod : IMod
 
     ModContext _ctx = null!;
     TimeSkipWindow _window = null!;
-    ModWindow? _modWindow;
-    bool _fallbackF4;
-    bool _wasF4;
     int _frame;
 
     string _status = "Open a character first.";
@@ -49,16 +46,16 @@ public sealed class TimeSkipMod : IMod
 
         try
         {
-            _modWindow = ctx.AddWindow("TimeSkip", Toggle, Key.F4);
+            // No default key: Mod Viewer (F2) and the loader's Mods menu open this window.
+            ctx.AddWindow("TimeSkip", Toggle);
         }
         catch (Exception e)
         {
-            _fallbackF4 = true;
-            ctx.Log($"Loader window registration failed ({e.GetType().Name}); polling F4 directly.");
+            ctx.Log($"Loader window registration failed ({e.GetType().Name}); TimeSkip will not have a window.");
         }
 
         ctx.Frame += OnFrame;
-        ctx.Log("Loaded. Press F4 to open the time skip window.");
+        ctx.Log("Loaded. Open TimeSkip from Mod Viewer (F2).");
     }
 
     void Toggle()
@@ -69,13 +66,6 @@ public sealed class TimeSkipMod : IMod
 
     void OnFrame()
     {
-        if (_fallbackF4)
-        {
-            bool down = Input.IsKeyPressed(Key.F4);
-            if (down && !_wasF4) Toggle();
-            _wasF4 = down;
-        }
-
         if (++_frame % 30 != 0) return;   // twice a second
 
         Game? now = GameAccess.CurrentGame;
