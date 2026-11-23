@@ -19,20 +19,21 @@ AUTO OPENER
 AUTO FARMER
   Makes every Farming automation free: the wine (and any other item/currency) normally charged
   for auto-plant, auto-harvest, auto-water and auto-compost is reduced to zero. It then switches
-  those automations on for every purchased plot, so the game's own automation does the work,
-  including during offline progress. The flags are re-applied every few seconds so newly
-  purchased plots are covered too.
+  those automations on for every purchased plot when a character opens, so the game's own
+  automation does the work, including during offline progress. A plot bought during the session
+  is picked up the next time you open the game.
 
   Some recipes and higher-tier plots have their own automation requirements. The mod checks
   them and writes a clear log line for each plot that cannot be automated yet, naming the plot
   and crop, so you know what is still gated.
 
-  The grain mill is also stocked with every valid storage item and started with the selected
-  mill recipe, or the first affordable one. This part can be switched off with AutoMill.
+  The grain mill is stocked with every valid storage item and started once when the character
+  opens, with the selected mill recipe or the first affordable one. This part can be switched
+  off with AutoMill.
 
 SETTINGS
-  settings.json next to the DLL. The 3am Mods hub edits the same file and Melvor Auto reloads
-  it while the game runs. Defaults:
+  settings.json next to the DLL. The Mod Viewer edits the same file. Bone/open changes apply
+  while the game runs; the farming automation flags are read when a character opens. Defaults:
     AutoBuryBones=true, AutoOpenItems=true,
     AutoFarm=true, AutoHarvest=true, AutoCompost=true, AutoWater=true, AutoPlant=true,
     AutoMill=true.

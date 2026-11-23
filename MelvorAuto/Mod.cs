@@ -29,7 +29,6 @@ namespace MelvorAuto;
 /// </summary>
 public sealed class MelvorAutoMod : IMod
 {
-    const long FarmPeriodMs = 5000;
     const int MaxNesting = 8;
 
     sealed class Source(string name) : INamedObject
@@ -58,7 +57,6 @@ public sealed class MelvorAutoMod : IMod
 
     int _frame;
     int _depth;
-    ulong _lastAutomation;
     readonly HashSet<string> _logged = new();
     readonly HashSet<string> _loggedAutomation = new();
 
@@ -88,11 +86,8 @@ public sealed class MelvorAutoMod : IMod
         TryBind();
         ReloadSettingsIfChanged();
 
-        if (_farming != null && _passive != null)
-        {
-            ulong now = Time.GetTicksMsec();
-            if (now - _lastAutomation >= FarmPeriodMs) ApplyAutomation();
-        }
+        // The farming flags are applied once when a character opens. Plots bought later are
+        // picked up on the next launch, as requested.
     }
 
     void TryBind()
@@ -295,7 +290,6 @@ public sealed class MelvorAutoMod : IMod
     void ApplyAutomation()
     {
         if (_farming == null || _passive == null) return;
-        _lastAutomation = Time.GetTicksMsec();
 
         bool master = _settings.AutoFarm;
         int purchased = 0;

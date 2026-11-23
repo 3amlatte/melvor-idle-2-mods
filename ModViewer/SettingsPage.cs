@@ -203,7 +203,7 @@ internal static class SettingsPage
                 settings["BoneDefaultsApplied"] = JsonValue.Create(true);
 
                 File.WriteAllText(path, settings.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-                status("Saved. Melvor Auto reloads this file while the game runs.");
+                status("Saved. Bone/open changes apply live; farming flags apply when a character next opens.");
             }
             catch (Exception e) { status("Could not save: " + e.Message); }
         };
