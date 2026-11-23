@@ -30,6 +30,7 @@ namespace MelvorAuto;
 public sealed class MelvorAutoMod : IMod
 {
     const int MaxNesting = 8;
+    const long MillIntervalSeconds = 2 * 60 * 60;   // 2 real hours = 2 in-game hours at 1:1 speed
 
     sealed class Source(string name) : INamedObject
     {
@@ -87,7 +88,9 @@ public sealed class MelvorAutoMod : IMod
         ReloadSettingsIfChanged();
 
         // The farming flags are applied once when a character opens. Plots bought later are
-        // picked up on the next launch, as requested.
+        // picked up on the next launch, as requested. The mill is checked against a real
+        // two-hour timer while the game is open.
+        TryStockMill();
     }
 
     void TryBind()
@@ -120,6 +123,7 @@ public sealed class MelvorAutoMod : IMod
 
         AddFreeAutomation(game);
         ApplyAutomation();
+        TryStockMill();
 
         Available available = BuildAvailable(game);
         available.Save(_availablePath);
@@ -316,25 +320,66 @@ public sealed class MelvorAutoMod : IMod
             }
         }
 
-        if (master && _settings.AutoMill) FarmMill();
     }
 
-    void FarmMill()
+    void TryStockMill()
+    {
+        if (!_settings.AutoMill || _mill?.Data == null) return;
+
+        string character = string.IsNullOrWhiteSpace(_game?.CharacterName) ? "default" : _game!.CharacterName!;
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        _settings.MillStockedAtUnix ??= new Dictionary<string, long>();
+        if (_settings.MillStockedAtUnix.TryGetValue(character, out long last) &&
+            now - last < MillIntervalSeconds)
+        {
+            return;
+        }
+
+        StockMill(character, now);
+    }
+
+    void StockMill(string character, long now)
     {
         if (_mill?.Data == null) return;
 
-        _mill.DepositAllToGrainMill();
-        if (_mill.IsActive) return;
-
-        if (_mill.SelectedRecipe == null || !_mill.CanCreateRecipe(_mill.SelectedRecipe))
+        try
         {
-            ActiveGrainMillRecipe? pick = _mill.ActiveRecipes.Values
-                .FirstOrDefault(r => _mill.CanCreateRecipe(r));
-            if (pick != null) _mill.SelectRecipe(pick);
-        }
+            _mill.DepositAllToGrainMill();
 
-        if (_mill.SelectedRecipe != null && _mill.CanCreateRecipe(_mill.SelectedRecipe))
-            _mill.ToggleGrainMillTimer(true);
+            // Only ever start the mill. If it is already running, leave it running: calling
+            // ToggleGrainMillTimer(true) while active would restart its timer, and passing false
+            // would stop it.
+            bool started = false;
+            if (!_mill.IsActive)
+            {
+                if (_mill.SelectedRecipe == null || !_mill.CanCreateRecipe(_mill.SelectedRecipe))
+                {
+                    ActiveGrainMillRecipe? pick = _mill.ActiveRecipes.Values
+                        .FirstOrDefault(r => _mill.CanCreateRecipe(r));
+                    if (pick != null) _mill.SelectRecipe(pick);
+                }
+
+                if (_mill.SelectedRecipe != null && _mill.CanCreateRecipe(_mill.SelectedRecipe))
+                    started = _mill.ToggleGrainMillTimer(true);
+            }
+
+            _settings.MillStockedAtUnix[character] = now;
+            _settings.Save(_settingsPath, _ctx.Log);
+            if (File.Exists(_settingsPath))
+                _settingsStamp = File.GetLastWriteTimeUtc(_settingsPath);
+
+            if (started)
+                _ctx.Log($"Grain mill stocked and started for {character}. Next stock in 2 hours.");
+            else if (_mill.IsActive)
+                _ctx.Log($"Grain mill stocked for {character}; it was already running, so it was left running.");
+            else
+                _ctx.Log($"Grain mill stocked for {character}, but no recipe could be started.");
+        }
+        catch (Exception e)
+        {
+            LogOnce("Grain mill stocking failed: " + e.Message);
+        }
     }
 
     static ModifierValues FreeValues(Game game)

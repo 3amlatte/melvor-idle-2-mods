@@ -27,9 +27,12 @@ AUTO FARMER
   them and writes a clear log line for each plot that cannot be automated yet, naming the plot
   and crop, so you know what is still gated.
 
-  The grain mill is stocked with every valid storage item and started once when the character
-  opens, with the selected mill recipe or the first affordable one. This part can be switched
-  off with AutoMill.
+  The grain mill is stocked with every valid storage item every 2 real hours (the game clock
+  runs 1:1, so that is also 2 in-game hours). The time is saved per character, so quitting and
+  reopening the game does not restart the timer. On the first run for a character it stocks
+  immediately. If the mill is already running it is only topped up, never stopped or toggled
+  off; if it is stopped, the selected recipe (or the first affordable one) is started. This
+  part can be switched off with AutoMill.
 
 SETTINGS
   settings.json next to the DLL. The Mod Viewer edits the same file. Bone/open changes apply
