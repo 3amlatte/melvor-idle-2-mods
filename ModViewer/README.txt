@@ -9,10 +9,20 @@ GROUPS
   else is under "Other mods". The marker is included in every 3am mod package, so no name
   list needs maintaining. Click the "3am Mods" heading to collapse or expand it.
 
-COLOUR
-  The Accent swatch in the header opens a colour picker. It recolours the title, group
-  headings, border and clickable-name hover, and is saved in ModViewer\settings.json.
-  When TimeSkip is installed, its window uses this colour too.
+THEMES
+  The Theme drop-down in the header switches the whole viewer palette:
+    AI        the original dark navy + gold look (default)
+    Dark      black + cyan
+    Light     warm paper + dark text
+    Midnight  deep blue + periwinkle
+    Forest    dark green + mint
+    Sakura    plum + pink
+    Contrast  black + yellow
+  The choice is saved in ModViewer\settings.json. When TimeSkip is installed, its window
+  uses the same theme.
+
+FOLDER
+  The "Mods Folder" button in the footer opens the game's mods folder in Explorer.
 
 ENABLED / DISABLED
   Unchecking Enabled moves the mod's folder (or loose DLL) from mods\ to mods-disabled\.

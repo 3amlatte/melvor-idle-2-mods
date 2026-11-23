@@ -14,8 +14,10 @@ internal sealed class ViewerWindow
     readonly PanelContainer _panel;
     readonly StyleBoxFlat _panelStyle;
     readonly Label _title;
-    readonly HBoxContainer _accentGroup;
-    readonly ColorPickerButton _accentPicker;
+    readonly Label _hint;
+    readonly Label _themeLabel;
+    readonly HBoxContainer _themeGroup;
+    readonly OptionButton _themePicker;
     readonly VBoxContainer _list;
     readonly VBoxContainer _settings;
     readonly ScrollContainer _listScroll;
@@ -30,6 +32,8 @@ internal sealed class ViewerWindow
         _log = log;
 
         ViewerTheme.Load(ctx.Directory, log);
+        ViewerPalette palette = ViewerTheme.Current;
+
         _layer = new CanvasLayer { Layer = 120, Visible = false };
 
         var center = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -39,8 +43,8 @@ internal sealed class ViewerWindow
         _panel = new PanelContainer { CustomMinimumSize = new Vector2(820, 620) };
         _panelStyle = new StyleBoxFlat
         {
-            BgColor = new Color(0.07f, 0.08f, 0.11f, 0.98f),
-            BorderColor = ViewerTheme.Accent
+            BgColor = palette.Panel,
+            BorderColor = palette.Accent
         };
         _panelStyle.SetBorderWidthAll(1);
         _panelStyle.SetCornerRadiusAll(8);
@@ -55,42 +59,41 @@ internal sealed class ViewerWindow
         var header = new HBoxContainer();
         _title = new Label { Text = "Mod Viewer" };
         _title.AddThemeFontSizeOverride("font_size", 22);
-        _title.AddThemeColorOverride("font_color", ViewerTheme.Accent);
+        _title.AddThemeColorOverride("font_color", palette.Accent);
         header.AddChild(_title);
         header.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
 
-        _accentGroup = new HBoxContainer();
-        _accentGroup.AddThemeConstantOverride("separation", 6);
-        var accentLabel = new Label { Text = "Accent" };
-        accentLabel.AddThemeFontSizeOverride("font_size", 12);
-        accentLabel.AddThemeColorOverride("font_color", new Color(0.70f, 0.70f, 0.70f));
-        _accentGroup.AddChild(accentLabel);
+        _themeGroup = new HBoxContainer();
+        _themeGroup.AddThemeConstantOverride("separation", 6);
+        _themeLabel = new Label { Text = "Theme" };
+        _themeLabel.AddThemeFontSizeOverride("font_size", 12);
+        _themeLabel.AddThemeColorOverride("font_color", palette.Muted);
+        _themeGroup.AddChild(_themeLabel);
 
-        _accentPicker = new ColorPickerButton
+        _themePicker = new OptionButton
         {
-            Color = ViewerTheme.Accent,
-            EditAlpha = false,
-            CustomMinimumSize = new Vector2(46, 0),
-            TooltipText = "Choose the Mod Viewer accent colour"
+            CustomMinimumSize = new Vector2(140, 0),
+            TooltipText = "Choose a theme"
         };
-        _accentPicker.ColorChanged += OnAccentChanged;
-        _accentPicker.PopupClosed += OnAccentPopupClosed;
-        _accentGroup.AddChild(_accentPicker);
-        header.AddChild(_accentGroup);
+        foreach (ViewerPalette theme in ViewerTheme.All)
+            _themePicker.AddItem(theme.Name);
+        _themePicker.Selected = ViewerTheme.IndexOf(ViewerTheme.Current.Id);
+        _themePicker.ItemSelected += OnThemeSelected;
+        _themeGroup.AddChild(_themePicker);
+        header.AddChild(_themeGroup);
 
         var close = new Button { Text = "Close" };
         close.Pressed += Hide;
         header.AddChild(close);
         column.AddChild(header);
 
-        var hint = new Label
+        _hint = new Label
         {
             Text = "Every folder in mods and mods-disabled. Click a mod's name for its settings or window. Turn a mod off to move it out of the loader's path; restart to apply.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
-        hint.AddThemeFontSizeOverride("font_size", 12);
-        hint.AddThemeColorOverride("font_color", new Color(0.70f, 0.70f, 0.70f));
-        column.AddChild(hint);
+        _hint.AddThemeFontSizeOverride("font_size", 12);
+        column.AddChild(_hint);
 
         var body = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         column.AddChild(body);
@@ -119,14 +122,18 @@ internal sealed class ViewerWindow
         var footer = new HBoxContainer();
         _status = new Label { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         _status.AddThemeFontSizeOverride("font_size", 12);
-        _status.AddThemeColorOverride("font_color", new Color(0.80f, 0.80f, 0.80f));
         footer.AddChild(_status);
+
+        var modsFolder = new Button { Text = "Mods Folder", TooltipText = Mods.ModsDir };
+        modsFolder.Pressed += OpenModsFolder;
+        footer.AddChild(modsFolder);
 
         var restartButton = new Button { Text = "Restart Game" };
         restartButton.Pressed += () => _restart();
         footer.AddChild(restartButton);
         column.AddChild(footer);
 
+        ApplyPalette(false);
         ctx.Tree.Root.AddChild(_layer);
     }
 
@@ -142,7 +149,8 @@ internal sealed class ViewerWindow
 
         _settingsScroll.Visible = false;
         _listScroll.Visible = true;
-        _accentGroup.Visible = true;
+        _themeGroup.Visible = true;
+        ApplyPalette(false);
         Refresh();
         _layer.Visible = true;
     }
@@ -152,18 +160,38 @@ internal sealed class ViewerWindow
         _layer.Visible = false;
     }
 
-    void OnAccentChanged(Color color)
+    void OnThemeSelected(long index)
     {
-        ViewerTheme.SetAccent(color);
-        _panelStyle.BorderColor = color;
-        _panel.AddThemeStyleboxOverride("panel", _panelStyle);
-        _title.AddThemeColorOverride("font_color", color);
+        if (index < 0 || index >= ViewerTheme.All.Count) return;
+
+        ViewerTheme.Select(ViewerTheme.All[(int)index].Id);
+        ViewerTheme.Save(_log);
+        ApplyPalette(true);
     }
 
-    void OnAccentPopupClosed()
+    void ApplyPalette(bool refresh)
     {
-        Refresh();
-        ViewerTheme.Save(_log);
+        ViewerPalette palette = ViewerTheme.Current;
+
+        _panelStyle.BgColor = palette.Panel;
+        _panelStyle.BorderColor = palette.Accent;
+        _panel.AddThemeStyleboxOverride("panel", _panelStyle);
+
+        _title.AddThemeColorOverride("font_color", palette.Accent);
+        _hint.AddThemeColorOverride("font_color", palette.Muted);
+        _themeLabel.AddThemeColorOverride("font_color", palette.Muted);
+        _status.AddThemeColorOverride("font_color", palette.Muted);
+
+        // Labels and checkboxes are used by the generic settings pages, so theme them from
+        // one inherited Theme resource rather than colouring each control by hand.
+        var theme = new Theme();
+        theme.SetColor("font_color", "Label", palette.Text);
+        theme.SetColor("font_color", "CheckBox", palette.Text);
+        theme.SetColor("font_hover_color", "CheckBox", palette.Accent);
+        theme.SetColor("font_pressed_color", "CheckBox", palette.Accent);
+        _panel.Theme = theme;
+
+        if (refresh) Refresh();
     }
 
     void Refresh()
@@ -214,8 +242,8 @@ internal sealed class ViewerWindow
             MouseDefaultCursorShape = Control.CursorShape.PointingHand
         };
         button.AddThemeFontSizeOverride("font_size", 16);
-        button.AddThemeColorOverride("font_color", ViewerTheme.Accent);
-        button.AddThemeColorOverride("font_hover_color", ViewerTheme.Accent.Lightened(0.16f));
+        button.AddThemeColorOverride("font_color", ViewerTheme.Current.Accent);
+        button.AddThemeColorOverride("font_hover_color", ViewerTheme.Current.Accent.Lightened(0.16f));
         button.Pressed += toggle;
         _list.AddChild(button);
     }
@@ -224,7 +252,7 @@ internal sealed class ViewerWindow
     {
         var label = new Label { Text = text };
         label.AddThemeFontSizeOverride("font_size", 16);
-        label.AddThemeColorOverride("font_color", ViewerTheme.Accent);
+        label.AddThemeColorOverride("font_color", ViewerTheme.Current.Accent);
         _list.AddChild(new HSeparator());
         _list.AddChild(label);
     }
@@ -241,11 +269,12 @@ internal sealed class ViewerWindow
         detail += entry.Enabled ? "enabled" : "disabled";
         var sub = new Label { Text = detail };
         sub.AddThemeFontSizeOverride("font_size", 11);
-        sub.AddThemeColorOverride("font_color", new Color(0.65f, 0.65f, 0.65f));
+        sub.AddThemeColorOverride("font_color", ViewerTheme.Current.Muted);
         info.AddChild(sub);
         row.AddChild(info);
 
         var enabled = new CheckBox { Text = "Enabled", ButtonPressed = entry.Enabled };
+        ViewerTheme.StyleCheckBox(enabled);
         enabled.Toggled += pressed =>
         {
             if (Mods.SetEnabled(entry, pressed, out string error))
@@ -283,9 +312,9 @@ internal sealed class ViewerWindow
             TooltipText = entry.HasSettings ? "Open settings" : "Open this mod's window"
         };
         button.AddThemeFontSizeOverride("font_size", 15);
-        button.AddThemeColorOverride("font_color", new Color(0.90f, 0.90f, 0.90f));
-        button.AddThemeColorOverride("font_hover_color", ViewerTheme.Accent);
-        button.AddThemeColorOverride("font_pressed_color", ViewerTheme.Accent);
+        button.AddThemeColorOverride("font_color", ViewerTheme.Current.Text);
+        button.AddThemeColorOverride("font_hover_color", ViewerTheme.Current.Accent);
+        button.AddThemeColorOverride("font_pressed_color", ViewerTheme.Current.Accent);
         button.Pressed += () => Open(entry);
         return button;
     }
@@ -314,7 +343,7 @@ internal sealed class ViewerWindow
         Clear(_settings);
         _listScroll.Visible = false;
         _settingsScroll.Visible = true;
-        _accentGroup.Visible = false;
+        _themeGroup.Visible = false;
 
         var back = new Button { Text = "Back to mods", SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd };
         back.Pressed += Back;
@@ -322,7 +351,7 @@ internal sealed class ViewerWindow
 
         var title = new Label { Text = entry.Name };
         title.AddThemeFontSizeOverride("font_size", 18);
-        title.AddThemeColorOverride("font_color", ViewerTheme.Accent);
+        title.AddThemeColorOverride("font_color", ViewerTheme.Current.Accent);
         _settings.AddChild(title);
 
         _settings.AddChild(SettingsPage.Build(entry, _log, SetStatus));
@@ -333,8 +362,26 @@ internal sealed class ViewerWindow
         Clear(_settings);
         _settingsScroll.Visible = false;
         _listScroll.Visible = true;
-        _accentGroup.Visible = true;
+        _themeGroup.Visible = true;
         Refresh();
+    }
+
+    void OpenModsFolder()
+    {
+        try
+        {
+            if (Mods.ModsDir.Length == 0)
+            {
+                SetStatus("The mods folder path is unknown.");
+                return;
+            }
+
+            OS.CreateProcess("explorer.exe", new[] { Mods.ModsDir }, false);
+        }
+        catch (Exception e)
+        {
+            SetStatus("Could not open the mods folder: " + e.Message);
+        }
     }
 
     void SetStatus(string text)

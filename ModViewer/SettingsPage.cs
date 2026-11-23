@@ -38,7 +38,17 @@ internal static class SettingsPage
         else
             BuildGeneric(path, column, log, status);
 
+        StyleChecks(column);
         return column;
+    }
+
+    static void StyleChecks(Node node)
+    {
+        foreach (Node child in node.GetChildren())
+        {
+            if (child is CheckBox check) ViewerTheme.StyleCheckBox(check);
+            StyleChecks(child);
+        }
     }
 
     static JsonObject LoadObject(string path, Action<string> log)
@@ -122,7 +132,7 @@ internal static class SettingsPage
 
         var title = new Label { Text = "Melvor Auto" };
         title.AddThemeFontSizeOverride("font_size", 18);
-        title.AddThemeColorOverride("font_color", ViewerTheme.Accent);
+        title.AddThemeColorOverride("font_color", ViewerTheme.Current.Accent);
         column.AddChild(title);
 
         var toggles = new List<(string Key, CheckBox Box)>();

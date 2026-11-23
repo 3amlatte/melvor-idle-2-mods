@@ -18,6 +18,7 @@ internal sealed class TimeSkipWindow
     readonly PanelContainer _panel;
     readonly StyleBoxFlat _panelStyle;
     readonly Label _title;
+    readonly Label _hint;
     readonly Label _selected;
     readonly Button _skip;
     readonly Label _status;
@@ -55,7 +56,7 @@ internal sealed class TimeSkipWindow
         _panel = new PanelContainer { CustomMinimumSize = new Vector2(448, 0) };
         _panelStyle = new StyleBoxFlat
         {
-            BgColor = new Color(0.07f, 0.08f, 0.11f, 0.98f),
+            BgColor = TimeSkipTheme.Panel,
             BorderColor = TimeSkipTheme.Accent
         };
         _panelStyle.SetBorderWidthAll(1);
@@ -73,14 +74,14 @@ internal sealed class TimeSkipWindow
         _title.AddThemeColorOverride("font_color", TimeSkipTheme.Accent);
         column.AddChild(_title);
 
-        var hint = new Label
+        _hint = new Label
         {
             Text = "Skip forward by simulating the selected time. The game pauses, runs the offline calculation, then shows its summary.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
-        hint.AddThemeFontSizeOverride("font_size", 10);
-        hint.AddThemeColorOverride("font_color", new Color(0.70f, 0.70f, 0.70f));
-        column.AddChild(hint);
+        _hint.AddThemeFontSizeOverride("font_size", 10);
+        _hint.AddThemeColorOverride("font_color", TimeSkipTheme.Muted);
+        column.AddChild(_hint);
 
         var grid = new GridContainer { Columns = 3 };
         grid.AddThemeConstantOverride("h_separation", 6);
@@ -119,7 +120,7 @@ internal sealed class TimeSkipWindow
 
         _status = new Label { Text = "Open a character first." };
         _status.AddThemeFontSizeOverride("font_size", 10);
-        _status.AddThemeColorOverride("font_color", new Color(0.70f, 0.70f, 0.70f));
+        _status.AddThemeColorOverride("font_color", TimeSkipTheme.Muted);
         column.AddChild(_status);
 
         var close = new Button
@@ -132,7 +133,7 @@ internal sealed class TimeSkipWindow
 
         Select(_hours);
         if (defaultButton != null) defaultButton.ButtonPressed = true;
-        ApplyAccent(TimeSkipTheme.Accent);
+        ApplyTheme();
 
         ctx.Tree.Root.AddChild(_layer);
     }
@@ -147,15 +148,18 @@ internal sealed class TimeSkipWindow
 
     public void RefreshTheme()
     {
-        if (TimeSkipTheme.RefreshIfChanged()) ApplyAccent(TimeSkipTheme.Accent);
+        if (TimeSkipTheme.RefreshIfChanged()) ApplyTheme();
     }
 
-    void ApplyAccent(Color accent)
+    void ApplyTheme()
     {
-        _panelStyle.BorderColor = accent;
+        _panelStyle.BgColor = TimeSkipTheme.Panel;
+        _panelStyle.BorderColor = TimeSkipTheme.Accent;
         _panel.AddThemeStyleboxOverride("panel", _panelStyle);
-        _title.AddThemeColorOverride("font_color", accent);
-        _selected.AddThemeColorOverride("font_color", accent.Lightened(0.12f));
+        _title.AddThemeColorOverride("font_color", TimeSkipTheme.Accent);
+        _selected.AddThemeColorOverride("font_color", TimeSkipTheme.Accent);
+        _hint.AddThemeColorOverride("font_color", TimeSkipTheme.Muted);
+        _status.AddThemeColorOverride("font_color", TimeSkipTheme.Muted);
     }
 
     public void Hide()

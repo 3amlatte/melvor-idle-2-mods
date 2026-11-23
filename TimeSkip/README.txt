@@ -10,9 +10,9 @@ OPTIONS
   24 hours
   2, 4 and 7 days
 
-COLOUR
-  When Mod Viewer is installed, TimeSkip uses the accent colour chosen there (the Accent
-  swatch in Mod Viewer's header). Without Mod Viewer, TimeSkip keeps its default gold.
+THEME
+  When Mod Viewer is installed, TimeSkip uses the same theme (background, accent and text
+  colours). Without Mod Viewer it uses the default AI palette: dark panel and gold accent.
 
 HOW IT WORKS
   The skip uses the game's own offline progress calculation, so farming, combat, actions,

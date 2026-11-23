@@ -1,17 +1,44 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Godot;
 
 namespace ModViewer;
 
-/// <summary>The Mod Viewer's accent colour, saved in its own settings.json.</summary>
+internal sealed record ViewerPalette(
+    string Id,
+    string Name,
+    Color Panel,
+    Color Accent,
+    Color Text,
+    Color Muted);
+
+/// <summary>Theme list and the selected theme, saved in Mod Viewer's settings.json.</summary>
 internal static class ViewerTheme
 {
-    public static readonly Color DefaultAccent = new(0.93f, 0.75f, 0.35f);
-    public static Color Accent { get; private set; } = DefaultAccent;
+    public static readonly IReadOnlyList<ViewerPalette> All = new[]
+    {
+        new ViewerPalette("AI", "AI",
+            Hex("#12141C"), Hex("#EDBF59"), Hex("#FFFFFF"), Hex("#B0B0B0")),
+        new ViewerPalette("Dark", "Dark",
+            Hex("#0B0D10"), Hex("#4FC3F7"), Hex("#E6EDF3"), Hex("#8B949E")),
+        new ViewerPalette("Light", "Light",
+            Hex("#F4F1EA"), Hex("#8A5A00"), Hex("#211F1B"), Hex("#6B665C")),
+        new ViewerPalette("Midnight", "Midnight",
+            Hex("#0A1020"), Hex("#7AA2FF"), Hex("#DCE6FF"), Hex("#8A9BC4")),
+        new ViewerPalette("Forest", "Forest",
+            Hex("#0F1A14"), Hex("#7BD88F"), Hex("#E3F0E6"), Hex("#93A89B")),
+        new ViewerPalette("Sakura", "Sakura",
+            Hex("#20141C"), Hex("#F3A6C8"), Hex("#F7E9F0"), Hex("#B99AA9")),
+        new ViewerPalette("Contrast", "Contrast",
+            Hex("#000000"), Hex("#FFD400"), Hex("#FFFFFF"), Hex("#C8C8C8"))
+    };
+
+    public static ViewerPalette Current { get; private set; } = All[0];
 
     static string _path = "";
 
@@ -24,8 +51,8 @@ internal static class ViewerTheme
             if (!File.Exists(_path)) return;
 
             JsonNode? root = JsonNode.Parse(File.ReadAllText(_path));
-            if (root?["AccentColor"] is JsonValue value && value.TryGetValue(out string? hex))
-                Accent = Parse(hex);
+            if (root?["Theme"] is JsonValue value && value.TryGetValue(out string? id))
+                Current = Find(id) ?? All[0];
         }
         catch (Exception e)
         {
@@ -33,9 +60,9 @@ internal static class ViewerTheme
         }
     }
 
-    public static void SetAccent(Color color)
+    public static void Select(string id)
     {
-        Accent = color;
+        Current = Find(id) ?? All[0];
     }
 
     public static void Save(Action<string> log)
@@ -52,7 +79,12 @@ internal static class ViewerTheme
             }
             catch { root = new JsonObject(); }
 
-            root["AccentColor"] = ToHex(Accent);
+            root["Theme"] = Current.Id;
+            root["AccentColor"] = ToHex(Current.Accent);
+            root["PanelColor"] = ToHex(Current.Panel);
+            root["TextColor"] = ToHex(Current.Text);
+            root["MutedColor"] = ToHex(Current.Muted);
+
             File.WriteAllText(_path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         }
         catch (Exception e)
@@ -61,18 +93,38 @@ internal static class ViewerTheme
         }
     }
 
+    public static int IndexOf(string id)
+    {
+        for (int i = 0; i < All.Count; i++)
+        {
+            if (string.Equals(All[i].Id, id, StringComparison.OrdinalIgnoreCase)) return i;
+        }
+
+        return 0;
+    }
+
+    public static void StyleCheckBox(CheckBox box)
+    {
+        box.AddThemeColorOverride("font_color", Current.Text);
+        box.AddThemeColorOverride("font_hover_color", Current.Accent);
+        box.AddThemeColorOverride("font_pressed_color", Current.Accent);
+    }
+
+    static ViewerPalette? Find(string id) =>
+        All.FirstOrDefault(t => string.Equals(t.Id, id, StringComparison.OrdinalIgnoreCase));
+
     static string ToHex(Color color) =>
         $"#{Byte(color.R):X2}{Byte(color.G):X2}{Byte(color.B):X2}";
 
     static int Byte(float value) => Math.Clamp((int)MathF.Round(value * 255f), 0, 255);
 
-    static Color Parse(string hex)
+    static Color Hex(string hex)
     {
         if (hex.StartsWith('#')) hex = hex[1..];
         if (hex.Length != 6 ||
             !uint.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint rgb))
         {
-            return DefaultAccent;
+            return new Color(0.07f, 0.08f, 0.11f);
         }
 
         return new Color(

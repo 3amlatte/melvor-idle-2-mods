@@ -18,7 +18,7 @@ zips on Nexus, which contain exactly the files the game needs.
 | [PassiveSmelting](PassiveSmelting) | Runs the selected smelting recipe passively while you train another skill; 1–3 bars by level. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/34) |
 | [BiggerPastures](BiggerPastures) | Doubles the animal limit of every Ranching enclosure. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/41) |
 | [MelvorAuto](MelvorAuto) | Auto bone burial, auto opener, free farming automation, mill stocking, ranch repairs and petting. | Not published yet |
-| [ModViewer](ModViewer) | F2 mod list, accent colour, enable/disable, settings, mod windows, restart. | Not published yet |
+| [ModViewer](ModViewer) | F2 mod list, themes, mods-folder button, enable/disable, settings, mod windows, restart. | Not published yet |
 
 Tested with game **0.11.6-alpha.1** and Melvor Mod Loader **0.2.0**.
 
