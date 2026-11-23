@@ -12,6 +12,7 @@ GROUPS
 COLOUR
   The Accent swatch in the header opens a colour picker. It recolours the title, group
   headings, border and clickable-name hover, and is saved in ModViewer\settings.json.
+  When TimeSkip is installed, its window uses this colour too.
 
 ENABLED / DISABLED
   Unchecking Enabled moves the mod's folder (or loose DLL) from mods\ to mods-disabled\.

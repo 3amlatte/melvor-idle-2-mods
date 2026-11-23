@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using GamesByMalcs.Melvor2;
 using GamesByMalcs.Melvor2.Components.CombatEffects;
@@ -42,6 +43,7 @@ public sealed class TimeSkipMod : IMod
     public void OnLoad(ModContext ctx)
     {
         _ctx = ctx;
+        TimeSkipTheme.Initialize(Directory.GetParent(ctx.Directory)?.FullName ?? "");
         _window = new TimeSkipWindow(ctx, Skip);
 
         try
@@ -83,7 +85,11 @@ public sealed class TimeSkipMod : IMod
             _status = $"Finished skipping {Duration.Format(_skipHours)}.";
         }
 
-        if (_window.Visible) UpdateWindow();
+        if (_window.Visible)
+        {
+            _window.RefreshTheme();
+            UpdateWindow();
+        }
     }
 
     void UpdateWindow()

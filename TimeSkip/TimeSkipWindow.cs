@@ -15,6 +15,9 @@ internal sealed class TimeSkipWindow
     };
 
     readonly CanvasLayer _layer;
+    readonly PanelContainer _panel;
+    readonly StyleBoxFlat _panelStyle;
+    readonly Label _title;
     readonly Label _selected;
     readonly Button _skip;
     readonly Label _status;
@@ -22,6 +25,7 @@ internal sealed class TimeSkipWindow
 
     public TimeSkipWindow(ModContext ctx, Action<double> onSkip)
     {
+        TimeSkipTheme.RefreshIfChanged();
         _layer = new CanvasLayer { Layer = 110, Visible = false };
 
         // Bottom-right corner, with a 20 px gap. The containers push the panel into place
@@ -48,26 +52,26 @@ internal sealed class TimeSkipWindow
         };
         bottom.AddChild(right);
 
-        var panel = new PanelContainer { CustomMinimumSize = new Vector2(448, 0) };
-        var style = new StyleBoxFlat
+        _panel = new PanelContainer { CustomMinimumSize = new Vector2(448, 0) };
+        _panelStyle = new StyleBoxFlat
         {
             BgColor = new Color(0.07f, 0.08f, 0.11f, 0.98f),
-            BorderColor = new Color(0.85f, 0.70f, 0.30f)
+            BorderColor = TimeSkipTheme.Accent
         };
-        style.SetBorderWidthAll(1);
-        style.SetCornerRadiusAll(6);
-        style.SetContentMarginAll(14);
-        panel.AddThemeStyleboxOverride("panel", style);
-        right.AddChild(panel);
+        _panelStyle.SetBorderWidthAll(1);
+        _panelStyle.SetCornerRadiusAll(6);
+        _panelStyle.SetContentMarginAll(14);
+        _panel.AddThemeStyleboxOverride("panel", _panelStyle);
+        right.AddChild(_panel);
 
         var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", 8);
-        panel.AddChild(column);
+        _panel.AddChild(column);
 
-        var title = new Label { Text = "TimeSkip" };
-        title.AddThemeFontSizeOverride("font_size", 18);
-        title.AddThemeColorOverride("font_color", new Color(0.93f, 0.75f, 0.35f));
-        column.AddChild(title);
+        _title = new Label { Text = "TimeSkip" };
+        _title.AddThemeFontSizeOverride("font_size", 18);
+        _title.AddThemeColorOverride("font_color", TimeSkipTheme.Accent);
+        column.AddChild(_title);
 
         var hint = new Label
         {
@@ -128,6 +132,7 @@ internal sealed class TimeSkipWindow
 
         Select(_hours);
         if (defaultButton != null) defaultButton.ButtonPressed = true;
+        ApplyAccent(TimeSkipTheme.Accent);
 
         ctx.Tree.Root.AddChild(_layer);
     }
@@ -136,7 +141,21 @@ internal sealed class TimeSkipWindow
 
     public void Toggle()
     {
+        RefreshTheme();
         _layer.Visible = !_layer.Visible;
+    }
+
+    public void RefreshTheme()
+    {
+        if (TimeSkipTheme.RefreshIfChanged()) ApplyAccent(TimeSkipTheme.Accent);
+    }
+
+    void ApplyAccent(Color accent)
+    {
+        _panelStyle.BorderColor = accent;
+        _panel.AddThemeStyleboxOverride("panel", _panelStyle);
+        _title.AddThemeColorOverride("font_color", accent);
+        _selected.AddThemeColorOverride("font_color", accent.Lightened(0.12f));
     }
 
     public void Hide()
