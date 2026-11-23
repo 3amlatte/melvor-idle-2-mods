@@ -341,7 +341,12 @@ internal sealed class ViewerWindow
         back.Pressed += Back;
         _settings.AddChild(back);
 
-        var title = new Label { Text = entry.Name };
+        var title = new Label
+        {
+            Text = entry.Name.Equals("MelvorAuto", StringComparison.OrdinalIgnoreCase)
+                ? "Melvor Auto"
+                : entry.Name
+        };
         title.AddThemeFontSizeOverride("font_size", 18);
         title.AddThemeColorOverride("font_color", ViewerTheme.Current.Accent);
         _settings.AddChild(title);

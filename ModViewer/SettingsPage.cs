@@ -137,11 +137,6 @@ internal static class SettingsPage
     {
         JsonObject settings = LoadObject(path, log);
 
-        var title = new Label { Text = "Melvor Auto" };
-        title.AddThemeFontSizeOverride("font_size", 18);
-        title.AddThemeColorOverride("font_color", ViewerTheme.Current.Accent);
-        column.AddChild(title);
-
         var toggles = new List<(string Key, CheckBox Box)>();
         AddToggle(column, toggles, settings, "AutoBuryBones");
         AddToggle(column, toggles, settings, "AutoOpenItems");
@@ -175,22 +170,21 @@ internal static class SettingsPage
 
             if (available["Bones"] is JsonArray bones)
             {
+                var grid = NewCardGrid();
+                column.AddChild(grid);
+
                 foreach (JsonNode? node in bones)
                 {
                     if (node is not JsonObject bone) continue;
                     string id = String(bone, "Id");
                     string name = String(bone, "Name");
+                    string icon = String(bone, "IconPath");
                     int points = Int(bone, "Points");
                     if (id == "" || points <= 6) continue;
 
-                    var check = new CheckBox
-                    {
-                        Text = $"{name} ({points} points)",
-                        ButtonPressed = excludedBones.Contains(id),
-                        TooltipText = "Leave this bone in the bank instead of auto-burying it."
-                    };
+                    CheckBox check = AddItemCard(grid, name, icon, excludedBones.Contains(id),
+                        $"Do not bury {name} ({points} points).");
                     boneChecks.Add((id, check));
-                    column.AddChild(check);
                 }
             }
 
@@ -198,21 +192,20 @@ internal static class SettingsPage
             column.AddChild(TextLabel("Openable items (checked = do not auto-open)"));
             if (available["Openables"] is JsonArray openables)
             {
+                var grid = NewCardGrid();
+                column.AddChild(grid);
+
                 foreach (JsonNode? node in openables)
                 {
                     if (node is not JsonObject openable) continue;
                     string id = String(openable, "Id");
                     string name = String(openable, "Name");
+                    string icon = String(openable, "IconPath");
                     if (id == "") continue;
 
-                    var check = new CheckBox
-                    {
-                        Text = name,
-                        ButtonPressed = excludedOpen.Contains(id),
-                        TooltipText = "Leave this item unopened."
-                    };
+                    CheckBox check = AddItemCard(grid, name, icon, excludedOpen.Contains(id),
+                        $"Do not open {name}.");
                     openChecks.Add((id, check));
-                    column.AddChild(check);
                 }
             }
         }
@@ -313,6 +306,89 @@ internal static class SettingsPage
         var label = new Label { Text = text };
         label.AddThemeColorOverride("font_color", ViewerTheme.Current.Text);
         return label;
+    }
+
+    static GridContainer NewCardGrid()
+    {
+        var grid = new GridContainer { Columns = 4, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        grid.AddThemeConstantOverride("h_separation", 8);
+        grid.AddThemeConstantOverride("v_separation", 8);
+        return grid;
+    }
+
+    static CheckBox AddItemCard(GridContainer grid, string name, string iconPath, bool excluded,
+        string tooltip)
+    {
+        var card = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(150, 124),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            TooltipText = name
+        };
+        card.AddThemeStyleboxOverride("panel", CardStyle());
+
+        var content = new VBoxContainer();
+        content.AddThemeConstantOverride("separation", 4);
+        card.AddChild(content);
+
+        var icon = new TextureRect
+        {
+            Texture = LoadIcon(iconPath),
+            CustomMinimumSize = new Vector2(48, 48),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
+        };
+        content.AddChild(icon);
+
+        var label = new Label
+        {
+            Text = name,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        label.AddThemeFontSizeOverride("font_size", 11);
+        label.AddThemeColorOverride("font_color", ViewerTheme.Current.Text);
+        content.AddChild(label);
+
+        var check = new CheckBox
+        {
+            ButtonPressed = excluded,
+            TooltipText = tooltip,
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
+        };
+        content.AddChild(check);
+
+        grid.AddChild(card);
+        return check;
+    }
+
+    static StyleBoxFlat CardStyle()
+    {
+        ViewerPalette palette = ViewerTheme.Current;
+        float luminance = 0.2126f * palette.Panel.R
+                          + 0.7152f * palette.Panel.G
+                          + 0.0722f * palette.Panel.B;
+        Color background = luminance < 0.5f
+            ? palette.Panel.Lightened(0.07f)
+            : palette.Panel.Darkened(0.05f);
+        Color border = palette.Muted;
+        border.A = 0.35f;
+
+        var style = new StyleBoxFlat { BgColor = background, BorderColor = border };
+        style.SetBorderWidthAll(1);
+        style.SetCornerRadiusAll(6);
+        style.SetContentMarginAll(8);
+        return style;
+    }
+
+    static Texture2D? LoadIcon(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+
+        try { return ResourceLoader.Load<Texture2D>(path); }
+        catch { return null; }
     }
 
     static string String(JsonObject obj, string key) =>

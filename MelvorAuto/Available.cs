@@ -9,6 +9,7 @@ public sealed class BoneInfo
 {
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
+    public string IconPath { get; set; } = "";
     public int Points { get; set; }
 }
 
@@ -16,6 +17,7 @@ public sealed class OpenableInfo
 {
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
+    public string IconPath { get; set; } = "";
 }
 
 /// <summary>

@@ -284,6 +284,7 @@ public sealed class MelvorAutoMod : IMod
                 {
                     Id = item.Id,
                     Name = item.DisplayName.GetPluralText(1),
+                    IconPath = item.Icon.ResourcePath,
                     Points = (int)bury.CurrencyGain.Quantity
                 });
             }
@@ -293,7 +294,8 @@ public sealed class MelvorAutoMod : IMod
                 available.Openables.Add(new OpenableInfo
                 {
                     Id = item.Id,
-                    Name = item.DisplayName.GetPluralText(1)
+                    Name = item.DisplayName.GetPluralText(1),
+                    IconPath = item.Icon.ResourcePath
                 });
             }
         }
