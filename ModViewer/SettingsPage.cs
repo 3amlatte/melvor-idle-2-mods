@@ -138,8 +138,12 @@ internal static class SettingsPage
         foreach (string key in FarmerKeys)
             AddToggle(farmerBody, toggles, settings, key);
 
+        var ranchBody = new VBoxContainer();
+        ranchBody.AddThemeConstantOverride("separation", 6);
+        AddSectionHeader(column, "Auto Ranching", ranchBody,
+            "Show or hide the Ranching options.");
         foreach (string key in RanchKeys)
-            AddToggle(column, toggles, settings, key);
+            AddToggle(ranchBody, toggles, settings, key);
 
         column.AddChild(new HSeparator());
         column.AddChild(TextLabel("Do not bury"));
@@ -271,8 +275,8 @@ internal static class SettingsPage
         "AutoWater" => "Auto water",
         "AutoPlant" => "Auto plant",
         "AutoMill" => "Grain mill stocking",
-        "AutoRanchMaintenance" => "Auto Ranching: repair all enclosures",
-        "AutoRanchPets" => "Auto Ranching: pet all animals",
+        "AutoRanchMaintenance" => "Repair all enclosures",
+        "AutoRanchPets" => "Pet all animals",
         _ => key
     };
 

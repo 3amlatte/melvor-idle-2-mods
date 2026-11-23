@@ -328,7 +328,7 @@ public sealed class MelvorAutoMod : IMod
                 {
                     Id = item.Id,
                     Name = item.DisplayName.GetPluralText(1),
-                    IconPath = item.Icon.ResourcePath,
+                    IconPath = IconPathOf(item),
                     Points = (int)bury.CurrencyGain.Quantity
                 });
             }
@@ -339,7 +339,7 @@ public sealed class MelvorAutoMod : IMod
                 {
                     Id = item.Id,
                     Name = item.DisplayName.GetPluralText(1),
-                    IconPath = item.Icon.ResourcePath
+                    IconPath = IconPathOf(item)
                 });
             }
         }
@@ -364,6 +364,23 @@ public sealed class MelvorAutoMod : IMod
         }
 
         return OpenableRarityOrder.Length;
+    }
+
+    static string IconPathOf(Item item)
+    {
+        string path = item.Icon.ResourcePath;
+        if (path.Length > 0 &&
+            !path.EndsWith("/missing_artwork.png", StringComparison.OrdinalIgnoreCase))
+        {
+            return path;
+        }
+
+        string local = item.Id;
+        int colon = local.LastIndexOf(':');
+        if (colon >= 0) local = local[(colon + 1)..];
+
+        string guess = "res://Assets/Items/" + local + ".png";
+        return ResourceLoader.Exists(guess) ? guess : "";
     }
 
     void ApplyBoneDefaults(List<BoneInfo> bones)
