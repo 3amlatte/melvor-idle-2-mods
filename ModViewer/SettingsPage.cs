@@ -303,9 +303,9 @@ internal static class SettingsPage
 
     static GridContainer NewCardGrid()
     {
-        var grid = new GridContainer { Columns = 4, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        grid.AddThemeConstantOverride("h_separation", 8);
-        grid.AddThemeConstantOverride("v_separation", 8);
+        var grid = new GridContainer { Columns = 5, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        grid.AddThemeConstantOverride("h_separation", 6);
+        grid.AddThemeConstantOverride("v_separation", 6);
         return grid;
     }
 
@@ -314,14 +314,14 @@ internal static class SettingsPage
     {
         var card = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(150, 124),
+            CustomMinimumSize = new Vector2(120, 100),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             TooltipText = name
         };
         card.AddThemeStyleboxOverride("panel", CardStyle());
 
         var content = new VBoxContainer();
-        content.AddThemeConstantOverride("separation", 4);
+        content.AddThemeConstantOverride("separation", 2);
         card.AddChild(content);
 
         var icon = new TextureRect
@@ -341,7 +341,7 @@ internal static class SettingsPage
             HorizontalAlignment = HorizontalAlignment.Center,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
-        label.AddThemeFontSizeOverride("font_size", 11);
+        label.AddThemeFontSizeOverride("font_size", 10);
         label.AddThemeColorOverride("font_color", ViewerTheme.Current.Text);
         content.AddChild(label);
 
@@ -372,7 +372,7 @@ internal static class SettingsPage
         var style = new StyleBoxFlat { BgColor = background, BorderColor = border };
         style.SetBorderWidthAll(1);
         style.SetCornerRadiusAll(6);
-        style.SetContentMarginAll(8);
+        style.SetContentMarginAll(5);
         return style;
     }
 
