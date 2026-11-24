@@ -15,6 +15,7 @@ zips on Nexus, which contain exactly the files the game needs.
 | [TimeSkip](TimeSkip) | Skip the character forward by 1 hour up to 7 days; opened from Mod Viewer. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/28) |
 | [PassiveSmelting](PassiveSmelting) | Runs the selected smelting recipe passively while you train another skill; 1–3 bars by level. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/34) |
 | [BiggerPastures](BiggerPastures) | Doubles the animal limit of every Ranching enclosure. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/41) |
+| [MorePets](MorePets) | Dungeon Bosses pet collection with permanent stance and global buffs; shown in Completion Log → Pets. | [Source](MorePets) |
 | [MelvorAuto](MelvorAuto) | Auto bone burial, auto opener, free farming automation, mill stocking, ranch repairs and petting. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/44) |
 | [ModViewer](ModViewer) | F2 mod list, developer groups, themes, mods-folder button, enable/disable, settings, mod windows, restart. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/43) |
 | [3am Modpack](Modpack) | Every 3am mod in one download; Seed Return Lite/Max are optional alternatives. | [GitHub release](https://github.com/3amlatte/melvor-idle-2-mods/releases/tag/3am-modpack-v1.0.0) |
