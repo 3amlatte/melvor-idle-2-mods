@@ -12,7 +12,7 @@ internal static class SettingsPage
 {
     static readonly string[] FarmerKeys =
     {
-        "AutoFarm", "AutoHarvest", "AutoCompost", "AutoWater", "AutoPlant", "AutoMill"
+        "AutoHarvest", "AutoCompost", "AutoWater", "AutoPlant", "AutoMill"
     };
 
     static readonly string[] RanchKeys =
@@ -135,24 +135,8 @@ internal static class SettingsPage
         farmerBody.AddThemeConstantOverride("separation", 6);
         AddSectionHeader(column, "Auto Farmer", farmerBody,
             "Show or hide the Farming automation options.");
-
-        CheckBox? farmerMaster = null;
-        var farmerChecks = new List<CheckBox>();
         foreach (string key in FarmerKeys)
-        {
-            CheckBox check = AddToggle(farmerBody, toggles, settings, key);
-            if (key == "AutoFarm") farmerMaster = check;
-            else farmerChecks.Add(check);
-        }
-
-        if (farmerMaster != null)
-        {
-            farmerMaster.Toggled += pressed =>
-            {
-                foreach (CheckBox check in farmerChecks)
-                    check.SetPressedNoSignal(pressed);
-            };
-        }
+            AddToggle(farmerBody, toggles, settings, key);
 
         var ranchBody = new VBoxContainer();
         ranchBody.AddThemeConstantOverride("separation", 6);
@@ -199,7 +183,7 @@ internal static class SettingsPage
             }
 
             column.AddChild(new HSeparator());
-            column.AddChild(TextLabel("Openable items (checked = do not auto-open)"));
+            column.AddChild(TextLabel("Do not open"));
             if (available["Openables"] is JsonArray openables)
             {
                 var grid = NewCardGrid();
@@ -231,6 +215,7 @@ internal static class SettingsPage
                 settings["ExcludedBones"] = ArrayOf(boneChecks.Where(x => x.Box.ButtonPressed).Select(x => x.Id));
                 settings["ExcludedOpenables"] = ArrayOf(openChecks.Where(x => x.Box.ButtonPressed).Select(x => x.Id));
                 settings["BoneDefaultsApplied"] = JsonValue.Create(true);
+                settings.Remove("AutoFarm");
 
                 File.WriteAllText(path, settings.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
                 status("Saved. Bone/open changes apply live; farming flags apply when a character next opens.");
@@ -240,7 +225,7 @@ internal static class SettingsPage
         column.AddChild(save);
     }
 
-    static CheckBox AddToggle(VBoxContainer parent, List<(string Key, CheckBox Box)> toggles,
+    static void AddToggle(VBoxContainer parent, List<(string Key, CheckBox Box)> toggles,
         JsonObject settings, string key)
     {
         var check = new CheckBox
@@ -251,7 +236,6 @@ internal static class SettingsPage
         };
         toggles.Add((key, check));
         parent.AddChild(check);
-        return check;
     }
 
     static void AddSectionHeader(VBoxContainer column, string title, VBoxContainer body,
@@ -286,7 +270,6 @@ internal static class SettingsPage
     {
         "AutoBuryBones" => "Auto bone burial",
         "AutoOpenItems" => "Auto opener",
-        "AutoFarm" => "Toggle all",
         "AutoHarvest" => "Auto harvest",
         "AutoCompost" => "Auto compost",
         "AutoWater" => "Auto water",
@@ -301,7 +284,6 @@ internal static class SettingsPage
     {
         "AutoBuryBones" => "Bury every bone that reaches the bank, except the exclusions below.",
         "AutoOpenItems" => "Open chests and other openables as soon as they arrive.",
-        "AutoFarm" => "Turn every Auto Farmer option on or off.",
         "AutoHarvest" => "Harvest ripe crops automatically.",
         "AutoCompost" => "Compost a plot automatically before replanting.",
         "AutoWater" => "Water crops automatically.",

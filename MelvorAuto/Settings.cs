@@ -13,7 +13,6 @@ public sealed class Settings
     public List<string> ExcludedBones { get; set; } = new();
     public bool AutoOpenItems { get; set; } = true;
     public List<string> ExcludedOpenables { get; set; } = new();
-    public bool AutoFarm { get; set; } = true;
     public bool AutoHarvest { get; set; } = true;
     public bool AutoCompost { get; set; } = true;
     public bool AutoWater { get; set; } = true;

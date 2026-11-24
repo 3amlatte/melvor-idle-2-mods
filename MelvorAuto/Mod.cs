@@ -166,7 +166,7 @@ public sealed class MelvorAutoMod : IMod
         available.Save(_availablePath);
         ApplyBoneDefaults(available.Bones);
 
-        _ctx.Log($"Ready. Auto-bury {_settings.AutoBuryBones}, auto-open {_settings.AutoOpenItems}, free auto-farm {_settings.AutoFarm}.");
+        _ctx.Log($"Ready. Auto-bury {_settings.AutoBuryBones}, auto-open {_settings.AutoOpenItems}, Farming automation loaded.");
     }
 
     void Detach()
@@ -454,7 +454,6 @@ public sealed class MelvorAutoMod : IMod
     {
         if (_farming == null || _passive == null) return;
 
-        bool master = _settings.AutoFarm;
         int purchased = 0;
 
         foreach (ActiveFarmingPlot plot in _passive.ActivePlots.Values)
@@ -462,10 +461,10 @@ public sealed class MelvorAutoMod : IMod
             if (!plot.IsPurchased) continue;
             purchased++;
 
-            plot.AutoPlant = master && _settings.AutoPlant;
-            plot.AutoHarvest = master && _settings.AutoHarvest;
-            plot.AutoWater = master && _settings.AutoWater;
-            plot.AutoCompost = master && _settings.AutoCompost;
+            plot.AutoPlant = _settings.AutoPlant;
+            plot.AutoHarvest = _settings.AutoHarvest;
+            plot.AutoWater = _settings.AutoWater;
+            plot.AutoCompost = _settings.AutoCompost;
 
             ActiveFarmingRecipe? recipe = plot.SelectedRecipe ?? plot.PlantedRecipe;
             if (recipe?.AutomationRequirements is { } requirements && !requirements.AreMet)

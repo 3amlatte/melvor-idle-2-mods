@@ -1,5 +1,8 @@
-MELVOR AUTO 0.1.2
+MELVOR AUTO 0.1.3
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
+
+WHAT'S NEW IN 0.1.3
+  - Auto Farmer options are independent; there is no master switch.
 
 WHAT'S NEW IN 0.1.2
   - Openables that arrive during offline progress, such as geodes, are swept from the bank
@@ -61,7 +64,7 @@ SETTINGS
   settings.json next to the DLL. The Mod Viewer edits the same file. Bone/open changes apply
   while the game runs; the farming automation flags are read when a character opens. Defaults:
     AutoBuryBones=true, AutoOpenItems=true,
-    AutoFarm=true, AutoHarvest=true, AutoCompost=true, AutoWater=true, AutoPlant=true,
+    AutoHarvest=true, AutoCompost=true, AutoWater=true, AutoPlant=true,
     AutoMill=true, AutoRanchMaintenance=true, AutoRanchPets=true.
   available.json lists the bones and openable items Mod Viewer shows as icon cards.
 
