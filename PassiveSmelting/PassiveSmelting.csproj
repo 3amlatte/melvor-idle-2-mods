@@ -3,7 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>PassiveSmelting</AssemblyName>
     <RootNamespace>PassiveSmelting</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
 
     <!-- Build straight into the game: mods\PassiveSmelting\PassiveSmelting.dll -->
     <OutputPath>$(GameDir)\mods\$(AssemblyName)\</OutputPath>

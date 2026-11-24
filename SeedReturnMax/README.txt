@@ -1,4 +1,4 @@
-SEED RETURN MAX 0.1.0
+SEED RETURN MAX 0.1.1
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
 
 Every successful harvest has a chance to return seeds of the crop you planted, in addition

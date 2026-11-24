@@ -1,4 +1,4 @@
-UNLIMITED OFFLINE 0.1.0
+UNLIMITED OFFLINE 0.1.1
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
 
 Melvor Idle 2 caps offline progress at 24 hours. This mod removes that cap: come back after
