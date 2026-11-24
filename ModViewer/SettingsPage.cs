@@ -135,8 +135,24 @@ internal static class SettingsPage
         farmerBody.AddThemeConstantOverride("separation", 6);
         AddSectionHeader(column, "Auto Farmer", farmerBody,
             "Show or hide the Farming automation options.");
+
+        CheckBox? farmerMaster = null;
+        var farmerChecks = new List<CheckBox>();
         foreach (string key in FarmerKeys)
-            AddToggle(farmerBody, toggles, settings, key);
+        {
+            CheckBox check = AddToggle(farmerBody, toggles, settings, key);
+            if (key == "AutoFarm") farmerMaster = check;
+            else farmerChecks.Add(check);
+        }
+
+        if (farmerMaster != null)
+        {
+            farmerMaster.Toggled += pressed =>
+            {
+                foreach (CheckBox check in farmerChecks)
+                    check.SetPressedNoSignal(pressed);
+            };
+        }
 
         var ranchBody = new VBoxContainer();
         ranchBody.AddThemeConstantOverride("separation", 6);
@@ -224,7 +240,7 @@ internal static class SettingsPage
         column.AddChild(save);
     }
 
-    static void AddToggle(VBoxContainer parent, List<(string Key, CheckBox Box)> toggles,
+    static CheckBox AddToggle(VBoxContainer parent, List<(string Key, CheckBox Box)> toggles,
         JsonObject settings, string key)
     {
         var check = new CheckBox
@@ -235,6 +251,7 @@ internal static class SettingsPage
         };
         toggles.Add((key, check));
         parent.AddChild(check);
+        return check;
     }
 
     static void AddSectionHeader(VBoxContainer column, string title, VBoxContainer body,
@@ -269,7 +286,7 @@ internal static class SettingsPage
     {
         "AutoBuryBones" => "Auto bone burial",
         "AutoOpenItems" => "Auto opener",
-        "AutoFarm" => "Auto farmer (master)",
+        "AutoFarm" => "Toggle all",
         "AutoHarvest" => "Auto harvest",
         "AutoCompost" => "Auto compost",
         "AutoWater" => "Auto water",
@@ -284,7 +301,7 @@ internal static class SettingsPage
     {
         "AutoBuryBones" => "Bury every bone that reaches the bank, except the exclusions below.",
         "AutoOpenItems" => "Open chests and other openables as soon as they arrive.",
-        "AutoFarm" => "Master switch for all Farming automation.",
+        "AutoFarm" => "Turn every Auto Farmer option on or off.",
         "AutoHarvest" => "Harvest ripe crops automatically.",
         "AutoCompost" => "Compost a plot automatically before replanting.",
         "AutoWater" => "Water crops automatically.",
