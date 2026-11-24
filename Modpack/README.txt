@@ -1,7 +1,7 @@
 3AM MODPACK
 for Melvor Idle 2 (tested on 0.11.6-alpha.1)
 
-Everything in one download. This is a bundle of all 3am mods, not a code mod of its own.
+All my mods in one place. Everything in one download. This is a bundle of all 3am mods, not a code mod of its own.
 The full list and exact versions are in 3am-Modpack-versions.txt inside the zip.
 
 REQUIRES
