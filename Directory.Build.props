@@ -8,5 +8,15 @@
     <DebugType>none</DebugType>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <ModGroup Condition="'$(ModGroup)' == ''">3am Mods</ModGroup>
   </PropertyGroup>
+
+  <!-- Every mod built from this repository gets the group/marker files automatically.
+       A project can override ModGroup, or ship its own group.txt, without touching the build. -->
+  <Target Name="WriteModGroupMarkers" AfterTargets="Build">
+    <WriteLinesToFile File="$(OutputPath)group.txt" Lines="$(ModGroup)" Overwrite="false"
+                      Condition="'$(OutputPath)' != '' and !Exists('$(OutputPath)group.txt')" />
+    <WriteLinesToFile File="$(OutputPath)3am.mod" Lines="$(ModGroup)" Overwrite="false"
+                      Condition="'$(OutputPath)' != '' and !Exists('$(OutputPath)3am.mod')" />
+  </Target>
 </Project>

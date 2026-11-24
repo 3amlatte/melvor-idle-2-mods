@@ -69,6 +69,17 @@ foreach ($mod in $Mods) {
         # settings.json and 3am.mod are optional.
     }
 
+    # Future mods in this repository are 3am mods by default. If a project ships its own
+    # group.txt, the copy above keeps it; otherwise create the group markers automatically.
+    $groupFile = Join-Path $modStage 'group.txt'
+    if (-not (Test-Path $groupFile)) {
+        Set-Content -LiteralPath $groupFile -Value '3am Mods' -NoNewline
+    }
+    $markerFile = Join-Path $modStage '3am.mod'
+    if (-not (Test-Path $markerFile)) {
+        Set-Content -LiteralPath $markerFile -Value '3am Mods' -NoNewline
+    }
+
     $zip = Join-Path $distDir ($mod + '-' + $version + '.zip')
     if (Test-Path $zip) { Remove-Item $zip -Force }
 
