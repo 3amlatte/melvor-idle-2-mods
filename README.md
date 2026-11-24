@@ -10,7 +10,7 @@ zips on Nexus, which contain exactly the files the game needs.
 | Mod | What it does | Install |
 |:--|:--|:--|
 | [NoNegativeGear](NoNegativeGear) | Removes negative stats and bonuses from armour (weapons optional). | [Nexus](https://www.nexusmods.com/melvoridle2/mods/25) |
-| [SeedReturn](SeedReturn) | Three versions: Lite (1–20%), Standard (20–60%), and Max (60–150%; above 100% can add an extra batch). | [Nexus](https://www.nexusmods.com/melvoridle2/mods/26) — 3 files |
+| [SeedReturn](SeedReturn) | Returns seeds after harvesting. Three versions: Lite (1–20%), Standard (20–60%), and Max (60–150%; above 100% can add an extra batch). | [Nexus](https://www.nexusmods.com/melvoridle2/mods/26) |
 | [UnlimitedOffline](UnlimitedOffline) | Removes the 24-hour offline progress cap. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/27) |
 | [TimeSkip](TimeSkip) | Skip the character forward by 1 hour up to 7 days; opened from Mod Viewer. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/28) |
 | [PassiveSmelting](PassiveSmelting) | Runs the selected smelting recipe passively while you train another skill; 1–3 bars by level. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/34) |
