@@ -616,6 +616,7 @@ public sealed class MorePetsMod : IMod
         Node root = _view.GetTree().Root;
 
         PopupPanel popup = new() { Name = "MorePetsDetails" };
+        if (_view.Theme != null) popup.Theme = _view.Theme;
         MarginContainer margin = new();
         margin.AddThemeConstantOverride("margin_left", 16);
         margin.AddThemeConstantOverride("margin_right", 16);
@@ -707,6 +708,7 @@ public sealed class MorePetsMod : IMod
 
         Node root = _view.GetTree().Root;
         PopupPanel popup = new() { Name = "MorePetsFound" };
+        if (_view.Theme != null) popup.Theme = _view.Theme;
         MarginContainer margin = new();
         margin.AddThemeConstantOverride("margin_left", 16);
         margin.AddThemeConstantOverride("margin_right", 16);
