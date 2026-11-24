@@ -36,6 +36,9 @@ There is no installer. Install [Mod Viewer](ModViewer) for an in-game mod list, 
 enable/disable and quick restarts. Without it, a mod with options reads `settings.json` from
 its own folder; delete the mod's folder to uninstall it.
 
+Mod authors can group their mods automatically with a `group.txt` file; see
+[GROUPING.md](GROUPING.md).
+
 ## License
 
 MIT — free to use, change and share, including commercially. See [LICENSE](LICENSE).
