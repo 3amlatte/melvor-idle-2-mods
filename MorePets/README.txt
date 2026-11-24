@@ -21,20 +21,20 @@ DROP RATES
 
 PERMANENT BUFFS
   Nine stance pets: +20% max hit and -20% attack interval for one stance.
-    Eraxi, the Blighted Scar            Focused (Magic)
-    Scar Golem                          Empowered (Magic)
-    King Black Dragon                   Stab (Melee)
-    Mesmeris, the Slumbering Princess   Powerful (Ranged)
-    Qazarak, the Shiftsand Guardian     Accurate (Ranged)
-    Kythiss, the Venom Queen            Slash (Melee)
-    Zuraxa, the Brood Mother            Long-Range (Ranged)
-    Blood Summoner                      Crush (Melee)
-    Magmor, the Molten Behemoth         Block (Melee)
+    Lil Eraxi, the Blighted Scar            Focused (Magic)
+    Lil Scar Golem                          Empowered (Magic)
+    Lil King Black Dragon                   Stab (Melee)
+    Lil Mesmeris, the Slumbering Princess   Powerful (Ranged)
+    Lil Qazarak, the Shiftsand Guardian     Accurate (Ranged)
+    Lil Kythiss, the Venom Queen            Slash (Melee)
+    Lil Zuraxa, the Brood Mother            Long-Range (Ranged)
+    Lil Blood Summoner                      Crush (Melee)
+    Lil Magmor, the Molten Behemoth         Block (Melee)
 
   Three global pets:
-    Morgis, the Grave Corruptor          +20% global gold
-    Ghelbak, the Hob Chief               -20% global action interval
-    Kraken, the Drowned Overlord         +20% global skill XP
+    Lil Morgis, the Grave Corruptor          +20% global gold
+    Lil Ghelbak, the Hob Chief               -20% global action interval
+    Lil Kraken, the Drowned Overlord         +20% global skill XP
 
 SETTINGS
   Open Mod Viewer (F2), click More Pets, and toggle any buff.

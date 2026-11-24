@@ -73,6 +73,18 @@ internal sealed class MorePetsSettings
         bool changed = false;
         foreach (MorePetDef pet in PetCatalog.All)
         {
+            // Migrate settings written by the first name-only build.
+            string? legacyName = pet.Name.StartsWith("Lil ", StringComparison.Ordinal) ? pet.Name[4..] : null;
+            if (legacyName != null && _values.ContainsKey(legacyName))
+            {
+                if (!_values.ContainsKey(pet.Name))
+                {
+                    _values[pet.Name] = _values[legacyName]?.DeepClone() ?? true;
+                }
+                _values.Remove(legacyName);
+                changed = true;
+            }
+
             if (_values.ContainsKey(pet.Name)) continue;
             _values[pet.Name] = true;
             changed = true;

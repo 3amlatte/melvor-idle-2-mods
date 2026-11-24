@@ -57,8 +57,8 @@ internal static class PetCatalog
         new()
         {
             Id = "Eraxi",
-            Name = "Eraxi, the Blighted Scar",
-            ShortName = "Eraxi",
+            Name = "Lil Eraxi, the Blighted Scar",
+            ShortName = "Lil Eraxi",
             Description = "A shard of the Blighted Scar, still humming with ruined magic.",
             EnemyId = "MelvorBase:EraxitheBlightedScar",
             Location = "Blighted Scar",
@@ -72,8 +72,8 @@ internal static class PetCatalog
         new()
         {
             Id = "ScarGolem",
-            Name = "Scar Golem",
-            ShortName = "Scar Golem",
+            Name = "Lil Scar Golem",
+            ShortName = "Lil Scar Golem",
             Description = "A walking wound in the land, held together by old magic.",
             EnemyId = "MelvorBase:ScarGolem",
             Location = "Blighted Scar",
@@ -87,8 +87,8 @@ internal static class PetCatalog
         new()
         {
             Id = "KingBlackDragon",
-            Name = "King Black Dragon",
-            ShortName = "King Black Dragon",
+            Name = "Lil King Black Dragon",
+            ShortName = "Lil King Black Dragon",
             Description = "The black dragon's king, small enough to perch on your shoulder.",
             EnemyId = "MelvorBase:KingBlackDragon",
             Location = "Black Dragon's Lair",
@@ -102,8 +102,8 @@ internal static class PetCatalog
         new()
         {
             Id = "Mesmeris",
-            Name = "Mesmeris, the Slumbering Princess",
-            ShortName = "Mesmeris",
+            Name = "Lil Mesmeris, the Slumbering Princess",
+            ShortName = "Lil Mesmeris",
             Description = "The princess of the Glowsquid caverns, dreaming of brighter water.",
             EnemyId = "MelvorBase:MesmeristheSlumberingPrincess",
             Location = "Glowsquid Caverns",
@@ -117,8 +117,8 @@ internal static class PetCatalog
         new()
         {
             Id = "Qazarak",
-            Name = "Qazarak, the Shiftsand Guardian",
-            ShortName = "Qazarak",
+            Name = "Lil Qazarak, the Shiftsand Guardian",
+            ShortName = "Lil Qazarak",
             Description = "A guardian of the shifting sands, now shifting around your feet.",
             EnemyId = "MelvorBase:QazaraktheShiftsandGuardian",
             Location = "Shiftsand Ruins",
@@ -132,8 +132,8 @@ internal static class PetCatalog
         new()
         {
             Id = "Kythiss",
-            Name = "Kythiss, the Venom Queen",
-            ShortName = "Kythiss",
+            Name = "Lil Kythiss, the Venom Queen",
+            ShortName = "Lil Kythiss",
             Description = "A tiny venom queen with an extremely large opinion of herself.",
             EnemyId = "MelvorBase:KythisstheVenomQueen",
             Location = "Venom Pit",
@@ -147,8 +147,8 @@ internal static class PetCatalog
         new()
         {
             Id = "Zuraxa",
-            Name = "Zuraxa, the Brood Mother",
-            ShortName = "Zuraxa",
+            Name = "Lil Zuraxa, the Brood Mother",
+            ShortName = "Lil Zuraxa",
             Description = "The brood mother's smallest child. Probably harmless.",
             EnemyId = "MelvorBase:ZuraxatheBroodMother",
             Location = "Murkwood Lair",
@@ -162,8 +162,8 @@ internal static class PetCatalog
         new()
         {
             Id = "BloodSummoner",
-            Name = "Blood Summoner",
-            ShortName = "Blood Summoner",
+            Name = "Lil Blood Summoner",
+            ShortName = "Lil Blood Summoner",
             Description = "It keeps trying to summon things. Mostly snacks.",
             EnemyId = "MelvorBase:BloodSummoner",
             Location = "Blood Sanctum",
@@ -177,8 +177,8 @@ internal static class PetCatalog
         new()
         {
             Id = "Magmor",
-            Name = "Magmor, the Molten Behemoth",
-            ShortName = "Magmor",
+            Name = "Lil Magmor, the Molten Behemoth",
+            ShortName = "Lil Magmor",
             Description = "A molten behemoth with a surprisingly calm temperament.",
             EnemyId = "MelvorBase:MagmortheMoltenBehemoth",
             Location = "Blackstone Gauntlet",
@@ -192,8 +192,8 @@ internal static class PetCatalog
         new()
         {
             Id = "Morgis",
-            Name = "Morgis, the Grave Corruptor",
-            ShortName = "Morgis",
+            Name = "Lil Morgis, the Grave Corruptor",
+            ShortName = "Lil Morgis",
             Description = "A grave corrupter who has decided your coin purse is interesting.",
             EnemyId = "MelvorBase:MorgistheGraveCorruptor",
             Location = "Harvest Farm",
@@ -205,8 +205,8 @@ internal static class PetCatalog
         new()
         {
             Id = "Ghelbak",
-            Name = "Ghelbak, the Hob Chief",
-            ShortName = "Ghelbak",
+            Name = "Lil Ghelbak, the Hob Chief",
+            ShortName = "Lil Ghelbak",
             Description = "The hob chief, now chief of a much smaller camp.",
             EnemyId = "MelvorBase:GhelbaktheHobChief",
             Location = "Hobgolbin Camp",
@@ -218,8 +218,8 @@ internal static class PetCatalog
         new()
         {
             Id = "Kraken",
-            Name = "Kraken, the Drowned Overlord",
-            ShortName = "Kraken",
+            Name = "Lil Kraken, the Drowned Overlord",
+            ShortName = "Lil Kraken",
             Description = "The drowned overlord, reduced to a very damp lap pet.",
             EnemyId = "MelvorBase:KrakentheDrownedOverlord",
             Location = "Kraken's Domain",

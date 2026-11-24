@@ -465,13 +465,17 @@ public sealed class MorePetsMod : IMod
         int owned = PetCatalog.All.Count(p => _state.Owned(p.Id));
         int total = PetCatalog.All.Count;
 
-        VBoxContainer moreBody = AddCollapsible(_panel, "More Pets", $"({owned}/{total})");
-        Label intro = Label("Extra pets from dungeon bosses. Hover a pet for its drop rate and buff. Buffs can be toggled in Mod Viewer settings.");
-        intro.AddThemeFontSizeOverride("font_size", 12);
-        intro.Modulate = new Color(0.75f, 0.78f, 0.82f);
-        moreBody.AddChild(intro);
+        const string petHint = "Hover a pet for its drop rate and buff. Buffs can be toggled in Mod Viewer settings.";
+        VBoxContainer moreBody = AddCollapsible(_panel, "More Pets", $"({owned}/{total})", petHint);
+        moreBody.AddThemeConstantOverride("separation", 8);
 
-        VBoxContainer bossBody = AddCollapsible(moreBody, PetCatalog.Subcategory, $"({owned}/{total})");
+        VBoxContainer bossBody = AddStyledSection(
+            moreBody,
+            PetCatalog.Subcategory,
+            PetCatalog.ById["Kraken"].Icon ?? MissingIcon,
+            owned,
+            total,
+            petHint);
         HFlowContainer bossGrid = NewGrid();
         foreach (MorePetDef pet in PetCatalog.All)
         {
@@ -481,20 +485,127 @@ public sealed class MorePetsMod : IMod
 
         (int defaultOwned, int defaultTotal) = DefaultPetCounts();
         VBoxContainer defaultBody = AddCollapsible(_panel, "Default Pets", $"({defaultOwned}/{defaultTotal})");
-        HFlowContainer defaultGrid = NewGrid();
+        defaultBody.AddThemeConstantOverride("separation", 8);
+
         foreach (IPetsEntity entity in _petsCompletion.PetEntities)
         {
+            if (entity.Pets.ActivePets.Count == 0) continue;
+
+            VBoxContainer skillBody = AddStyledSection(
+                defaultBody,
+                entity.DisplayName.Text,
+                entity.Icon,
+                entity.Pets.UnlockedPetCount,
+                entity.Pets.ActivePets.Count);
+
+            HFlowContainer defaultGrid = NewGrid();
             foreach (ActivePet activePet in entity.Pets.ActivePets.Values)
             {
                 defaultGrid.AddChild(BuildDefaultPetCell(entity, activePet));
             }
+            skillBody.AddChild(defaultGrid);
         }
-        defaultBody.AddChild(defaultGrid);
 
         _uiDirty = false;
     }
 
-    static VBoxContainer AddCollapsible(Control parent, string title, string? count = null)
+    /// <summary>A collapsible panel styled like the default PetsCompletionBreakdownView.</summary>
+    VBoxContainer AddStyledSection(
+        Control parent,
+        string title,
+        Texture2D? icon,
+        int owned,
+        int total,
+        string? tooltip = null)
+    {
+        PanelContainer panel = new()
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            TooltipText = tooltip ?? string.Empty,
+        };
+        if (_view?.Theme != null) panel.Theme = _view.Theme;
+
+        MarginContainer margin = new();
+        margin.AddThemeConstantOverride("margin_left", 10);
+        margin.AddThemeConstantOverride("margin_right", 10);
+        margin.AddThemeConstantOverride("margin_top", 8);
+        margin.AddThemeConstantOverride("margin_bottom", 10);
+
+        VBoxContainer column = new();
+        column.AddThemeConstantOverride("separation", 6);
+
+        HBoxContainer header = new();
+        header.AddThemeConstantOverride("separation", 6);
+
+        Button toggle = new()
+        {
+            Text = "▼",
+            Flat = true,
+            ToggleMode = true,
+            ButtonPressed = true,
+            CustomMinimumSize = new Vector2(26, 0),
+        };
+        toggle.AddThemeFontSizeOverride("font_size", 13);
+
+        TextureRect categoryIcon = new()
+        {
+            Texture = icon ?? MissingIcon,
+            CustomMinimumSize = new Vector2(34, 34),
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+        };
+
+        Label titleLabel = new()
+        {
+            Text = title,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
+            TooltipText = tooltip ?? string.Empty,
+        };
+        titleLabel.AddThemeFontSizeOverride("font_size", 18);
+
+        Label countLabel = new()
+        {
+            Text = $"{owned}/{total}",
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        countLabel.AddThemeFontSizeOverride("font_size", 13);
+        countLabel.Modulate = new Color(0.78f, 0.8f, 0.84f);
+
+        header.AddChild(toggle);
+        header.AddChild(categoryIcon);
+        header.AddChild(titleLabel);
+        header.AddChild(countLabel);
+
+        ProgressBar progress = new()
+        {
+            MinValue = 0,
+            MaxValue = Math.Max(1, total),
+            Value = owned,
+            ShowPercentage = false,
+            CustomMinimumSize = new Vector2(0, 6),
+            Step = 0.01,
+        };
+
+        VBoxContainer body = new();
+        body.AddThemeConstantOverride("separation", 6);
+
+        toggle.Toggled += pressed =>
+        {
+            toggle.Text = pressed ? "▼" : "▶";
+            body.Visible = pressed;
+        };
+
+        column.AddChild(header);
+        column.AddChild(progress);
+        column.AddChild(body);
+        margin.AddChild(column);
+        panel.AddChild(margin);
+        parent.AddChild(panel);
+        return body;
+    }
+
+    static VBoxContainer AddCollapsible(Control parent, string title, string? count = null, string? tooltip = null)
     {
         Button header = new()
         {
@@ -503,6 +614,7 @@ public sealed class MorePetsMod : IMod
             ButtonPressed = true,
             Alignment = HorizontalAlignment.Left,
             Text = "▼ " + title + (count == null ? "" : " " + count),
+            TooltipText = tooltip ?? string.Empty,
         };
         header.AddThemeFontSizeOverride("font_size", 18);
 
@@ -523,8 +635,8 @@ public sealed class MorePetsMod : IMod
     static HFlowContainer NewGrid()
     {
         HFlowContainer grid = new();
-        grid.AddThemeConstantOverride("h_separation", 6);
-        grid.AddThemeConstantOverride("v_separation", 10);
+        grid.AddThemeConstantOverride("h_separation", 4);
+        grid.AddThemeConstantOverride("v_separation", 8);
         return grid;
     }
 
@@ -537,34 +649,18 @@ public sealed class MorePetsMod : IMod
     Control BuildMorePetCell(MorePetDef pet)
     {
         int count = _state?.Count(pet.Id) ?? 0;
-        bool owned = count > 0;
-
-        VBoxContainer cell = new() { CustomMinimumSize = new Vector2(96, 0) };
         TextureButton button = new()
         {
             TextureNormal = pet.Icon ?? MissingIcon,
-            CustomMinimumSize = new Vector2(58, 58),
+            CustomMinimumSize = new Vector2(48, 48),
             IgnoreTextureSize = true,
             StretchMode = TextureButton.StretchModeEnum.Scale,
-            Modulate = owned ? Colors.White : new Color(0.28f, 0.28f, 0.28f),
+            Modulate = count > 0 ? Colors.White : new Color(0.22f, 0.22f, 0.22f),
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
             TooltipText = TooltipFor(pet),
         };
         button.Pressed += () => ShowPetDetails(pet);
-
-        Label name = new()
-        {
-            Text = count > 1 ? $"{pet.ShortName} ({count})" : pet.ShortName,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-            CustomMinimumSize = new Vector2(96, 0),
-        };
-        name.AddThemeFontSizeOverride("font_size", 11);
-
-        cell.AddChild(button);
-        cell.AddChild(name);
-        return cell;
+        return button;
     }
 
     Control BuildDefaultPetCell(IPetsEntity entity, ActivePet activePet)
