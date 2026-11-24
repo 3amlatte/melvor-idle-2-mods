@@ -30,7 +30,14 @@ public sealed class MorePetsMod : IMod
 
     PetsCompletionView? _view;
     PetsCompletionComponent? _petsCompletion;
-    VBoxContainer? _panel;
+    HBoxContainer? _panel;
+    PanelContainer? _detailPane;
+    TextureRect? _detailImage;
+    Label? _detailName;
+    Label? _detailMeta;
+    Label? _detailBuff;
+    Label? _detailDescription;
+    MorePetDef? _selectedPet;
     Texture2D? _missingIcon;
 
     readonly Dictionary<string, Enemy> _enemyCache = new(StringComparer.OrdinalIgnoreCase);
@@ -433,14 +440,14 @@ public sealed class MorePetsMod : IMod
             Node? parent = _view.GetParent();
             if (parent == null) return;
 
-            _panel = new VBoxContainer
+            _panel = new HBoxContainer
             {
                 Name = "MorePetsPanel",
                 CustomMinimumSize = new Vector2(900, 0),
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                 SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             };
-            _panel.AddThemeConstantOverride("separation", 10);
+            _panel.AddThemeConstantOverride("separation", 12);
             if (_view.Theme != null) _panel.Theme = _view.Theme;
             parent.AddChild(_panel);
             _uiDirty = true;
@@ -465,8 +472,19 @@ public sealed class MorePetsMod : IMod
         int owned = PetCatalog.All.Count(p => _state.Owned(p.Id));
         int total = PetCatalog.All.Count;
 
+        VBoxContainer left = new()
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+        left.AddThemeConstantOverride("separation", 10);
+        _panel.AddChild(left);
+
+        PanelContainer details = BuildDetailPane();
+        _panel.AddChild(details);
+
         const string petHint = "Hover a pet for its drop rate and buff. Buffs can be toggled in Mod Viewer settings.";
-        VBoxContainer moreBody = AddCollapsible(_panel, "More Pets", $"({owned}/{total})", petHint);
+        VBoxContainer moreBody = AddCollapsible(left, "More Pets", $"({owned}/{total})", petHint);
         moreBody.AddThemeConstantOverride("separation", 8);
 
         VBoxContainer bossBody = AddStyledSection(
@@ -484,7 +502,7 @@ public sealed class MorePetsMod : IMod
         bossBody.AddChild(bossGrid);
 
         (int defaultOwned, int defaultTotal) = DefaultPetCounts();
-        VBoxContainer defaultBody = AddCollapsible(_panel, "Default Pets", $"({defaultOwned}/{defaultTotal})");
+        VBoxContainer defaultBody = AddCollapsible(left, "Default Pets", $"({defaultOwned}/{defaultTotal})");
         defaultBody.AddThemeConstantOverride("separation", 8);
 
         foreach (IPetsEntity entity in _petsCompletion.PetEntities)
@@ -506,7 +524,142 @@ public sealed class MorePetsMod : IMod
             skillBody.AddChild(defaultGrid);
         }
 
+        if (_selectedPet != null)
+        {
+            UpdateDetailPane(_selectedPet);
+            details.Visible = true;
+        }
+        else
+        {
+            details.Visible = false;
+        }
+
         _uiDirty = false;
+    }
+
+    PanelContainer BuildDetailPane()
+    {
+        PanelContainer pane = new()
+        {
+            CustomMinimumSize = new Vector2(330, 0),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+        if (_view?.Theme != null) pane.Theme = _view.Theme;
+        _detailPane = pane;
+
+        MarginContainer margin = new();
+        margin.AddThemeConstantOverride("margin_left", 12);
+        margin.AddThemeConstantOverride("margin_right", 12);
+        margin.AddThemeConstantOverride("margin_top", 10);
+        margin.AddThemeConstantOverride("margin_bottom", 12);
+
+        VBoxContainer box = new();
+        box.AddThemeConstantOverride("separation", 8);
+
+        HBoxContainer header = new();
+        Label heading = new()
+        {
+            Text = "Pet details",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        heading.AddThemeFontSizeOverride("font_size", 18);
+
+        Button close = new()
+        {
+            Text = "✕",
+            Flat = true,
+            CustomMinimumSize = new Vector2(28, 28),
+            TooltipText = "Close",
+        };
+        close.AddThemeFontSizeOverride("font_size", 14);
+        close.Pressed += HideDetail;
+        header.AddChild(heading);
+        header.AddChild(close);
+
+        _detailImage = new TextureRect
+        {
+            CustomMinimumSize = new Vector2(180, 180),
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+        };
+
+        _detailName = new Label
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        _detailName.AddThemeFontSizeOverride("font_size", 19);
+
+        _detailMeta = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+
+        _detailBuff = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        _detailBuff.Modulate = new Color(0.82f, 0.9f, 1f);
+
+        _detailDescription = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        _detailDescription.Modulate = new Color(0.75f, 0.78f, 0.82f);
+
+        box.AddChild(header);
+        box.AddChild(_detailImage);
+        box.AddChild(_detailName);
+        box.AddChild(_detailMeta);
+        box.AddChild(_detailBuff);
+        box.AddChild(_detailDescription);
+        margin.AddChild(box);
+        pane.AddChild(margin);
+        pane.Visible = false;
+        return pane;
+    }
+
+    void SelectPet(MorePetDef pet)
+    {
+        _selectedPet = pet;
+        if (_detailPane == null || !GodotObject.IsInstanceValid(_detailPane)) return;
+        _detailPane.Visible = true;
+        UpdateDetailPane(pet);
+    }
+
+    void HideDetail()
+    {
+        _selectedPet = null;
+        if (_detailPane != null && GodotObject.IsInstanceValid(_detailPane))
+        {
+            _detailPane.Visible = false;
+        }
+    }
+
+    void UpdateDetailPane(MorePetDef pet)
+    {
+        if (_detailImage == null || _detailName == null || _detailMeta == null ||
+            _detailBuff == null || _detailDescription == null)
+        {
+            return;
+        }
+
+        _detailImage.Texture = pet.Icon ?? MissingIcon;
+        _detailName.Text = pet.Name;
+
+        string enemyName = pet.Name.StartsWith("Lil ", StringComparison.Ordinal) ? pet.Name[4..] : pet.Name;
+        StringBuilder meta = new();
+        meta.AppendLine($"Enemy: {enemyName}");
+        meta.AppendLine($"Obtained: {_state?.Count(pet.Id) ?? 0:N0}");
+        meta.AppendLine($"Enemy kills: {GetKills(pet):N0}");
+        meta.AppendLine($"Location: {pet.Location}");
+        meta.Append($"Drop rate: 1 / {RateFor(pet):N0}");
+        _detailMeta.Text = meta.ToString();
+
+        bool enabled = _settings?.IsEnabled(pet.Name) != false;
+        _detailBuff.Text = pet.BuffText + (enabled ? "\nBuff: enabled" : "\nBuff: disabled in settings");
+        _detailDescription.Text = pet.Description;
     }
 
     /// <summary>A collapsible panel styled like the default PetsCompletionBreakdownView.</summary>
@@ -657,9 +810,9 @@ public sealed class MorePetsMod : IMod
             StretchMode = TextureButton.StretchModeEnum.Scale,
             Modulate = count > 0 ? Colors.White : new Color(0.22f, 0.22f, 0.22f),
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
-            TooltipText = TooltipFor(pet),
+            TooltipText = pet.ShortName,
         };
-        button.Pressed += () => ShowPetDetails(pet);
+        button.Pressed += () => SelectPet(pet);
         return button;
     }
 
@@ -691,19 +844,6 @@ public sealed class MorePetsMod : IMod
             owned += entity.Pets.UnlockedPetCount;
         }
         return (owned, total);
-    }
-
-    string TooltipFor(MorePetDef pet)
-    {
-        StringBuilder text = new();
-        text.AppendLine(pet.Name);
-        text.AppendLine($"Obtained: {_state?.Count(pet.Id) ?? 0:N0}");
-        text.AppendLine($"Enemy kills: {GetKills(pet):N0}");
-        text.AppendLine($"Location: {pet.Location}");
-        text.AppendLine($"Drop rate: 1 / {RateFor(pet):N0}");
-        text.AppendLine(pet.BuffText);
-        text.Append(_settings?.IsEnabled(pet.Name) == false ? "Buff: disabled" : "Buff: enabled");
-        return text.ToString();
     }
 
     void ShowPetDetails(MorePetDef pet, string? title = null)
