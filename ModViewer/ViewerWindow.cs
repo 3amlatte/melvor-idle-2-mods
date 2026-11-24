@@ -26,8 +26,7 @@ internal sealed class ViewerWindow
     readonly ScrollContainer _listScroll;
     readonly ScrollContainer _settingsScroll;
     readonly Label _status;
-    bool _collapsed3am;
-    bool _collapsedOther;
+    readonly Dictionary<string, bool> _collapsedGroups = new(StringComparer.OrdinalIgnoreCase);
 
     public ViewerWindow(ModContext ctx, Action restart, Action<string> log)
     {
@@ -229,42 +228,37 @@ internal sealed class ViewerWindow
 
         List<ModEntry> entries = Mods.Scan();
 
-        AddGroupHeader("3am Mods", _collapsed3am, () =>
+        if (entries.Count == 0)
         {
-            _collapsed3am = !_collapsed3am;
-            Refresh();
-        });
-
-        if (!_collapsed3am)
-        {
-            bool any = false;
-            foreach (ModEntry entry in entries)
-            {
-                if (!entry.Is3am) continue;
-                _list.AddChild(Row(entry));
-                any = true;
-            }
-            if (!any) _list.AddChild(TextLabel("No 3am mods found."));
+            _list.AddChild(TextLabel("No mods found."));
+            return;
         }
 
-        AddGroupHeader("Other mods", _collapsedOther, () =>
+        foreach (var group in entries
+                     .GroupBy(e => e.Group)
+                     .OrderBy(g => GroupOrder(g.Key))
+                     .ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
         {
-            _collapsedOther = !_collapsedOther;
-            Refresh();
-        });
+            string name = group.Key;
+            bool collapsed = _collapsedGroups.TryGetValue(name, out bool value) && value;
 
-        if (!_collapsedOther)
-        {
-            bool anyOther = false;
-            foreach (ModEntry entry in entries)
+            AddGroupHeader(name, collapsed, () =>
             {
-                if (entry.Is3am) continue;
+                _collapsedGroups[name] = !collapsed;
+                Refresh();
+            });
+
+            if (collapsed) continue;
+
+            foreach (ModEntry entry in group.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
                 _list.AddChild(Row(entry));
-                anyOther = true;
-            }
-            if (!anyOther) _list.AddChild(TextLabel("No other mods found."));
         }
     }
+
+    static int GroupOrder(string name) =>
+        string.Equals(name, "3am Mods", StringComparison.OrdinalIgnoreCase) ? 0
+        : string.Equals(name, "Other mods", StringComparison.OrdinalIgnoreCase) ? 2
+        : 1;
 
     void AddGroupHeader(string text, bool collapsed, Action toggle)
     {

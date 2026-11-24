@@ -62,6 +62,8 @@ public sealed class MelvorAutoMod : IMod
 
     int _frame;
     int _depth;
+    long _lastMillRetry;
+    bool _millFailureLogged;
     bool _ranchRepairPending;
     bool _ranchPetPending;
     bool _inRanchPet;
@@ -184,6 +186,8 @@ public sealed class MelvorAutoMod : IMod
         _ranchPassive = null;
         _ranchRepairPending = false;
         _ranchPetPending = false;
+        _lastMillRetry = 0;
+        _millFailureLogged = false;
         _mods = null;
         _game = null;
     }
@@ -456,12 +460,15 @@ public sealed class MelvorAutoMod : IMod
         long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         _settings.MillStockedAtUnix ??= new Dictionary<string, long>();
-        if (_settings.MillStockedAtUnix.TryGetValue(character, out long last) &&
-            now - last < MillIntervalSeconds)
-        {
-            return;
-        }
+        bool hasLast = _settings.MillStockedAtUnix.TryGetValue(character, out long last);
+        bool periodicDue = !hasLast || now - last >= MillIntervalSeconds;
+        bool stopped = !_mill.IsActive;
 
+        // Top up on the 2-hour timer, and also restart the mill shortly after it runs dry.
+        if (!periodicDue && !stopped) return;
+        if (now - _lastMillRetry < 60) return;
+
+        _lastMillRetry = now;
         StockMill(character, now);
     }
 
@@ -490,17 +497,24 @@ public sealed class MelvorAutoMod : IMod
                     started = _mill.ToggleGrainMillTimer(true);
             }
 
-            _settings.MillStockedAtUnix[character] = now;
-            _settings.Save(_settingsPath, _ctx.Log);
-            if (File.Exists(_settingsPath))
-                _settingsStamp = File.GetLastWriteTimeUtc(_settingsPath);
+            if (_mill.IsActive)
+            {
+                _settings.MillStockedAtUnix[character] = now;
+                _settings.Save(_settingsPath, _ctx.Log);
+                if (File.Exists(_settingsPath))
+                    _settingsStamp = File.GetLastWriteTimeUtc(_settingsPath);
 
-            if (started)
-                _ctx.Log($"Grain mill stocked and started for {character}.");
-            else if (_mill.IsActive)
-                _ctx.Log($"Grain mill stocked for {character}; it was already running, so it was left running.");
-            else
-                _ctx.Log($"Grain mill stocked for {character}, but no recipe could be started.");
+                _millFailureLogged = false;
+                if (started)
+                    _ctx.Log($"Grain mill stocked and started for {character}.");
+                else
+                    _ctx.Log($"Grain mill stocked for {character}; it was already running, so it was left running.");
+            }
+            else if (!_millFailureLogged)
+            {
+                _millFailureLogged = true;
+                _ctx.Log($"Grain mill could not be started for {character}; no affordable mill recipe.");
+            }
         }
         catch (Exception e)
         {

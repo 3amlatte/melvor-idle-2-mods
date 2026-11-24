@@ -38,21 +38,25 @@ internal static class ViewerTheme
             Hex("#000000"), Hex("#FFD400"), Hex("#FFFFFF"), Hex("#C8C8C8"))
     };
 
-    public static ViewerPalette Current { get; private set; } = All[0];
+    public static ViewerPalette Current { get; private set; } =
+        All.FirstOrDefault(t => t.Id == "Dark") ?? All[0];
 
     static string _path = "";
 
     public static void Load(string folder, Action<string> log)
     {
-        _path = Path.Combine(folder, "settings.json");
+        string modsFolder = Directory.GetParent(folder)?.FullName ?? folder;
+        _path = Path.Combine(modsFolder, "ModViewer-settings.json");
+        string legacy = Path.Combine(folder, "settings.json");
+        string readPath = File.Exists(_path) ? _path : (File.Exists(legacy) ? legacy : "");
 
         try
         {
-            if (File.Exists(_path))
+            if (readPath.Length > 0)
             {
-                JsonNode? root = JsonNode.Parse(File.ReadAllText(_path));
+                JsonNode? root = JsonNode.Parse(File.ReadAllText(readPath));
                 if (root?["Theme"] is JsonValue value && value.TryGetValue(out string? id))
-                    Current = Find(id) ?? All[0];
+                    Current = Find(id) ?? All.FirstOrDefault(t => t.Id == "Dark") ?? All[0];
             }
         }
         catch (Exception e)
@@ -60,7 +64,8 @@ internal static class ViewerTheme
             log("Mod Viewer settings could not be read: " + e.Message);
         }
 
-        // Also refresh the resolved colours used by TimeSkip.
+        // Persist the resolved theme outside the mod folder, so updating Mod Viewer does not
+        // reset it, and keep the colours used by TimeSkip in sync.
         Save(log);
     }
 

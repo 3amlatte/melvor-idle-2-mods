@@ -1,26 +1,37 @@
-MOD VIEWER 0.1.1
-for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
+MOD VIEWER 0.1.2
+for Melvor Idle 2 (tested on 0.11.6-alpha.1).
+
+Requires Melvor Mod Loader 0.2.0 or newer:
+  https://www.nexusmods.com/melvoridle2/mods/2
+Install the loader first; Mod Viewer will not load without it.
 
 Press F2 (or pick it in the loader's Mods menu) to open a list of every installed mod, both
 enabled and disabled.
 
 GROUPS
-  Mods whose folder contains a "3am.mod" marker file are listed under "3am Mods". Everything
-  else is under "Other mods". The marker is included in every 3am mod package, so no name
-  list needs maintaining. Click either group heading to collapse or expand it.
+  Mods are grouped by developer when a group is known:
+    - Put group.txt in a mod folder. The first non-empty line is the group name.
+    - Or create mods\ModViewer-groups.json and map a group to folder or assembly names:
+        {
+          "Some Developer": ["AstrologyKnowledgeMultiplier", "DungeonCompletions"]
+        }
+  The older 3am.mod marker is still recognised as "3am Mods". Groups appear with 3am Mods
+  first, other groups alphabetically, and Other mods last. Click any group heading to
+  collapse or expand it.
 
 THEMES
   The Theme drop-down in the header switches the whole viewer palette:
-    AI        the original dark navy + gold look (default)
-    Dark      black + grey
+    AI        dark navy + gold
+    Dark      black + grey (default)
     Light     warm paper + dark text
     Midnight  deep blue + periwinkle
     Forest    dark green + mint
     Sakura    plum + pink
     Contrast  black + yellow
-  The choice is saved in ModViewer\settings.json. When TimeSkip is installed, its window
-  uses the same theme. Buttons, checkboxes and text fields are themed too, so the green
-  default controls no longer stand out.
+  The choice is saved in mods\ModViewer-settings.json, outside the mod folder, so updating
+  Mod Viewer does not reset it. When TimeSkip is installed, its window uses the same theme.
+  Buttons, checkboxes and text fields are themed too, so the green default controls no longer
+  stand out.
 
 FOLDER
   The "Mods Folder" button in the footer opens the game's mods folder in Explorer.

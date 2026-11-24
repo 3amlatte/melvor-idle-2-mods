@@ -18,20 +18,26 @@ internal static class TimeSkipTheme
     public static Color Muted { get; private set; } = Hex("#B0B0B0");
 
     static string _path = "";
+    static string _legacyPath = "";
     static DateTime _stamp = DateTime.MinValue;
 
     public static void Initialize(string modsFolder)
     {
-        _path = Path.Combine(modsFolder, "ModViewer", "settings.json");
+        _path = Path.Combine(modsFolder, "ModViewer-settings.json");
+        _legacyPath = Path.Combine(modsFolder, "ModViewer", "settings.json");
     }
 
     public static bool RefreshIfChanged()
     {
+        string source = File.Exists(_path)
+            ? _path
+            : File.Exists(_legacyPath) ? _legacyPath : "";
+
         DateTime stamp = DateTime.MinValue;
         try
         {
-            if (_path.Length > 0 && File.Exists(_path))
-                stamp = File.GetLastWriteTimeUtc(_path);
+            if (source.Length > 0)
+                stamp = File.GetLastWriteTimeUtc(source);
         }
         catch { stamp = DateTime.MinValue; }
 
@@ -46,7 +52,7 @@ internal static class TimeSkipTheme
         {
             try
             {
-                JsonNode? root = JsonNode.Parse(File.ReadAllText(_path));
+                JsonNode? root = JsonNode.Parse(File.ReadAllText(source));
                 accent = Read(root, "AccentColor", accent);
                 panel = Read(root, "PanelColor", panel);
                 text = Read(root, "TextColor", text);

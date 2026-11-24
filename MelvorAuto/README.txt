@@ -1,5 +1,9 @@
-MELVOR AUTO 0.1.0
+MELVOR AUTO 0.1.1
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
+
+WHAT'S NEW IN 0.1.1
+  - The grain mill now tops up and restarts shortly after it runs dry, as well as on the
+    2-hour timer.
 
 Several conveniences in one mod. Everything uses the game's own bury, open, plant, harvest,
 water, compost, mill, repair and pet actions, so XP, Prayer Points, bonuses, statistics and

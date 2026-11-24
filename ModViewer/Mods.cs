@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json.Nodes;
 
 namespace ModViewer;
 
@@ -10,6 +11,7 @@ internal sealed class ModEntry
 {
     public string Name = "";
     public string Assembly = "";
+    public string Group = "Other mods";
     public string Path = "";
     public string Dll = "";
     public bool Enabled;
@@ -25,16 +27,17 @@ internal static class Mods
 
     public static List<ModEntry> Scan()
     {
+        Dictionary<string, string> groups = LoadGroupMap();
         var list = new List<ModEntry>();
-        ScanDir(ModsDir, true, list);
-        ScanDir(DisabledDir, false, list);
+        ScanDir(ModsDir, true, list, groups);
+        ScanDir(DisabledDir, false, list, groups);
         return list
-            .OrderByDescending(e => e.Is3am)
-            .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
-    static void ScanDir(string dir, bool enabled, List<ModEntry> list)
+    static void ScanDir(string dir, bool enabled, List<ModEntry> list,
+        Dictionary<string, string> groups)
     {
         if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return;
 
@@ -53,6 +56,7 @@ internal static class Mods
             {
                 Name = folder,
                 Assembly = info.Name,
+                Group = GroupForFolder(sub, folder, info.Name, groups),
                 Path = sub,
                 Dll = dll,
                 Enabled = enabled,
@@ -65,11 +69,13 @@ internal static class Mods
         foreach (string dll in Directory.GetFiles(dir, "*.dll"))
         {
             var info = AssemblyInfoOf(dll);
+            string name = Path.GetFileNameWithoutExtension(dll);
 
             list.Add(new ModEntry
             {
-                Name = Path.GetFileNameWithoutExtension(dll),
+                Name = name,
                 Assembly = info.Name,
+                Group = MapGroup(name, info.Name, groups) ?? "Other mods",
                 Path = dll,
                 Dll = dll,
                 Enabled = enabled,
@@ -77,6 +83,67 @@ internal static class Mods
                 Version = info.Version
             });
         }
+    }
+
+    static string GroupForFolder(string path, string folder, string assembly,
+        Dictionary<string, string> groups)
+    {
+        string? mapped = MapGroup(folder, assembly, groups);
+        if (mapped != null) return mapped;
+
+        try
+        {
+            string file = Path.Combine(path, "group.txt");
+            if (File.Exists(file))
+            {
+                string? line = File.ReadLines(file)
+                    .FirstOrDefault(l => !string.IsNullOrWhiteSpace(l));
+                if (!string.IsNullOrWhiteSpace(line)) return line.Trim();
+            }
+        }
+        catch { }
+
+        return File.Exists(Path.Combine(path, "3am.mod")) ? "3am Mods" : "Other mods";
+    }
+
+    static string? MapGroup(string name, string assembly, Dictionary<string, string> groups)
+    {
+        if (groups.TryGetValue(name, out string? group)) return group;
+        if (assembly.Length > 0 && groups.TryGetValue(assembly, out group)) return group;
+        return null;
+    }
+
+    static Dictionary<string, string> LoadGroupMap()
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrEmpty(ModsDir)) return map;
+
+        string path = Path.Combine(ModsDir, "ModViewer-groups.json");
+        if (!File.Exists(path)) return map;
+
+        try
+        {
+            if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject root) return map;
+
+            foreach (var pair in root)
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key)) continue;
+                if (pair.Value is not JsonArray names) continue;
+
+                foreach (JsonNode? node in names)
+                {
+                    if (node is JsonValue value &&
+                        value.TryGetValue(out string? name) &&
+                        !string.IsNullOrWhiteSpace(name))
+                    {
+                        map[name.Trim()] = pair.Key;
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return map;
     }
 
     static (string Name, string Version) AssemblyInfoOf(string dll)

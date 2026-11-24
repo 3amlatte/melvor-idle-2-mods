@@ -58,7 +58,7 @@ foreach ($mod in $Mods) {
     $dll = Join-Path $modStage ($mod + '.dll')
     if (-not (Test-Path $dll)) { throw "Build did not produce $dll" }
 
-    foreach ($file in @('README.txt', 'settings.json', '3am.mod')) {
+    foreach ($file in @('README.txt', 'settings.json', '3am.mod', 'group.txt')) {
         $from = Join-Path $projectDir $file
         if (Test-Path $from) {
             Copy-Item -Path $from -Destination (Join-Path $modStage $file)

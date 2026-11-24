@@ -1,11 +1,11 @@
-TIMESKIP 0.2.0
+TIMESKIP 0.2.1
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
 
-WHAT'S NEW IN 0.2.0
+WHAT'S NEW IN 0.2.1
   - Mod Viewer integration: click TimeSkip's name to open the window; when Mod Viewer is
     installed, TimeSkip no longer binds F4 or appears in the loader's Mods menu.
   - If Mod Viewer is not installed (or is disabled), F4 opens TimeSkip as before.
-  - The window follows the Mod Viewer theme.
+  - The window follows the Mod Viewer theme stored in mods\ModViewer-settings.json.
 
 If Mod Viewer is installed, open Mod Viewer (F2) and click TimeSkip. Without Mod Viewer, press
 F4. Pick how far to skip, then click Skip Forward. The game pauses, simulates that much time,
