@@ -17,6 +17,7 @@ zips on Nexus, which contain exactly the files the game needs.
 | [BiggerPastures](BiggerPastures) | Doubles the animal limit of every Ranching enclosure. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/41) |
 | [MelvorAuto](MelvorAuto) | Auto bone burial, auto opener, free farming automation, mill stocking, ranch repairs and petting. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/44) |
 | [ModViewer](ModViewer) | F2 mod list, developer groups, themes, mods-folder button, enable/disable, settings, mod windows, restart. | [Nexus](https://www.nexusmods.com/melvoridle2/mods/43) |
+| [3am Modpack](Modpack) | Every 3am mod in one download; Seed Return Lite/Max are optional alternatives. | [GitHub release](https://github.com/3amlatte/melvor-idle-2-mods/releases/tag/3am-modpack-v1.0.0) |
 
 Tested with game **0.11.6-alpha.1** and Melvor Mod Loader **0.2.0**.
 

@@ -1,0 +1,4 @@
+# Mods that are alternatives and should not be installed alongside the default mods.
+# Every other project in this repository is included under mods\ automatically.
+SeedReturn
+SeedReturnMax
