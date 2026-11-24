@@ -1,5 +1,9 @@
-MELVOR AUTO 0.1.1
+MELVOR AUTO 0.1.2
 for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
+
+WHAT'S NEW IN 0.1.2
+  - Openables that arrive during offline progress, such as geodes, are swept from the bank
+    and opened shortly after offline progress ends.
 
 WHAT'S NEW IN 0.1.1
   - The grain mill now tops up and restarts shortly after it runs dry, as well as on the

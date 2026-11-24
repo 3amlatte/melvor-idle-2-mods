@@ -63,6 +63,7 @@ public sealed class MelvorAutoMod : IMod
     int _frame;
     int _depth;
     long _lastMillRetry;
+    long _lastOpenSweep;
     bool _millFailureLogged;
     bool _ranchRepairPending;
     bool _ranchPetPending;
@@ -95,6 +96,7 @@ public sealed class MelvorAutoMod : IMod
         if (++_frame % 30 != 0) return;   // twice a second
         TryBind();
         ReloadSettingsIfChanged();
+        SweepOpenables();
 
         // The farming flags are applied once when a character opens. Plots bought later are
         // picked up on the next launch, as requested. The mill is checked against a real
@@ -188,6 +190,7 @@ public sealed class MelvorAutoMod : IMod
         _ranchPetPending = false;
         _lastMillRetry = 0;
         _millFailureLogged = false;
+        _lastOpenSweep = 0;
         _mods = null;
         _game = null;
     }
@@ -265,6 +268,32 @@ public sealed class MelvorAutoMod : IMod
         try { _bank.ItemOpening.OpenItem(item, quantity); }
         catch (Exception e) { LogOnce($"Open failed for {item.Id}: {e.Message}"); }
         finally { _depth--; }
+    }
+
+    void SweepOpenables()
+    {
+        if (!_settings.AutoOpenItems || _bank == null || _game == null) return;
+        if (GameAccess.IsComputingOffline) return;
+
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        if (now - _lastOpenSweep < 5) return;
+        _lastOpenSweep = now;
+
+        try
+        {
+            foreach (Item item in _game.Data.GetDataRegistryOutput<Item>().GetAllObjects())
+            {
+                if (!item.Capabilities.Contains<OpenableCapability>()) continue;
+                if (_excludedOpenables.Contains(item.Id)) continue;
+
+                int quantity = _bank.Inventory.GetQuantity(item);
+                if (quantity > 0) Open(item, quantity);
+            }
+        }
+        catch (Exception e)
+        {
+            LogOnce("Openable sweep failed: " + e.Message);
+        }
     }
 
     static bool IsBone(Item item)
