@@ -268,8 +268,8 @@ internal static class SettingsPage
 
     static string Label(string key) => key switch
     {
-        "AutoBuryBones" => "Auto bone burial",
-        "AutoOpenItems" => "Auto opener",
+        "AutoBuryBones" => "Auto Burial",
+        "AutoOpenItems" => "Auto Opener",
         "AutoHarvest" => "Auto harvest",
         "AutoCompost" => "Auto compost",
         "AutoWater" => "Auto water",
