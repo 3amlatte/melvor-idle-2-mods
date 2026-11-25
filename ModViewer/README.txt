@@ -1,4 +1,4 @@
-MOD VIEWER 0.1.7
+MOD VIEWER 0.1.8
 for Melvor Idle 2 (tested on 0.11.7-alpha).
 
 Requires Melvor Mod Loader 0.2.0 or newer:

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using Godot;
 using MelvorModLoader;
@@ -62,10 +63,27 @@ public sealed class ModViewerMod : IMod
     {
         try
         {
-            // Start Steam's launch URL after this process exits.
-            string cmd = "timeout /t 2 /nobreak >nul & start \"\" \"steam://rungameid/3218350\"";
-            OS.CreateProcess("cmd.exe", new[] { "/c", cmd }, false);
-            _ctx.Log("Restarting Melvor Idle 2...");
+            // The old two-second timeout relaunched Steam before Melvor had finished closing.
+            // Hand the wait to a detached PowerShell helper that watches this exact process
+            // and starts Steam only after it has exited.
+            int pid = Process.GetCurrentProcess().Id;
+            string script = Path.Combine(Path.GetTempPath(), "3am-modviewer-restart.ps1");
+            File.WriteAllText(script,
+                "param([int]$GamePid)\n" +
+                "try { Wait-Process -Id $GamePid -Timeout 300 -ErrorAction SilentlyContinue } catch { }\n" +
+                "Start-Sleep -Seconds 2\n" +
+                "Start-Process 'steam://rungameid/3218350'\n");
+
+            OS.CreateProcess("powershell.exe", new[]
+            {
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-WindowStyle", "Hidden",
+                "-File", script,
+                "-GamePid", pid.ToString(),
+            }, false);
+
+            _ctx.Log($"Restarting Melvor Idle 2 after process {pid} exits...");
             _ctx.Tree.Quit();
         }
         catch (Exception e)
