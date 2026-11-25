@@ -484,16 +484,8 @@ public sealed class MorePetsMod : IMod
         _panel.AddChild(details);
 
         const string petHint = "Hover a pet for its drop rate and buff. Buffs can be toggled in Mod Viewer settings.";
-        VBoxContainer moreBody = AddCollapsibleBar(
-            left,
-            "More Pets",
-            $"({owned}/{total})",
-            PetCatalog.ById["Kraken"].Icon ?? MissingIcon,
-            petHint);
-        moreBody.AddThemeConstantOverride("separation", 8);
-
         VBoxContainer bossBody = AddCollapsibleBar(
-            moreBody,
+            left,
             PetCatalog.Subcategory,
             $"({owned}/{total})",
             PetCatalog.ById["Kraken"].Icon ?? MissingIcon,
