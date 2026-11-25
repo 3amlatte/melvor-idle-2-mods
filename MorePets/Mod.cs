@@ -524,24 +524,34 @@ public sealed class MorePetsMod : IMod
         skillGrid.AddThemeConstantOverride("v_separation", 14);
         defaultBody.AddChild(skillGrid);
 
+        PackedScene? breakdownScene = GD.Load<PackedScene>("res://Components/PetsCompletion/pets_completion_breakdown_view.tscn");
         foreach (IPetsEntity entity in _petsCompletion.PetEntities)
         {
             if (entity.Pets.ActivePets.Count == 0) continue;
 
-            VBoxContainer skillBody = AddStyledSection(
-                skillGrid,
-                entity.DisplayName.Text,
-                entity.Icon,
-                entity.Pets.UnlockedPetCount,
-                entity.Pets.ActivePets.Count,
-                collapsible: false);
-
-            HFlowContainer defaultGrid = NewGrid(center: true);
-            foreach (ActivePet activePet in entity.Pets.ActivePets.Values)
+            if (breakdownScene != null)
             {
-                defaultGrid.AddChild(BuildDefaultPetCell(entity, activePet));
+                PetsCompletionBreakdownView defaultPanel = breakdownScene.Instantiate<PetsCompletionBreakdownView>();
+                defaultPanel.Bind(entity.Pets, _petsCompletion);
+                skillGrid.AddChild(defaultPanel);
             }
-            skillBody.AddChild(defaultGrid);
+            else
+            {
+                VBoxContainer skillBody = AddStyledSection(
+                    skillGrid,
+                    entity.DisplayName.Text,
+                    entity.Icon,
+                    entity.Pets.UnlockedPetCount,
+                    entity.Pets.ActivePets.Count,
+                    collapsible: false);
+
+                HFlowContainer defaultGrid = NewGrid(center: true);
+                foreach (ActivePet activePet in entity.Pets.ActivePets.Values)
+                {
+                    defaultGrid.AddChild(BuildDefaultPetCell(entity, activePet));
+                }
+                skillBody.AddChild(defaultGrid);
+            }
         }
 
         if (_selectedPet != null)
