@@ -484,7 +484,12 @@ public sealed class MorePetsMod : IMod
         _panel.AddChild(details);
 
         const string petHint = "Hover a pet for its drop rate and buff. Buffs can be toggled in Mod Viewer settings.";
-        VBoxContainer moreBody = AddCollapsible(left, "More Pets", $"({owned}/{total})", petHint);
+        VBoxContainer moreBody = AddCollapsibleBar(
+            left,
+            "More Pets",
+            $"({owned}/{total})",
+            PetCatalog.ById["Kraken"].Icon ?? MissingIcon,
+            petHint);
         moreBody.AddThemeConstantOverride("separation", 8);
 
         VBoxContainer bossBody = AddStyledSection(
@@ -502,7 +507,12 @@ public sealed class MorePetsMod : IMod
         bossBody.AddChild(bossGrid);
 
         (int defaultOwned, int defaultTotal) = DefaultPetCounts();
-        VBoxContainer defaultBody = AddCollapsible(left, "Default Pets", $"({defaultOwned}/{defaultTotal})");
+        VBoxContainer defaultBody = AddCollapsibleBar(
+            left,
+            "Default Pets",
+            $"({defaultOwned}/{defaultTotal})",
+            DefaultPetIcon(),
+            null);
         defaultBody.AddThemeConstantOverride("separation", 8);
 
         foreach (IPetsEntity entity in _petsCompletion.PetEntities)
@@ -794,29 +804,82 @@ public sealed class MorePetsMod : IMod
         return body;
     }
 
-    static VBoxContainer AddCollapsible(Control parent, string title, string? count = null, string? tooltip = null)
+    VBoxContainer AddCollapsibleBar(
+        Control parent,
+        string title,
+        string count,
+        Texture2D? icon,
+        string? tooltip)
     {
-        Button header = new()
+        PanelContainer bar = new()
         {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            TooltipText = tooltip ?? string.Empty,
+        };
+        if (_view?.Theme != null) bar.Theme = _view.Theme;
+
+        MarginContainer margin = new();
+        margin.AddThemeConstantOverride("margin_left", 10);
+        margin.AddThemeConstantOverride("margin_right", 10);
+        margin.AddThemeConstantOverride("margin_top", 3);
+        margin.AddThemeConstantOverride("margin_bottom", 3);
+
+        HBoxContainer header = new();
+        header.AddThemeConstantOverride("separation", 6);
+
+        Button toggle = new()
+        {
+            Text = "▼",
             Flat = true,
             ToggleMode = true,
             ButtonPressed = true,
-            Alignment = HorizontalAlignment.Left,
-            Text = "▼ " + title + (count == null ? "" : " " + count),
+            CustomMinimumSize = new Vector2(26, 0),
+        };
+        toggle.AddThemeFontSizeOverride("font_size", 13);
+
+        TextureRect iconRect = new()
+        {
+            Texture = icon ?? MissingIcon,
+            CustomMinimumSize = new Vector2(30, 30),
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+        };
+
+        Label titleLabel = new()
+        {
+            Text = title,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
             TooltipText = tooltip ?? string.Empty,
         };
-        header.AddThemeFontSizeOverride("font_size", 18);
+        titleLabel.AddThemeFontSizeOverride("font_size", 18);
+        titleLabel.Modulate = new Color(0.96f, 0.82f, 0.48f);
+
+        Label countLabel = new()
+        {
+            Text = count,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        countLabel.AddThemeFontSizeOverride("font_size", 13);
+        countLabel.Modulate = new Color(0.78f, 0.8f, 0.84f);
+
+        header.AddChild(toggle);
+        header.AddChild(iconRect);
+        header.AddChild(titleLabel);
+        header.AddChild(countLabel);
 
         VBoxContainer body = new();
-        body.AddThemeConstantOverride("separation", 6);
+        body.AddThemeConstantOverride("separation", 8);
 
-        header.Toggled += pressed =>
+        toggle.Toggled += pressed =>
         {
+            toggle.Text = pressed ? "▼" : "▶";
             body.Visible = pressed;
-            header.Text = (pressed ? "▼ " : "▶ ") + title + (count == null ? "" : " " + count);
         };
 
-        parent.AddChild(header);
+        margin.AddChild(header);
+        bar.AddChild(margin);
+        parent.AddChild(bar);
         parent.AddChild(body);
         return body;
     }
@@ -867,6 +930,21 @@ public sealed class MorePetsMod : IMod
         };
         button.Pressed += () => _petsCompletion?.RequestPetModal(activePet);
         return button;
+    }
+
+    Texture2D? DefaultPetIcon()
+    {
+        if (_petsCompletion != null)
+        {
+            foreach (IPetsEntity entity in _petsCompletion.PetEntities)
+            {
+                foreach (ActivePet activePet in entity.Pets.ActivePets.Values)
+                {
+                    if (activePet.Pet.Icon != null) return activePet.Pet.Icon;
+                }
+            }
+        }
+        return MissingIcon;
     }
 
     (int Owned, int Total) DefaultPetCounts()
