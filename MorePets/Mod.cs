@@ -492,19 +492,27 @@ public sealed class MorePetsMod : IMod
             petHint);
         moreBody.AddThemeConstantOverride("separation", 8);
 
-        VBoxContainer bossBody = AddStyledSection(
+        VBoxContainer bossBody = AddCollapsibleBar(
             moreBody,
             PetCatalog.Subcategory,
+            $"({owned}/{total})",
             PetCatalog.ById["Kraken"].Icon ?? MissingIcon,
-            owned,
-            total,
             petHint);
-        HFlowContainer bossGrid = NewGrid(expand: true);
+        bossBody.AddThemeConstantOverride("separation", 8);
+
+        GridContainer petGrid = new()
+        {
+            Columns = 3,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        petGrid.AddThemeConstantOverride("h_separation", 14);
+        petGrid.AddThemeConstantOverride("v_separation", 14);
+        bossBody.AddChild(petGrid);
+
         foreach (MorePetDef pet in PetCatalog.All)
         {
-            bossGrid.AddChild(BuildMorePetCell(pet));
+            petGrid.AddChild(BuildPetCard(pet));
         }
-        bossBody.AddChild(bossGrid);
 
         (int defaultOwned, int defaultTotal) = DefaultPetCounts();
         VBoxContainer defaultBody = AddCollapsibleBar(
@@ -927,18 +935,92 @@ public sealed class MorePetsMod : IMod
         AutowrapMode = TextServer.AutowrapMode.WordSmart,
     };
 
+    Control BuildPetCard(MorePetDef pet)
+    {
+        int count = _state?.Count(pet.Id) ?? 0;
+        bool owned = count > 0;
+
+        PanelContainer card = new()
+        {
+            CustomMinimumSize = new Vector2(340, 0),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        if (_view?.Theme != null) card.Theme = _view.Theme;
+
+        MarginContainer margin = new();
+        margin.AddThemeConstantOverride("margin_left", 10);
+        margin.AddThemeConstantOverride("margin_right", 10);
+        margin.AddThemeConstantOverride("margin_top", 8);
+        margin.AddThemeConstantOverride("margin_bottom", 10);
+
+        VBoxContainer column = new();
+        column.AddThemeConstantOverride("separation", 6);
+
+        HBoxContainer header = new();
+        header.AddThemeConstantOverride("separation", 6);
+
+        TextureRect icon = new()
+        {
+            Texture = pet.Icon ?? MissingIcon,
+            CustomMinimumSize = new Vector2(28, 28),
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+        };
+
+        Label title = new()
+        {
+            Text = pet.ShortName,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
+            TooltipText = pet.Name,
+        };
+        title.AddThemeFontSizeOverride("font_size", 18);
+
+        Label countLabel = new()
+        {
+            Text = $"x{count}",
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        countLabel.AddThemeFontSizeOverride("font_size", 13);
+        countLabel.Modulate = new Color(0.78f, 0.8f, 0.84f);
+
+        header.AddChild(icon);
+        header.AddChild(title);
+        header.AddChild(countLabel);
+
+        ProgressBar progress = new()
+        {
+            MinValue = 0,
+            MaxValue = 1,
+            Value = owned ? 1 : 0,
+            ShowPercentage = false,
+            CustomMinimumSize = new Vector2(0, 8),
+            Step = 1,
+        };
+
+        HFlowContainer petRow = NewGrid(center: true);
+        petRow.AddChild(BuildMorePetCell(pet));
+
+        column.AddChild(header);
+        column.AddChild(progress);
+        column.AddChild(petRow);
+        margin.AddChild(column);
+        card.AddChild(margin);
+        return card;
+    }
+
     Control BuildMorePetCell(MorePetDef pet)
     {
         int count = _state?.Count(pet.Id) ?? 0;
         TextureButton button = new()
         {
             TextureNormal = pet.Icon ?? MissingIcon,
-            CustomMinimumSize = new Vector2(64, 64),
+            CustomMinimumSize = new Vector2(96, 96),
             IgnoreTextureSize = true,
             StretchMode = TextureButton.StretchModeEnum.Scale,
             Modulate = count > 0 ? Colors.White : new Color(0.22f, 0.22f, 0.22f),
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
-            TooltipText = pet.ShortName,
+            TooltipText = pet.Name,
         };
         button.Pressed += () => SelectPet(pet);
         return button;
