@@ -71,7 +71,7 @@ public sealed class ModViewerMod : IMod
             File.WriteAllText(script,
                 "param([int]$GamePid)\n" +
                 "try { Wait-Process -Id $GamePid -Timeout 300 -ErrorAction SilentlyContinue } catch { }\n" +
-                "Start-Sleep -Seconds 2\n" +
+                "Start-Sleep -Seconds 4\n" +
                 "Start-Process 'steam://rungameid/3218350'\n");
 
             OS.CreateProcess("powershell.exe", new[]
