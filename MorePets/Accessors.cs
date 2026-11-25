@@ -1,7 +1,9 @@
 using System.Runtime.CompilerServices;
 using GamesByMalcs.Melvor2;
 using GamesByMalcs.Melvor2.Components.PetsCompletion;
+using GamesByMalcs.Melvor2.Entities.CompletionLog;
 using GamesByMalcs.Melvor2.Modifiers;
+using Godot;
 
 namespace MorePets;
 
@@ -14,4 +16,7 @@ internal static class Accessors
     // PetsCompletionView keeps its bound component in a private auto-property.
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "<PetsCompletion>k__BackingField")]
     public static extern ref PetsCompletionComponent? PetsCompletionOf(PetsCompletionView view);
+
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "<CurrentCategoryLabel>k__BackingField")]
+    public static extern ref Label? CurrentCategoryLabelOf(CompletionLogActiveView view);
 }

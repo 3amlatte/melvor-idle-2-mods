@@ -8,6 +8,7 @@ using GamesByMalcs.Melvor2.Components.PetsCompletion;
 using GamesByMalcs.Melvor2.Entities;
 using GamesByMalcs.Melvor2.Entities.Bank;
 using GamesByMalcs.Melvor2.Entities.Combat;
+using GamesByMalcs.Melvor2.Entities.CompletionLog;
 using GamesByMalcs.Melvor2.GameMenus;
 using GamesByMalcs.Melvor2.Modifiers;
 using Godot;
@@ -430,6 +431,13 @@ public sealed class MorePetsMod : IMod
             _view = GameAccess.FindNode<PetsCompletionView>();
             if (_view == null) return;
             _uiDirty = true;
+        }
+
+        CompletionLogActiveView? logView = GameAccess.FindNode<CompletionLogActiveView>();
+        if (logView != null)
+        {
+            Label? categoryLabel = Accessors.CurrentCategoryLabelOf(logView);
+            if (categoryLabel != null) categoryLabel.Text = "More Pets";
         }
 
         _petsCompletion = Accessors.PetsCompletionOf(_view);
