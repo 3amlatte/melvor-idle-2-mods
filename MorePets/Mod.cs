@@ -499,7 +499,7 @@ public sealed class MorePetsMod : IMod
             owned,
             total,
             petHint);
-        HFlowContainer bossGrid = NewGrid();
+        HFlowContainer bossGrid = NewGrid(expand: true);
         foreach (MorePetDef pet in PetCatalog.All)
         {
             bossGrid.AddChild(BuildMorePetCell(pet));
@@ -515,18 +515,28 @@ public sealed class MorePetsMod : IMod
             null);
         defaultBody.AddThemeConstantOverride("separation", 8);
 
+        GridContainer skillGrid = new()
+        {
+            Columns = 3,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        skillGrid.AddThemeConstantOverride("h_separation", 14);
+        skillGrid.AddThemeConstantOverride("v_separation", 14);
+        defaultBody.AddChild(skillGrid);
+
         foreach (IPetsEntity entity in _petsCompletion.PetEntities)
         {
             if (entity.Pets.ActivePets.Count == 0) continue;
 
             VBoxContainer skillBody = AddStyledSection(
-                defaultBody,
+                skillGrid,
                 entity.DisplayName.Text,
                 entity.Icon,
                 entity.Pets.UnlockedPetCount,
-                entity.Pets.ActivePets.Count);
+                entity.Pets.ActivePets.Count,
+                collapsible: false);
 
-            HFlowContainer defaultGrid = NewGrid();
+            HFlowContainer defaultGrid = NewGrid(center: true);
             foreach (ActivePet activePet in entity.Pets.ActivePets.Values)
             {
                 defaultGrid.AddChild(BuildDefaultPetCell(entity, activePet));
@@ -715,10 +725,12 @@ public sealed class MorePetsMod : IMod
         Texture2D? icon,
         int owned,
         int total,
-        string? tooltip = null)
+        string? tooltip = null,
+        bool collapsible = true)
     {
         PanelContainer panel = new()
         {
+            CustomMinimumSize = new Vector2(340, 0),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             TooltipText = tooltip ?? string.Empty,
         };
@@ -749,7 +761,7 @@ public sealed class MorePetsMod : IMod
         TextureRect categoryIcon = new()
         {
             Texture = icon ?? MissingIcon,
-            CustomMinimumSize = new Vector2(34, 34),
+            CustomMinimumSize = new Vector2(28, 28),
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
         };
 
@@ -771,7 +783,7 @@ public sealed class MorePetsMod : IMod
         countLabel.AddThemeFontSizeOverride("font_size", 13);
         countLabel.Modulate = new Color(0.78f, 0.8f, 0.84f);
 
-        header.AddChild(toggle);
+        if (collapsible) header.AddChild(toggle);
         header.AddChild(categoryIcon);
         header.AddChild(titleLabel);
         header.AddChild(countLabel);
@@ -782,18 +794,21 @@ public sealed class MorePetsMod : IMod
             MaxValue = Math.Max(1, total),
             Value = owned,
             ShowPercentage = false,
-            CustomMinimumSize = new Vector2(0, 6),
+            CustomMinimumSize = new Vector2(0, 8),
             Step = 0.01,
         };
 
         VBoxContainer body = new();
         body.AddThemeConstantOverride("separation", 6);
 
-        toggle.Toggled += pressed =>
+        if (collapsible)
         {
-            toggle.Text = pressed ? "▼" : "▶";
-            body.Visible = pressed;
-        };
+            toggle.Toggled += pressed =>
+            {
+                toggle.Text = pressed ? "▼" : "▶";
+                body.Visible = pressed;
+            };
+        }
 
         column.AddChild(header);
         column.AddChild(progress);
@@ -884,9 +899,13 @@ public sealed class MorePetsMod : IMod
         return body;
     }
 
-    static HFlowContainer NewGrid()
+    static HFlowContainer NewGrid(bool expand = false, bool center = false)
     {
-        HFlowContainer grid = new();
+        HFlowContainer grid = new()
+        {
+            SizeFlagsHorizontal = expand ? Control.SizeFlags.ExpandFill : Control.SizeFlags.ShrinkCenter,
+            Alignment = center ? FlowContainer.AlignmentMode.Center : FlowContainer.AlignmentMode.Begin,
+        };
         grid.AddThemeConstantOverride("h_separation", 4);
         grid.AddThemeConstantOverride("v_separation", 8);
         return grid;
@@ -904,7 +923,7 @@ public sealed class MorePetsMod : IMod
         TextureButton button = new()
         {
             TextureNormal = pet.Icon ?? MissingIcon,
-            CustomMinimumSize = new Vector2(48, 48),
+            CustomMinimumSize = new Vector2(64, 64),
             IgnoreTextureSize = true,
             StretchMode = TextureButton.StretchModeEnum.Scale,
             Modulate = count > 0 ? Colors.White : new Color(0.22f, 0.22f, 0.22f),
@@ -921,7 +940,7 @@ public sealed class MorePetsMod : IMod
         TextureButton button = new()
         {
             TextureNormal = activePet.Pet.Icon ?? MissingIcon,
-            CustomMinimumSize = new Vector2(48, 48),
+            CustomMinimumSize = new Vector2(96, 96),
             IgnoreTextureSize = true,
             StretchMode = TextureButton.StretchModeEnum.Scale,
             Modulate = activePet.IsUnlocked ? Colors.White : new Color(0.22f, 0.22f, 0.22f),
