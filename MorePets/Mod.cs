@@ -862,13 +862,6 @@ public sealed class MorePetsMod : IMod
         };
         toggle.AddThemeFontSizeOverride("font_size", 13);
 
-        TextureRect iconRect = new()
-        {
-            Texture = icon ?? MissingIcon,
-            CustomMinimumSize = new Vector2(30, 30),
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-        };
-
         Label titleLabel = new()
         {
             Text = title,
@@ -889,7 +882,6 @@ public sealed class MorePetsMod : IMod
         countLabel.Modulate = new Color(0.78f, 0.8f, 0.84f);
 
         header.AddChild(toggle);
-        header.AddChild(iconRect);
         header.AddChild(titleLabel);
         header.AddChild(countLabel);
 
