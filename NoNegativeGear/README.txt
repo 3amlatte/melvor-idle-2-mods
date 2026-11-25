@@ -1,5 +1,5 @@
-NO NEGATIVE GEAR 0.1.1
-for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
+NO NEGATIVE GEAR 0.1.2
+for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 Removes the negative stats and bonuses from equipment. A Rune Platebody normally gives
 -100 Accurate Attack Bonus; with this mod it gives no penalty. Positive values are untouched.

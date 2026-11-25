@@ -1,5 +1,5 @@
-BIGGER PASTURES 0.1.1
-for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
+BIGGER PASTURES 0.1.2
+for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 Doubles the number of animals every Ranching enclosure can hold: each pen type, current and
 upgraded, gets twice its normal limit. A 6-animal pasture becomes 12, and so on.

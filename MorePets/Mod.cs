@@ -556,11 +556,18 @@ public sealed class MorePetsMod : IMod
         VBoxContainer box = new();
         box.AddThemeConstantOverride("separation", 8);
 
+        box.AddChild(ThemeBar("More Pets"));
+        box.AddChild(ThemeBar(PetCatalog.Subcategory));
+
         HBoxContainer header = new();
+        header.AddThemeConstantOverride("separation", 4);
+
+        Control titleSpacer = new() { CustomMinimumSize = new Vector2(28, 0) };
         Label heading = new()
         {
-            Text = "Pet details",
+            Text = "Pet Details",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
         };
         heading.AddThemeFontSizeOverride("font_size", 18);
@@ -574,6 +581,7 @@ public sealed class MorePetsMod : IMod
         };
         close.AddThemeFontSizeOverride("font_size", 14);
         close.Pressed += HideDetail;
+        header.AddChild(titleSpacer);
         header.AddChild(heading);
         header.AddChild(close);
 
@@ -618,6 +626,34 @@ public sealed class MorePetsMod : IMod
         pane.AddChild(margin);
         pane.Visible = false;
         return pane;
+    }
+
+    PanelContainer ThemeBar(string text)
+    {
+        PanelContainer bar = new()
+        {
+            CustomMinimumSize = new Vector2(0, 30),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        if (_view?.Theme != null) bar.Theme = _view.Theme;
+
+        MarginContainer margin = new();
+        margin.AddThemeConstantOverride("margin_left", 8);
+        margin.AddThemeConstantOverride("margin_right", 8);
+        margin.AddThemeConstantOverride("margin_top", 2);
+        margin.AddThemeConstantOverride("margin_bottom", 2);
+
+        Label label = new()
+        {
+            Text = text,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        label.AddThemeFontSizeOverride("font_size", 15);
+        label.Modulate = new Color(0.96f, 0.82f, 0.48f);
+
+        margin.AddChild(label);
+        bar.AddChild(margin);
+        return bar;
     }
 
     void SelectPet(MorePetDef pet)

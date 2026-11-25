@@ -1,5 +1,5 @@
-TIMESKIP 0.2.1
-for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
+TIMESKIP 0.2.2
+for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 WHAT'S NEW IN 0.2.1
   - Mod Viewer integration: click TimeSkip's name to open the window; when Mod Viewer is

@@ -1,5 +1,5 @@
-SEED RETURN LITE 0.1.2
-for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
+SEED RETURN LITE 0.1.3
+for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 Every successful harvest has a chance to return seeds of the crop you planted, in addition
 to the crop. Harvesting never has to stop because you ran out of seeds.

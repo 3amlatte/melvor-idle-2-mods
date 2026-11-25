@@ -1,5 +1,5 @@
-MELVOR AUTO 0.1.4
-for Melvor Idle 2 (tested on 0.11.6-alpha.1), needs Melvor Mod Loader 0.2.0+
+MELVOR AUTO 0.1.5
+for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 WHAT'S NEW IN 0.1.3
   - Auto Farmer options are independent; there is no master switch.
