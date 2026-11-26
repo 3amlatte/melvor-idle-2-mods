@@ -2,7 +2,7 @@ using System;
 using System.Reflection;
 using GamesByMalcs.Melvor2.Entities.Cooking;
 
-namespace PassiveCooker;
+namespace PassiveCooking;
 
 /// <summary>
 /// Starts the cooking action's timer without going through ActionComponent.TryStart, so the

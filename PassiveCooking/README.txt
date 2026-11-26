@@ -1,4 +1,4 @@
-PASSIVE COOKER 0.1.0
+PASSIVE COOKING 0.1.0
 for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 Runs the cooking recipe selected on the Cooking page as a passive action: its timer keeps
@@ -27,9 +27,9 @@ MILESTONES TAB
 
 INSTALL
   Extract this zip into the Melvor Idle 2 game folder, so the file ends up as
-  mods\PassiveCooker\PassiveCooker.dll
+  mods\PassiveCooking\PassiveCooking.dll
   (Steam > Melvor Idle 2 > Manage > Browse local files)
-  The zip already contains the mods\PassiveCooker\ folder, so extract it into the game folder,
+  The zip already contains the mods\PassiveCooking\ folder, so extract it into the game folder,
   not into the mods folder.
 
 NOTES

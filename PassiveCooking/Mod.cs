@@ -15,7 +15,7 @@ using GamesByMalcs.Melvor2.Modifiers;
 using Godot;
 using MelvorModLoader;
 
-namespace PassiveCooker;
+namespace PassiveCooking;
 
 /// <summary>
 /// Runs the cooking recipe selected on the Cooking page as a passive action: its timer keeps
@@ -23,17 +23,17 @@ namespace PassiveCooker;
 /// bases and basic food are cooked; selecting any other cooking category stops the passive
 /// action. Like Passive Smelting, the interval shortens with level: 2x from 51 and 3x from 86.
 /// </summary>
-public sealed class PassiveCookerMod : IMod
+public sealed class PassiveCookingMod : IMod
 {
     sealed class Source(string name) : INamedObject
     {
         public ILocalizedString DisplayName { get; } = new LocalizedString(name);
     }
 
-    static readonly Source SpeedSource = new("Passive Cooker: cooking speed");
+    static readonly Source SpeedSource = new("Passive Cooking: cooking speed");
 
     ModContext _ctx = null!;
-    PassiveCookerSection _section = null!;
+    PassiveCookingSection _section = null!;
     Game? _game;
     CookingEntity? _cooking;
     CookingActionComponent? _action;
@@ -49,7 +49,7 @@ public sealed class PassiveCookerMod : IMod
     public void OnLoad(ModContext ctx)
     {
         _ctx = ctx;
-        _section = new PassiveCookerSection(ctx);
+        _section = new PassiveCookingSection(ctx);
         ctx.Tree.NodeAdded += OnNodeAdded;
         ctx.Frame += OnFrame;
         ctx.Log("Loaded.");

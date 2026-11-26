@@ -1,4 +1,4 @@
-namespace PassiveCooker;
+namespace PassiveCooking;
 
 internal static class Tiers
 {

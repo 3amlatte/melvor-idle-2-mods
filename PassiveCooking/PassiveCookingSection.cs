@@ -5,13 +5,13 @@ using GamesByMalcs.Melvor2.Entities.Cooking;
 using Godot;
 using MelvorModLoader;
 
-namespace PassiveCooker;
+namespace PassiveCooking;
 
 /// <summary>
 /// Adds a "Passive Cooking" entry below the Cooking milestone categories. Clicking it shows
 /// the current tier and the level table; clicking it again or choosing a category returns.
 /// </summary>
-internal sealed class PassiveCookerSection
+internal sealed class PassiveCookingSection
 {
     sealed class ViewRefs
     {
@@ -27,7 +27,7 @@ internal sealed class PassiveCookerSection
     readonly Dictionary<MilestonesView, ViewRefs> _panels = new();
     bool _accessorBroken;
 
-    public PassiveCookerSection(ModContext ctx) => _ctx = ctx;
+    public PassiveCookingSection(ModContext ctx) => _ctx = ctx;
 
     public void Track(Node node)
     {
@@ -37,7 +37,7 @@ internal sealed class PassiveCookerSection
     public void Update(CookingEntity cooking, ActiveCookingRecipe? selected, int portions)
     {
         int level = cooking.Experience.Level;
-        string recipe = selected != null && PassiveCookerMod.IsBasicCooking(selected.Recipe)
+        string recipe = selected != null && PassiveCookingMod.IsBasicCooking(selected.Recipe)
             ? selected.Recipe.DisplayName.Text
             : "none selected";
 

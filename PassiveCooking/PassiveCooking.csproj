@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <AssemblyName>PassiveCooker</AssemblyName>
-    <RootNamespace>PassiveCooker</RootNamespace>
+    <AssemblyName>PassiveCooking</AssemblyName>
+    <RootNamespace>PassiveCooking</RootNamespace>
     <Version>0.1.0</Version>
 
-    <!-- Build straight into the game: mods\PassiveCooker\PassiveCooker.dll -->
+    <!-- Build straight into the game: mods\PassiveCooking\PassiveCooking.dll -->
     <OutputPath>$(GameDir)\mods\$(AssemblyName)\</OutputPath>
   </PropertyGroup>
 

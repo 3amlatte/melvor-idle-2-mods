@@ -3,7 +3,7 @@ using GamesByMalcs.Melvor2;
 using GamesByMalcs.Melvor2.Components.Milestones;
 using GamesByMalcs.Melvor2.Modifiers;
 
-namespace PassiveCooker;
+namespace PassiveCooking;
 
 internal static class Accessors
 {
