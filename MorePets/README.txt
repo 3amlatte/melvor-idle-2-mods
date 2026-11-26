@@ -17,6 +17,7 @@ WHERE TO FIND THEM
 SUB CATEGORIES
   Dungeon Bosses (first release)
     Twelve pets, one for each of the listed dungeon bosses.
+  More subcategories are planned for future updates.
 
 DROP RATES
   Enemy combat level 50 or less:   1 / 5,000
