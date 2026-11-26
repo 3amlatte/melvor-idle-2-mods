@@ -1,4 +1,4 @@
-MOD VIEWER 0.1.10
+MOD VIEWER 0.1.11
 for Melvor Idle 2 (tested on 0.11.7-alpha).
 
 Requires Melvor Mod Loader 0.2.0 or newer:
@@ -36,14 +36,15 @@ THEMES
   stand out.
 
 FOLDER
-  The "Mods Folder" button in the footer opens the game's mods folder in Explorer.
+  The "Mods Folder" button in the footer opens the game's mods folder in Explorer
+  (Finder on macOS).
 
 ENABLED / DISABLED
   Unchecking Enabled moves the mod's folder (or loose DLL) from mods\ to mods-disabled\.
   Checking it moves it back. The loader only scans mods\, so a disabled mod does not load on
   the next start. A running mod keeps running until then, and a banner reminds you to restart
   to see the updated list. The "Restart Game" button quits and launches Melvor Idle 2 again
-  through Steam.
+  through Steam (on macOS through /bin/sh and "open", instead of PowerShell).
 
 SETTINGS AND MOD WINDOWS
   Click a mod's name to open its settings, or, if it has no settings, its own window.
@@ -60,14 +61,19 @@ SETTINGS AND MOD WINDOWS
   other mods may need the restart.
 
 INSTALL
-  Extract this zip into the Melvor Idle 2 game folder, so the file ends up as
+  Windows: extract this zip into the Melvor Idle 2 game folder, so the file ends up as
   mods\ModViewer\ModViewer.dll
   (Steam > Melvor Idle 2 > Manage > Browse local files)
   The zip already contains the mods\ModViewer\ folder, so extract it into the game folder,
   not into the mods folder.
 
+  macOS: extract the zip into ~/Library/Application Support/MelvorModLoader, so it ends up
+  in ~/Library/Application Support/MelvorModLoader/mods/ModViewer/ModViewer.dll
+  (the experimental macOS loader uses that folder; F2 may need Fn on Apple keyboards).
+
 UNINSTALL
-  Delete the folder mods\ModViewer
+  Delete the mods/ModViewer folder (mods is the game folder on Windows and
+  ~/Library/Application Support/MelvorModLoader on macOS).
   Nothing is written to your save.
 
 Unofficial, fan-made. Not affiliated with Games by Malcs or Jagex.

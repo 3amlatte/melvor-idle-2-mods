@@ -404,7 +404,10 @@ internal sealed class ViewerWindow
                 return;
             }
 
-            OS.CreateProcess("explorer.exe", new[] { Mods.ModsDir }, false);
+            // ShellOpen is Explorer on Windows, "open" on macOS and xdg-open on Linux.
+            Godot.Error error = OS.ShellOpen(Mods.ModsDir);
+            if (error != Godot.Error.Ok)
+                SetStatus("Could not open the mods folder: " + error);
         }
         catch (Exception e)
         {

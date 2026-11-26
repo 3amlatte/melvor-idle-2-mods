@@ -64,24 +64,39 @@ public sealed class ModViewerMod : IMod
         try
         {
             // The old two-second timeout relaunched Steam before Melvor had finished closing.
-            // Hand the wait to a detached PowerShell helper that watches this exact process
-            // and starts Steam only after it has exited.
+            // Hand the wait to a detached helper that watches this exact process and starts
+            // Steam only after it has exited. Windows uses PowerShell; macOS uses /bin/sh.
             int pid = Process.GetCurrentProcess().Id;
-            string script = Path.Combine(Path.GetTempPath(), "3am-modviewer-restart.ps1");
-            File.WriteAllText(script,
-                "param([int]$GamePid)\n" +
-                "try { Wait-Process -Id $GamePid -Timeout 300 -ErrorAction SilentlyContinue } catch { }\n" +
-                "Start-Sleep -Seconds 4\n" +
-                "Start-Process 'steam://rungameid/3218350'\n");
-
-            OS.CreateProcess("powershell.exe", new[]
+            if (OS.GetName() == "macOS")
             {
-                "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
-                "-WindowStyle", "Hidden",
-                "-File", script,
-                "-GamePid", pid.ToString(),
-            }, false);
+                string script = Path.Combine(Path.GetTempPath(), "3am-modviewer-restart.sh");
+                File.WriteAllText(script,
+                    "#!/bin/sh\n" +
+                    "pid=\"$1\"\n" +
+                    "while kill -0 \"$pid\" 2>/dev/null; do sleep 1; done\n" +
+                    "sleep 4\n" +
+                    "open \"steam://rungameid/3218350\"\n");
+
+                OS.CreateProcess("/bin/sh", new[] { script, pid.ToString() }, false);
+            }
+            else
+            {
+                string script = Path.Combine(Path.GetTempPath(), "3am-modviewer-restart.ps1");
+                File.WriteAllText(script,
+                    "param([int]$GamePid)\n" +
+                    "try { Wait-Process -Id $GamePid -Timeout 300 -ErrorAction SilentlyContinue } catch { }\n" +
+                    "Start-Sleep -Seconds 4\n" +
+                    "Start-Process 'steam://rungameid/3218350'\n");
+
+                OS.CreateProcess("powershell.exe", new[]
+                {
+                    "-NoProfile",
+                    "-ExecutionPolicy", "Bypass",
+                    "-WindowStyle", "Hidden",
+                    "-File", script,
+                    "-GamePid", pid.ToString(),
+                }, false);
+            }
 
             _ctx.Log($"Restarting Melvor Idle 2 after process {pid} exits...");
             _ctx.Tree.Quit();

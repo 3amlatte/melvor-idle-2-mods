@@ -1,6 +1,6 @@
 # Melvor Idle 2 mods
 
-Source code for my **Melvor Idle 2** (Steam, Windows) mods, built on
+Source code for my **Melvor Idle 2** (Steam; Windows, plus an experimental macOS build) mods, built on
 [Melvor Mod Loader](https://github.com/falorfrozen-cmd/MelvorModLoader).
 
 **Downloads and installation: [Nexus Mods](https://www.nexusmods.com/melvoridle2).**
@@ -31,6 +31,11 @@ Tested with game **0.11.7-alpha** and Melvor Mod Loader **0.2.0**.
 2. Download the mod's zip from Nexus.
 3. Extract it into the game folder (Steam → Melvor Idle 2 → Manage → Browse local files), so the
    files end up under `mods\<ModName>\`.
+
+On macOS, use the [experimental macOS loader](https://github.com/falorfrozen-cmd/MelvorModLoader/tree/main/macos)
+and extract the same zips into `~/Library/Application Support/MelvorModLoader`, so the files end up under
+`.../MelvorModLoader/mods/<ModName>/`. Most mods are platform-neutral; Mod Viewer 0.1.11 added macOS versions
+of its folder and restart actions.
 
 There is no installer. Install [Mod Viewer](ModViewer) for an in-game mod list, settings,
 enable/disable and quick restarts. Without it, a mod with options reads `settings.json` from
