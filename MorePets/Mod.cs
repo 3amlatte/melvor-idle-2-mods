@@ -684,6 +684,7 @@ public sealed class MorePetsMod : IMod
         Label label = new()
         {
             Text = text,
+            HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
         };
         label.AddThemeFontSizeOverride("font_size", 15);
@@ -720,9 +721,9 @@ public sealed class MorePetsMod : IMod
         }
 
         _detailImage.Texture = pet.Icon ?? MissingIcon;
-        _detailName.Text = pet.Name;
+        _detailName.Text = pet.ShortName;
 
-        string enemyName = pet.Name.StartsWith("Lil ", StringComparison.Ordinal) ? pet.Name[4..] : pet.Name;
+        string enemyName = pet.ShortName.StartsWith("Lil ", StringComparison.Ordinal) ? pet.ShortName[4..] : pet.ShortName;
         StringBuilder meta = new();
         meta.AppendLine($"Enemy: {enemyName}");
         meta.AppendLine($"Obtained: {_state?.Count(pet.Id) ?? 0:N0}");
@@ -951,20 +952,13 @@ public sealed class MorePetsMod : IMod
         HBoxContainer header = new();
         header.AddThemeConstantOverride("separation", 6);
 
-        TextureRect icon = new()
-        {
-            Texture = pet.Icon ?? MissingIcon,
-            CustomMinimumSize = new Vector2(28, 28),
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-        };
-
         Label title = new()
         {
             Text = pet.ShortName,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             VerticalAlignment = VerticalAlignment.Center,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
-            TooltipText = pet.Name,
+            TooltipText = pet.ShortName,
         };
         title.AddThemeFontSizeOverride("font_size", 18);
 
@@ -976,7 +970,6 @@ public sealed class MorePetsMod : IMod
         countLabel.AddThemeFontSizeOverride("font_size", 13);
         countLabel.Modulate = new Color(0.78f, 0.8f, 0.84f);
 
-        header.AddChild(icon);
         header.AddChild(title);
         header.AddChild(countLabel);
 
@@ -1012,7 +1005,7 @@ public sealed class MorePetsMod : IMod
             StretchMode = TextureButton.StretchModeEnum.Scale,
             Modulate = count > 0 ? Colors.White : new Color(0.22f, 0.22f, 0.22f),
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
-            TooltipText = pet.Name,
+            TooltipText = pet.ShortName,
         };
         button.Pressed += () => SelectPet(pet);
         return button;
@@ -1089,14 +1082,14 @@ public sealed class MorePetsMod : IMod
 
         Label heading = new()
         {
-            Text = title ?? pet.Name,
+            Text = title ?? pet.ShortName,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
         heading.AddThemeFontSizeOverride("font_size", 22);
 
         Label name = new()
         {
-            Text = pet.Name,
+            Text = pet.ShortName,
             HorizontalAlignment = HorizontalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
@@ -1178,7 +1171,7 @@ public sealed class MorePetsMod : IMod
         {
             Label line = new()
             {
-                Text = $"{pet.Name}  —  {pet.Location}",
+                Text = $"{pet.ShortName}  -  {pet.Location}",
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             };
             box.AddChild(line);
