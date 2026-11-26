@@ -45,6 +45,7 @@ public sealed class MelvorAutoMod : IMod
 
     ModContext _ctx = null!;
     Settings _settings = null!;
+    AutoFarmerWindow? _window;
     string _settingsPath = "";
     string _availablePath = "";
     DateTime _settingsStamp;
@@ -80,9 +81,47 @@ public sealed class MelvorAutoMod : IMod
         _settingsStamp = File.Exists(_settingsPath) ? File.GetLastWriteTimeUtc(_settingsPath) : DateTime.MinValue;
         RebuildSets();
 
+        string modsFolder = Directory.GetParent(ctx.Directory)?.FullName ?? "";
+        bool modViewerInstalled = File.Exists(
+            Path.Combine(modsFolder, "ModViewer", "ModViewer.dll"));
+
+        if (!modViewerInstalled)
+        {
+            _window = new AutoFarmerWindow(
+                ctx,
+                () => _settings,
+                saved =>
+                {
+                    _settings = saved;
+                    _settings.Save(_settingsPath, _ctx.Log);
+                    _settingsStamp = File.Exists(_settingsPath)
+                        ? File.GetLastWriteTimeUtc(_settingsPath)
+                        : DateTime.MinValue;
+                },
+                ctx.Log);
+
+            try
+            {
+                // No Mod Viewer: F3 opens the Auto Farmer settings, and the loader's Mods menu
+                // lists the window too.
+                ctx.AddWindow("Melvor Auto", Toggle, Key.F3);
+            }
+            catch (Exception e)
+            {
+                ctx.Log($"Loader window registration failed ({e.GetType().Name}); F3 is unavailable.");
+            }
+        }
+
         ctx.Tree.NodeAdded += OnNodeAdded;
         ctx.Frame += OnFrame;
-        ctx.Log("Loaded.");
+        ctx.Log(modViewerInstalled
+            ? "Loaded. Mod Viewer is installed; edit settings there."
+            : "Loaded. Press F3 for Auto Farmer settings.");
+    }
+
+    void Toggle()
+    {
+        _window?.Toggle();
     }
 
     void OnNodeAdded(Node node)

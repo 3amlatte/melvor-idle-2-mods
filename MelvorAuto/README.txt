@@ -1,5 +1,10 @@
-MELVOR AUTO 0.1.7
+MELVOR AUTO 0.1.8
 for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
+
+WHAT'S NEW IN 0.1.8
+  - Without Mod Viewer, F3 opens an Auto Farmer settings window (harvest, compost, water,
+    plant and grain mill toggles). With Mod Viewer installed, the same settings stay in
+    Mod Viewer and F3 is not bound.
 
 WHAT'S NEW IN 0.1.3
   - Auto Farmer options are independent; there is no master switch.
@@ -61,8 +66,9 @@ AUTO RANCHING
       game's own Pet all animals action. Petting waits until offline progress has finished.
 
 SETTINGS
-  settings.json next to the DLL. The Mod Viewer edits the same file. Bone/open changes apply
-  while the game runs; the farming automation flags are read when a character opens. Defaults:
+  settings.json next to the DLL. The Mod Viewer edits the same file. Without Mod Viewer, press
+  F3 for the Auto Farmer settings window. Bone/open changes apply while the game runs; the
+  farming automation flags are read when a character opens. Defaults:
     AutoBuryBones=true, AutoOpenItems=true,
     AutoHarvest=true, AutoCompost=true, AutoWater=true, AutoPlant=true,
     AutoMill=true, AutoRanchMaintenance=true, AutoRanchPets=true.
