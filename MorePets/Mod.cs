@@ -744,27 +744,23 @@ public sealed class MorePetsMod : IMod
         if (_view?.Theme != null) bar.Theme = _view.Theme;
         ApplyCardStyle(bar);
 
-        MarginContainer margin = new()
+        CenterContainer center = new()
         {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        margin.AddThemeConstantOverride("margin_left", 8);
-        margin.AddThemeConstantOverride("margin_right", 8);
-        margin.AddThemeConstantOverride("margin_top", 0);
-        margin.AddThemeConstantOverride("margin_bottom", 0);
 
         Label label = new()
         {
             Text = text,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
         label.AddThemeFontSizeOverride("font_size", 15);
         label.Modulate = new Color(0.96f, 0.82f, 0.48f);
 
-        margin.AddChild(label);
-        bar.AddChild(margin);
+        center.AddChild(label);
+        bar.AddChild(center);
         return bar;
     }
 
