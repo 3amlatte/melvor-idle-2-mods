@@ -672,10 +672,15 @@ public sealed class MorePetsMod : IMod
         };
         _detailDescription.Modulate = new Color(0.75f, 0.78f, 0.82f);
 
+        Label bonusTitle = new() { Text = "Bonus" };
+        bonusTitle.AddThemeFontSizeOverride("font_size", 16);
+        bonusTitle.Modulate = new Color(0.96f, 0.82f, 0.48f);
+
         box.AddChild(header);
         box.AddChild(_detailImage);
         box.AddChild(_detailName);
         box.AddChild(_detailMeta);
+        box.AddChild(bonusTitle);
         box.AddChild(_detailBuff);
         box.AddChild(_detailDescription);
         margin.AddChild(box);
@@ -751,8 +756,7 @@ public sealed class MorePetsMod : IMod
         meta.Append($"Drop rate: 1 / {RateFor(pet):N0}");
         _detailMeta.Text = meta.ToString();
 
-        bool enabled = _settings?.IsEnabled(pet.Name) != false;
-        _detailBuff.Text = pet.BuffText + (enabled ? "\nBuff: enabled" : "\nBuff: disabled in settings");
+        _detailBuff.Text = pet.BuffText;
         _detailDescription.Text = pet.Description;
     }
 
@@ -1131,8 +1135,8 @@ public sealed class MorePetsMod : IMod
         details.AppendLine($"Enemy kills: {GetKills(pet):N0}");
         details.AppendLine($"Location: {pet.Location}");
         details.AppendLine($"Drop rate: 1 / {RateFor(pet):N0}");
-        details.AppendLine(pet.BuffText);
-        details.Append(_settings?.IsEnabled(pet.Name) == false ? "Buff: disabled in settings" : "Buff: enabled");
+        details.AppendLine("Bonus");
+        details.Append(pet.BuffText);
 
         Label detailLabel = new()
         {
