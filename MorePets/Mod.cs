@@ -10,6 +10,7 @@ using GamesByMalcs.Melvor2.Entities.Bank;
 using GamesByMalcs.Melvor2.Entities.Combat;
 using GamesByMalcs.Melvor2.Entities.CompletionLog;
 using GamesByMalcs.Melvor2.GameMenus;
+using GamesByMalcs.Melvor2.Localization;
 using GamesByMalcs.Melvor2.Modifiers;
 using Godot;
 using MelvorModLoader;
@@ -41,6 +42,13 @@ public sealed class MorePetsMod : IMod
     MorePetDef? _selectedPet;
     Texture2D? _missingIcon;
     StyleBox? _cardStyle;
+    Font? _cardFont;
+    int _cardFontSize = 18;
+    Color _cardFontColor = Colors.White;
+    Font? _cardCountFont;
+    int _cardCountFontSize = 13;
+    Color _cardCountFontColor = new(0.78f, 0.8f, 0.84f);
+    TextureProgressBar? _cardProgressTemplate;
 
     readonly Dictionary<string, Enemy> _enemyCache = new(StringComparer.OrdinalIgnoreCase);
     readonly HashSet<string> _applied = new(StringComparer.OrdinalIgnoreCase);
@@ -487,6 +495,28 @@ public sealed class MorePetsMod : IMod
         {
             PetsCompletionBreakdownView template = breakdownScene.Instantiate<PetsCompletionBreakdownView>();
             _cardStyle = template.GetThemeStylebox("panel");
+
+            Label? templateName = Accessors.SkillNameLabelOf(template);
+            if (templateName != null)
+            {
+                _cardFont = templateName.GetThemeFont("font");
+                _cardFontSize = templateName.GetThemeFontSize("font_size");
+                _cardFontColor = templateName.GetThemeColor("font_color");
+            }
+
+            Int32OutOfLabel? templateCount = Accessors.PetCountLabelOf(template);
+            if (templateCount != null)
+            {
+                _cardCountFont = templateCount.GetThemeFont("font");
+                _cardCountFontSize = templateCount.GetThemeFontSize("font_size");
+                _cardCountFontColor = templateCount.GetThemeColor("font_color");
+            }
+
+            TextureProgressBar? templateProgress = Accessors.PetProgressOf(template);
+            _cardProgressTemplate = templateProgress == null
+                ? null
+                : templateProgress.Duplicate() as TextureProgressBar;
+
             template.QueueFree();
         }
 
@@ -553,6 +583,8 @@ public sealed class MorePetsMod : IMod
                 defaultPanel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
                 defaultPanel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
                 defaultPanel.Bind(entity.Pets, _petsCompletion);
+                Label? defaultName = Accessors.SkillNameLabelOf(defaultPanel);
+                if (defaultName != null) defaultName.HorizontalAlignment = HorizontalAlignment.Center;
                 skillGrid.AddChild(defaultPanel);
             }
             else
@@ -699,17 +731,21 @@ public sealed class MorePetsMod : IMod
         if (_view?.Theme != null) bar.Theme = _view.Theme;
         ApplyCardStyle(bar);
 
-        MarginContainer margin = new();
+        MarginContainer margin = new()
+        {
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
         margin.AddThemeConstantOverride("margin_left", 8);
         margin.AddThemeConstantOverride("margin_right", 8);
-        margin.AddThemeConstantOverride("margin_top", 2);
-        margin.AddThemeConstantOverride("margin_bottom", 2);
+        margin.AddThemeConstantOverride("margin_top", 0);
+        margin.AddThemeConstantOverride("margin_bottom", 0);
 
         Label label = new()
         {
             Text = text,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
         label.AddThemeFontSizeOverride("font_size", 15);
         label.Modulate = new Color(0.96f, 0.82f, 0.48f);
@@ -987,28 +1023,44 @@ public sealed class MorePetsMod : IMod
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
             TooltipText = pet.ShortName,
         };
-        title.AddThemeFontSizeOverride("font_size", 18);
+        if (_cardFont != null) title.AddThemeFontOverride("font", _cardFont);
+        title.AddThemeFontSizeOverride("font_size", _cardFontSize);
+        title.AddThemeColorOverride("font_color", _cardFontColor);
 
         Label countLabel = new()
         {
             Text = $"x{count}",
             VerticalAlignment = VerticalAlignment.Center,
         };
-        countLabel.AddThemeFontSizeOverride("font_size", 13);
-        countLabel.Modulate = new Color(0.78f, 0.8f, 0.84f);
+        if (_cardCountFont != null) countLabel.AddThemeFontOverride("font", _cardCountFont);
+        countLabel.AddThemeFontSizeOverride("font_size", _cardCountFontSize);
+        countLabel.AddThemeColorOverride("font_color", _cardCountFontColor);
 
         header.AddChild(title);
         header.AddChild(countLabel);
 
-        ProgressBar progress = new()
+        Control progress;
+        if (_cardProgressTemplate != null)
         {
-            MinValue = 0,
-            MaxValue = 1,
-            Value = owned ? 1 : 0,
-            ShowPercentage = false,
-            CustomMinimumSize = new Vector2(0, 8),
-            Step = 1,
-        };
+            TextureProgressBar textureProgress = (TextureProgressBar)_cardProgressTemplate.Duplicate();
+            textureProgress.MinValue = 0;
+            textureProgress.MaxValue = 1;
+            textureProgress.Value = owned ? 1 : 0;
+            textureProgress.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            progress = textureProgress;
+        }
+        else
+        {
+            progress = new ProgressBar
+            {
+                MinValue = 0,
+                MaxValue = 1,
+                Value = owned ? 1 : 0,
+                ShowPercentage = false,
+                CustomMinimumSize = new Vector2(0, 8),
+                Step = 1,
+            };
+        }
 
         HFlowContainer petRow = NewGrid(center: true);
         petRow.AddChild(BuildMorePetCell(pet));
