@@ -491,22 +491,46 @@ public sealed class MelvorAutoMod : IMod
         bool hasLast = _settings.MillStockedAtUnix.TryGetValue(character, out long last);
         bool periodicDue = !hasLast || now - last >= MillIntervalSeconds;
         bool stopped = !_mill.IsActive;
+        bool grainWaiting = MillGrainWaiting();
 
-        // Top up on the 2-hour timer, and also restart the mill shortly after it runs dry.
-        if (!periodicDue && !stopped) return;
-        if (now - _lastMillRetry < 60) return;
+        // Feed the mill whenever usable grain is sitting in the bank, not only on the
+        // two-hour timer. The two-hour check remains as a fallback for empty mills.
+        if (!grainWaiting && !periodicDue && !stopped) return;
+        if (now - _lastMillRetry < 30) return;
 
         _lastMillRetry = now;
-        StockMill(character, now);
+        StockMill(character, now, periodicDue || stopped);
     }
 
-    void StockMill(string character, long now)
+    bool MillGrainWaiting()
+    {
+        if (_mill?.Data == null || _bank == null) return false;
+        foreach (Item item in _mill.Data.StorageItems)
+        {
+            if (_bank.Inventory.GetQuantity(item) <= 0) continue;
+            if (_mill.GrainMillInventory.GetMaxStackQuantityAvailable(item) > 0) return true;
+        }
+        return false;
+    }
+
+    int MillStorageTotal()
+    {
+        if (_mill?.Data == null) return 0;
+        int total = 0;
+        foreach (Item item in _mill.Data.StorageItems)
+            total += _mill.GrainMillInventory.GetQuantity(item);
+        return total;
+    }
+
+    void StockMill(string character, long now, bool stockCheck)
     {
         if (_mill?.Data == null) return;
 
         try
         {
+            int before = MillStorageTotal();
             _mill.DepositAllToGrainMill();
+            bool deposited = MillStorageTotal() > before;
 
             // Only ever start the mill. If it is already running, leave it running: calling
             // ToggleGrainMillTimer(true) while active would restart its timer, and passing false
@@ -527,15 +551,20 @@ public sealed class MelvorAutoMod : IMod
 
             if (_mill.IsActive)
             {
-                _settings.MillStockedAtUnix[character] = now;
-                _settings.Save(_settingsPath, _ctx.Log);
-                if (File.Exists(_settingsPath))
-                    _settingsStamp = File.GetLastWriteTimeUtc(_settingsPath);
+                if (stockCheck || started || deposited)
+                {
+                    _settings.MillStockedAtUnix[character] = now;
+                    _settings.Save(_settingsPath, _ctx.Log);
+                    if (File.Exists(_settingsPath))
+                        _settingsStamp = File.GetLastWriteTimeUtc(_settingsPath);
+                }
 
                 _millFailureLogged = false;
                 if (started)
                     _ctx.Log($"Grain mill stocked and started for {character}.");
-                else
+                else if (deposited && !stockCheck)
+                    _ctx.Log($"Grain mill topped up for {character}.");
+                else if (stockCheck)
                     _ctx.Log($"Grain mill stocked for {character}; it was already running, so it was left running.");
             }
             else if (!_millFailureLogged)
