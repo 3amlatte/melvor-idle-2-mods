@@ -540,6 +540,9 @@ public sealed class MorePetsMod : IMod
             if (breakdownScene != null)
             {
                 PetsCompletionBreakdownView defaultPanel = breakdownScene.Instantiate<PetsCompletionBreakdownView>();
+                defaultPanel.CustomMinimumSize = new Vector2(340, 0);
+                defaultPanel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                defaultPanel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
                 defaultPanel.Bind(entity.Pets, _petsCompletion);
                 skillGrid.AddChild(defaultPanel);
             }
@@ -956,6 +959,7 @@ public sealed class MorePetsMod : IMod
         {
             Text = pet.ShortName,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
             TooltipText = pet.ShortName,
