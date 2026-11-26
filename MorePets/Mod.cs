@@ -40,6 +40,7 @@ public sealed class MorePetsMod : IMod
     Label? _detailDescription;
     MorePetDef? _selectedPet;
     Texture2D? _missingIcon;
+    StyleBox? _cardStyle;
 
     readonly Dictionary<string, Enemy> _enemyCache = new(StringComparer.OrdinalIgnoreCase);
     readonly HashSet<string> _applied = new(StringComparer.OrdinalIgnoreCase);
@@ -480,6 +481,15 @@ public sealed class MorePetsMod : IMod
         int owned = PetCatalog.All.Count(p => _state.Owned(p.Id));
         int total = PetCatalog.All.Count;
 
+        PackedScene? breakdownScene = GD.Load<PackedScene>("res://Components/PetsCompletion/pets_completion_breakdown_view.tscn");
+        _cardStyle = null;
+        if (breakdownScene != null)
+        {
+            PetsCompletionBreakdownView template = breakdownScene.Instantiate<PetsCompletionBreakdownView>();
+            _cardStyle = template.GetThemeStylebox("panel");
+            template.QueueFree();
+        }
+
         VBoxContainer left = new()
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
@@ -532,7 +542,6 @@ public sealed class MorePetsMod : IMod
         skillGrid.AddThemeConstantOverride("v_separation", 14);
         defaultBody.AddChild(skillGrid);
 
-        PackedScene? breakdownScene = GD.Load<PackedScene>("res://Components/PetsCompletion/pets_completion_breakdown_view.tscn");
         foreach (IPetsEntity entity in _petsCompletion.PetEntities)
         {
             if (entity.Pets.ActivePets.Count == 0) continue;
@@ -578,6 +587,11 @@ public sealed class MorePetsMod : IMod
         _uiDirty = false;
     }
 
+    void ApplyCardStyle(Control control)
+    {
+        if (_cardStyle != null) control.AddThemeStyleboxOverride("panel", _cardStyle);
+    }
+
     PanelContainer BuildDetailPane()
     {
         PanelContainer pane = new()
@@ -586,6 +600,7 @@ public sealed class MorePetsMod : IMod
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
         if (_view?.Theme != null) pane.Theme = _view.Theme;
+        ApplyCardStyle(pane);
         _detailPane = pane;
 
         MarginContainer margin = new();
@@ -677,6 +692,7 @@ public sealed class MorePetsMod : IMod
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
         if (_view?.Theme != null) bar.Theme = _view.Theme;
+        ApplyCardStyle(bar);
 
         MarginContainer margin = new();
         margin.AddThemeConstantOverride("margin_left", 8);
@@ -757,6 +773,7 @@ public sealed class MorePetsMod : IMod
             TooltipText = tooltip ?? string.Empty,
         };
         if (_view?.Theme != null) panel.Theme = _view.Theme;
+        ApplyCardStyle(panel);
 
         MarginContainer margin = new();
         margin.AddThemeConstantOverride("margin_left", 10);
@@ -854,6 +871,7 @@ public sealed class MorePetsMod : IMod
             TooltipText = tooltip ?? string.Empty,
         };
         if (_view?.Theme != null) bar.Theme = _view.Theme;
+        ApplyCardStyle(bar);
 
         MarginContainer margin = new();
         margin.AddThemeConstantOverride("margin_left", 10);
@@ -942,6 +960,7 @@ public sealed class MorePetsMod : IMod
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
         if (_view?.Theme != null) card.Theme = _view.Theme;
+        ApplyCardStyle(card);
 
         MarginContainer margin = new();
         margin.AddThemeConstantOverride("margin_left", 10);
