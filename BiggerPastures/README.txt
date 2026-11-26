@@ -14,9 +14,11 @@ HOW IT WORKS
   limits; animals above the old limit stay until you move them or the pen changes.
 
 INSTALL
-  Put this folder under the game's mods folder, so the file ends up as
+  Extract this zip into the Melvor Idle 2 game folder, so the file ends up as
   mods\BiggerPastures\BiggerPastures.dll
   (Steam > Melvor Idle 2 > Manage > Browse local files)
+  The zip already contains the mods\BiggerPastures\ folder, so extract it into the game folder,
+  not into the mods folder.
 
 UNINSTALL
   Delete the folder mods\BiggerPastures

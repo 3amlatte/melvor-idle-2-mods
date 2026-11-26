@@ -3,6 +3,13 @@ for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 Adds collectible pets based on dungeon bosses.
 
+INSTALL
+  Extract this zip into the Melvor Idle 2 game folder, so the file ends up as
+  mods\MorePets\MorePets.dll
+  (Steam > Melvor Idle 2 > Manage > Browse local files)
+  The zip already contains the mods\MorePets\ folder, so extract it into the game folder,
+  not into the mods folder.
+
 WHERE TO FIND THEM
   Completion Log -> Pets -> More Pets -> Dungeon Bosses
   Default pets are under their own collapsible "Default Pets" section.

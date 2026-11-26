@@ -34,9 +34,11 @@ Above 100% (not reached in this version) one batch is guaranteed per full 100%, 
 remainder is a chance for one more batch.
 
 INSTALL
-  Put this folder under the game's mods folder, so the file ends up as
+  Extract this zip into the Melvor Idle 2 game folder, so the file ends up as
   mods\SeedReturnStandard\SeedReturnStandard.dll
   (Steam > Melvor Idle 2 > Manage > Browse local files)
+  The zip already contains the mods\SeedReturnStandard\ folder, so extract it into the game folder,
+  not into the mods folder.
 
 UNINSTALL
   Delete the folder mods\SeedReturnStandard

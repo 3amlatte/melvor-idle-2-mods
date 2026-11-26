@@ -8,9 +8,11 @@ By default only armour is changed (anything without a Weapon capability). Weapon
 left alone; set "IncludeWeapons": true in settings.json to include them too.
 
 INSTALL
-  Put this folder under the game's mods folder, so the file ends up as
+  Extract this zip into the Melvor Idle 2 game folder, so the file ends up as
   mods\NoNegativeGear\NoNegativeGear.dll
   (Steam > Melvor Idle 2 > Manage > Browse local files)
+  The zip already contains the mods\NoNegativeGear\ folder, so extract it into the game folder,
+  not into the mods folder.
 
 UNINSTALL
   Delete the folder mods\NoNegativeGear

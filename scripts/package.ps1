@@ -9,6 +9,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+. (Join-Path $PSScriptRoot 'zip-archive.ps1')
+
 $root = Split-Path -Parent $PSScriptRoot
 $distDir = Join-Path $root 'dist'
 $stageRoot = Join-Path $distDir 'stage'
@@ -81,11 +83,17 @@ foreach ($mod in $Mods) {
     }
 
     $zip = Join-Path $distDir ($mod + '-' + $version + '.zip')
-    if (Test-Path $zip) { Remove-Item $zip -Force }
 
-    # -Path <stage>\* keeps "mods" at the root of the zip, which is what players extract
-    # into the game folder.
-    Compress-Archive -Path (Join-Path $stageDir '*') -DestinationPath $zip -CompressionLevel Optimal
+    # New-CleanZip writes "mods\<Mod>\..." with forward slashes and explicit folder
+    # entries, so every extractor creates the same folders the game loads from.
+    New-CleanZip -SourceDir $stageDir -ZipPath $zip
+
+    $prefix = 'mods/' + $mod + '/'
+    $entries = @(Assert-ZipLayout -ZipPath $zip -AllowedPrefixes @($prefix))
+    $dllEntry = $prefix + $mod + '.dll'
+    if ($entries -notcontains $dllEntry) {
+        throw "Package $zip is missing $dllEntry."
+    }
 
     $hash = (Get-FileHash -Path $zip -Algorithm SHA256).Hash
     ("{0}  {1}" -f $hash, (Split-Path -Leaf $zip)) |
@@ -94,6 +102,7 @@ foreach ($mod in $Mods) {
     $sizeKb = (Get-Item $zip).Length / 1KB
     Write-Host ("  -> {0} ({1:N1} KB)" -f $zip, $sizeKb)
     Write-Host ("  sha256 {0}" -f $hash)
+    Write-Host ("  layout: {0} file(s) under {1}" -f $entries.Count, $prefix)
 
     $packages += [pscustomobject]@{ Mod = $mod; Version = $version; Zip = $zip; Sha256 = $hash }
 }

@@ -60,9 +60,11 @@ SETTINGS AND MOD WINDOWS
   other mods may need the restart.
 
 INSTALL
-  Put this folder under the game's mods folder, so the file ends up as
+  Extract this zip into the Melvor Idle 2 game folder, so the file ends up as
   mods\ModViewer\ModViewer.dll
   (Steam > Melvor Idle 2 > Manage > Browse local files)
+  The zip already contains the mods\ModViewer\ folder, so extract it into the game folder,
+  not into the mods folder.
 
 UNINSTALL
   Delete the folder mods\ModViewer

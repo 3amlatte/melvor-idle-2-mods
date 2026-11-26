@@ -30,9 +30,11 @@ GOOD TO KNOW
   - Nothing is written to the save. The mod starts the passive action again on every load.
 
 INSTALL
-  Put this folder under the game's mods folder, so the file ends up as
+  Extract this zip into the Melvor Idle 2 game folder, so the file ends up as
   mods\PassiveSmelting\PassiveSmelting.dll
   (Steam > Melvor Idle 2 > Manage > Browse local files)
+  The zip already contains the mods\PassiveSmelting\ folder, so extract it into the game folder,
+  not into the mods folder.
 
 UNINSTALL
   Delete the folder mods\PassiveSmelting

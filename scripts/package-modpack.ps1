@@ -9,6 +9,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+. (Join-Path $PSScriptRoot 'zip-archive.ps1')
+
 $root = Split-Path -Parent $PSScriptRoot
 $distDir = Join-Path $root 'dist'
 $modpackDir = Join-Path $root 'Modpack'
@@ -106,8 +108,18 @@ foreach ($mod in $optional) {
 Set-Content -LiteralPath (Join-Path $stageRoot '3am-Modpack-versions.txt') -Value $lines -Encoding UTF8
 
 $zip = Join-Path $distDir ('3am-Modpack-' + $Version + '.zip')
-if (Test-Path $zip) { Remove-Item $zip -Force }
-Compress-Archive -Path (Join-Path $stageRoot '*') -DestinationPath $zip -CompressionLevel Optimal
+New-CleanZip -SourceDir $stageRoot -ZipPath $zip
+
+$rootFiles = @('3am-Modpack-README.txt', '3am-Modpack-versions.txt')
+$entries = @(Assert-ZipLayout -ZipPath $zip -AllowedPrefixes @('mods/', 'optional-mods/') -AllowedRootFiles $rootFiles)
+foreach ($mod in $defaultMods) {
+    $dllEntry = 'mods/' + $mod + '/' + $mod + '.dll'
+    if ($entries -notcontains $dllEntry) { throw "Modpack $zip is missing $dllEntry." }
+}
+foreach ($mod in $optional) {
+    $dllEntry = 'optional-mods/' + $mod + '/' + $mod + '.dll'
+    if ($entries -notcontains $dllEntry) { throw "Modpack $zip is missing $dllEntry." }
+}
 
 $hash = (Get-FileHash -Path $zip -Algorithm SHA256).Hash
 ("{0}  {1}" -f $hash, (Split-Path -Leaf $zip)) |
@@ -119,3 +131,4 @@ Remove-Item $stageRoot -Recurse -Force
 Write-Host ''
 Write-Host ("Modpack {0} -> {1} ({2:N1} KB)" -f $Version, $zip, $sizeKb)
 Write-Host ("sha256 {0}" -f $hash)
+Write-Host ("layout: {0} file(s) under mods/ and optional-mods/" -f $entries.Count)
