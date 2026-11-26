@@ -37,6 +37,7 @@ public sealed class MorePetsMod : IMod
     TextureRect? _detailImage;
     Label? _detailName;
     Label? _detailMeta;
+    Label? _detailDrop;
     Label? _detailBuff;
     Label? _detailDescription;
     MorePetDef? _selectedPet;
@@ -704,6 +705,11 @@ public sealed class MorePetsMod : IMod
         };
         _detailDescription.Modulate = new Color(0.75f, 0.78f, 0.82f);
 
+        _detailDrop = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+
         Label bonusTitle = new() { Text = "Bonus" };
         bonusTitle.AddThemeFontSizeOverride("font_size", 16);
         bonusTitle.Modulate = new Color(0.96f, 0.82f, 0.48f);
@@ -712,9 +718,10 @@ public sealed class MorePetsMod : IMod
         box.AddChild(_detailImage);
         box.AddChild(_detailName);
         box.AddChild(_detailMeta);
+        box.AddChild(_detailDescription);
+        box.AddChild(_detailDrop);
         box.AddChild(bonusTitle);
         box.AddChild(_detailBuff);
-        box.AddChild(_detailDescription);
         margin.AddChild(box);
         pane.AddChild(margin);
         pane.Visible = false;
@@ -775,7 +782,7 @@ public sealed class MorePetsMod : IMod
     void UpdateDetailPane(MorePetDef pet)
     {
         if (_detailImage == null || _detailName == null || _detailMeta == null ||
-            _detailBuff == null || _detailDescription == null)
+            _detailDrop == null || _detailBuff == null || _detailDescription == null)
         {
             return;
         }
@@ -788,9 +795,9 @@ public sealed class MorePetsMod : IMod
         meta.AppendLine($"Enemy: {enemyName}");
         meta.AppendLine($"Obtained: {_state?.Count(pet.Id) ?? 0:N0}");
         meta.AppendLine($"Enemy kills: {GetKills(pet):N0}");
-        meta.AppendLine($"Location: {pet.Location}");
-        meta.Append($"Drop rate: 1 / {RateFor(pet):N0}");
+        meta.Append($"Location: {pet.Location}");
         _detailMeta.Text = meta.ToString();
+        _detailDrop.Text = $"Drop rate: 1 / {RateFor(pet):N0}";
 
         _detailBuff.Text = pet.BuffText;
         _detailDescription.Text = pet.Description;
