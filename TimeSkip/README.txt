@@ -1,4 +1,4 @@
-TIMESKIP 0.2.2
+TIMESKIP 0.2.3
 for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 WHAT'S NEW IN 0.2.1
