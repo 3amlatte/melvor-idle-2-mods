@@ -50,6 +50,7 @@ public sealed class MorePetsMod : IMod
     int _cardCountFontSize = 13;
     Color _cardCountFontColor = new(0.78f, 0.8f, 0.84f);
     TextureProgressBar? _cardProgressTemplate;
+    Label? _cardTitlePrototype;
 
     readonly Dictionary<string, Enemy> _enemyCache = new(StringComparer.OrdinalIgnoreCase);
     readonly HashSet<string> _applied = new(StringComparer.OrdinalIgnoreCase);
@@ -503,6 +504,11 @@ public sealed class MorePetsMod : IMod
                 _cardFont = templateName.GetThemeFont("font");
                 _cardFontSize = templateName.GetThemeFontSize("font_size");
                 _cardFontColor = templateName.GetThemeColor("font_color");
+                _cardTitlePrototype = templateName.Duplicate() as Label;
+            }
+            else
+            {
+                _cardTitlePrototype = null;
             }
 
             Int32OutOfLabel? templateCount = Accessors.PetCountLabelOf(template);
@@ -1021,18 +1027,24 @@ public sealed class MorePetsMod : IMod
         HBoxContainer header = new();
         header.AddThemeConstantOverride("separation", 6);
 
-        Label title = new()
+        Label title;
+        if (_cardTitlePrototype != null)
         {
-            Text = pet.ShortName,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
-            TooltipText = pet.ShortName,
-        };
-        if (_cardFont != null) title.AddThemeFontOverride("font", _cardFont);
-        title.AddThemeFontSizeOverride("font_size", _cardFontSize);
-        title.AddThemeColorOverride("font_color", _cardFontColor);
+            title = (Label)_cardTitlePrototype.Duplicate();
+        }
+        else
+        {
+            title = new Label();
+            if (_cardFont != null) title.AddThemeFontOverride("font", _cardFont);
+            title.AddThemeFontSizeOverride("font_size", _cardFontSize);
+            title.AddThemeColorOverride("font_color", _cardFontColor);
+        }
+        title.Text = pet.ShortName;
+        title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        title.HorizontalAlignment = HorizontalAlignment.Center;
+        title.VerticalAlignment = VerticalAlignment.Center;
+        title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        title.TooltipText = pet.ShortName;
 
         Label countLabel = new()
         {
@@ -1049,11 +1061,30 @@ public sealed class MorePetsMod : IMod
         Control progress;
         if (_cardProgressTemplate != null)
         {
-            TextureProgressBar textureProgress = (TextureProgressBar)_cardProgressTemplate.Duplicate();
-            textureProgress.MinValue = 0;
-            textureProgress.MaxValue = 1;
-            textureProgress.Value = owned ? 1 : 0;
-            textureProgress.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            TextureProgressBar source = _cardProgressTemplate;
+            TextureProgressBar textureProgress = new()
+            {
+                TextureUnder = source.TextureUnder,
+                TextureProgress = source.TextureProgress,
+                TextureOver = source.TextureOver,
+                NinePatchStretch = source.NinePatchStretch,
+                StretchMarginLeft = source.StretchMarginLeft,
+                StretchMarginTop = source.StretchMarginTop,
+                StretchMarginRight = source.StretchMarginRight,
+                StretchMarginBottom = source.StretchMarginBottom,
+                FillMode = source.FillMode,
+                RadialInitialAngle = source.RadialInitialAngle,
+                RadialFillDegrees = source.RadialFillDegrees,
+                TintUnder = source.TintUnder,
+                TintProgress = source.TintProgress,
+                TintOver = source.TintOver,
+                CustomMinimumSize = new Vector2(0, Math.Max(10, source.CustomMinimumSize.Y)),
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                MinValue = 0,
+                MaxValue = 1,
+                Value = owned ? 1 : 0,
+                Step = 1,
+            };
             progress = textureProgress;
         }
         else
