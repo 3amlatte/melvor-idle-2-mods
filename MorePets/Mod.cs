@@ -1044,7 +1044,6 @@ public sealed class MorePetsMod : IMod
         title.HorizontalAlignment = HorizontalAlignment.Center;
         title.VerticalAlignment = VerticalAlignment.Center;
         title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        title.TooltipText = pet.ShortName;
 
         Label countLabel = new()
         {
@@ -1122,7 +1121,6 @@ public sealed class MorePetsMod : IMod
             StretchMode = TextureButton.StretchModeEnum.Scale,
             Modulate = count > 0 ? Colors.White : new Color(0.22f, 0.22f, 0.22f),
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
-            TooltipText = pet.ShortName,
         };
         button.Pressed += () => SelectPet(pet);
         return button;
