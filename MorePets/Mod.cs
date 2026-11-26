@@ -783,7 +783,7 @@ public sealed class MorePetsMod : IMod
         _detailImage.Texture = pet.Icon ?? MissingIcon;
         _detailName.Text = pet.ShortName;
 
-        string enemyName = pet.ShortName.StartsWith("Lil ", StringComparison.Ordinal) ? pet.ShortName[4..] : pet.ShortName;
+        string enemyName = pet.Name.StartsWith("Lil ", StringComparison.Ordinal) ? pet.Name[4..] : pet.Name;
         StringBuilder meta = new();
         meta.AppendLine($"Enemy: {enemyName}");
         meta.AppendLine($"Obtained: {_state?.Count(pet.Id) ?? 0:N0}");
