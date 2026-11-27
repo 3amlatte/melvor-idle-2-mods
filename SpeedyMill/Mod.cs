@@ -28,7 +28,8 @@ public sealed class SpeedyMillMod : IMod
     static readonly Source SpeedSource = new("Speedy Mill: 500% faster mill");
 
     // 500% faster production means the interval is one sixth of normal (6x throughput).
-    const double IntervalMultiplier = 1.0 / 6.0;
+    // Negative because the game treats a lower interval as faster.
+    const double IntervalMultiplier = 1.0 / 6.0 - 1.0;
 
     ModContext _ctx = null!;
     Game? _game;

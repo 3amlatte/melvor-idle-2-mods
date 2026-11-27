@@ -49,6 +49,7 @@ public sealed class MasteryEtaMod : IMod
     string _loggedError = "";
     string _loggedAction = "";
     string _loggedTask = "";
+    string _loggedPlacement = "";
     bool _footerLogged;
     string _loggedNoMatchAction = "";
 
@@ -141,6 +142,11 @@ public sealed class MasteryEtaMod : IMod
         Texture2D? itemIcon = best.Recipe.Icon ?? best.Task.Task.Media ?? _masteryIcon;
 
         _bar.Show(_footer, _masteryIcon, itemIcon, text, current, max, eta);
+        if (_loggedPlacement != _bar.LastPlacement)
+        {
+            _loggedPlacement = _bar.LastPlacement;
+            _ctx.Log($"Mastery ETA placement: {_loggedPlacement}.");
+        }
         if (_loggedTask != text)
         {
             _loggedTask = text;

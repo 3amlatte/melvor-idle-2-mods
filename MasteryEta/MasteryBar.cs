@@ -121,6 +121,7 @@ internal sealed class MasteryBar
         Rect2 footerRect = footer != null && GodotObject.IsInstanceValid(footer)
             ? footer.GetGlobalRect()
             : new Rect2();
+        Rect2 anchorRect = new();
 
         float x, y, width;
 
@@ -130,9 +131,9 @@ internal sealed class MasteryBar
 
         if (anchor != null && footerRect.Size.X >= 200)
         {
-            Rect2 a = anchor.GetGlobalRect();
-            x = a.End.X + 18f;
-            y = a.Position.Y + 2f;
+            anchorRect = anchor.GetGlobalRect();
+            x = anchorRect.End.X + 18f;
+            y = anchorRect.Position.Y + 1f;
             width = footerRect.End.X - 104f - x;
             width = Math.Clamp(width, 190f, 360f);
         }
@@ -161,8 +162,14 @@ internal sealed class MasteryBar
         _eta.Text = eta;
         _progress.Value = max > 0 ? Math.Clamp(current / max, 0, 1) : 0;
 
+        LastPlacement = anchor != null
+            ? $"label {anchorRect.Position:0}/{anchorRect.Size:0} -> panel {x:0},{y:0} {width:0}x{Height:0}"
+            : $"footer {footerRect.Position:0}/{footerRect.Size:0} -> panel {x:0},{y:0} {width:0}x{Height:0}";
+
         _layer.Visible = true;
     }
+
+    public string LastPlacement { get; private set; } = "";
 
     public void Hide()
     {
@@ -173,11 +180,13 @@ internal sealed class MasteryBar
     {
         foreach (Node child in node.GetChildren())
         {
-            if (child is Label label && label.Text.Contains("depleted", StringComparison.OrdinalIgnoreCase))
+            if (child is Label label && label.Text.Contains("depleted", StringComparison.OrdinalIgnoreCase) &&
+                label.IsVisibleInTree() && label.Size.X > 10)
             {
                 return label;
             }
-            if (child is RichTextLabel rich && rich.Text.Contains("depleted", StringComparison.OrdinalIgnoreCase))
+            if (child is RichTextLabel rich && rich.Text.Contains("depleted", StringComparison.OrdinalIgnoreCase) &&
+                rich.IsVisibleInTree() && rich.Size.X > 10)
             {
                 return rich;
             }
