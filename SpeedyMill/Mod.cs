@@ -25,10 +25,10 @@ public sealed class SpeedyMillMod : IMod
         public ILocalizedString DisplayName { get; } = new LocalizedString(name);
     }
 
-    static readonly Source SpeedSource = new("Speedy Mill: 200% faster mill");
+    static readonly Source SpeedSource = new("Speedy Mill: 500% faster mill");
 
-    // 200% faster production means the interval is one third of normal (3x throughput).
-    const double IntervalMultiplier = 1.0 / 3.0;
+    // 500% faster production means the interval is one sixth of normal (6x throughput).
+    const double IntervalMultiplier = 1.0 / 6.0;
 
     ModContext _ctx = null!;
     Game? _game;
@@ -43,7 +43,7 @@ public sealed class SpeedyMillMod : IMod
         _ctx = ctx;
         ctx.Tree.NodeAdded += OnNodeAdded;
         ctx.Frame += OnFrame;
-        ctx.Log("Loaded. Grain mill production runs 200% faster (3x).");
+        ctx.Log("Loaded. Grain mill production runs 500% faster (6x).");
     }
 
     void OnNodeAdded(Node node)
