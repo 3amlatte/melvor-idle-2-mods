@@ -119,7 +119,7 @@ internal sealed class MasteryBar
         else if (footerRect.Size.X >= 200)
         {
             width = desiredWidth;
-            x = footerRect.End.X - width - (entries.Count <= 1 ? 240f : 100f);
+            x = footerRect.End.X - width - (entries.Count <= 1 ? 216f : 100f);
             y = footerRect.End.Y - Height - 4f;
         }
         else

@@ -189,6 +189,8 @@ public sealed class MasteryEtaMod : IMod
 
             var actions = entity.Components.Values.OfType<ActionComponent>().ToList();
             bool started = actions.Any(a => a.IsStarted);
+            MasteryGuildComponent guild = mastery.MasteryGuild;
+            MasteryGuildCategory? selectedCategory = guild.SelectedCategory;
 
             Candidate? best = null;
 
@@ -209,10 +211,11 @@ public sealed class MasteryEtaMod : IMod
                     if (task.IsComplete || task.ActiveGoal == null) continue;
                     int score = MatchScore(task.Task.Goal, recipe);
                     if (score < 0) continue;
+                    if (selectedCategory != null && ReferenceEquals(task.Task.Category, selectedCategory)) score += 10;
 
                     double remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress;
                     if (best == null || score > best.Score ||
-                        (score == best.Score && remaining < best.Remaining))
+                        (score == best.Score && task.ActiveGoal.MaxProgress < best.Task.ActiveGoal!.MaxProgress))
                     {
                         best = new Candidate
                         {
@@ -242,15 +245,19 @@ public sealed class MasteryEtaMod : IMod
                     if (task.IsComplete || task.ActiveGoal == null) continue;
                     if (!GoalMatchesAction(task.Task.Goal, actionDescription)) continue;
 
+                    int score = 3;
+                    if (selectedCategory != null && ReferenceEquals(task.Task.Category, selectedCategory)) score += 10;
+
                     double remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress;
-                    if (best == null || best.Score < 3 || remaining < best.Remaining)
+                    if (best == null || score > best.Score ||
+                        (score == best.Score && task.ActiveGoal.MaxProgress < best.Task.ActiveGoal!.MaxProgress))
                     {
                         best = new Candidate
                         {
                             Task = task,
                             Entity = mastery,
                             Priority = priority,
-                            Score = 3,
+                            Score = score,
                             Remaining = remaining,
                             Recipe = null,
                             ActionName = actionDescription.DisplayName.Text,
