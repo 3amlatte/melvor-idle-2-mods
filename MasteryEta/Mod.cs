@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using GamesByMalcs.Melvor2;
 using GamesByMalcs.Melvor2.Components.Actions;
 using GamesByMalcs.Melvor2.Components.ArtisanAction;
@@ -26,17 +27,19 @@ public sealed class MasteryEtaMod : IMod
     sealed class Candidate
     {
         public required ActiveMasteryGuildTask Task;
-        public required ArtisanRecipe Recipe;
         public required IMasteryGuildEntity Entity;
         public required int Priority;
         public required int Score;
         public required double Remaining;
+        public ArtisanRecipe? Recipe;
+        public string ActionName = "";
+        public Texture2D? Icon;
+        public int BaseIntervalMs;
     }
 
     sealed class RateState
     {
         public required ActiveMasteryGuildTask Task;
-        public required ArtisanRecipe Recipe;
         public EventHandler<GoalProgressedEventArgs>? Handler;
         public double LastProgress;
         public long LastMs;
@@ -58,6 +61,7 @@ public sealed class MasteryEtaMod : IMod
     string _loggedTasks = "";
     string _loggedPlacement = "";
     string _loggedNoMatchAction = "";
+    string _loggedTrackerAction = "";
     bool _footerLogged;
 
     public void OnLoad(ModContext ctx)
@@ -123,7 +127,7 @@ public sealed class MasteryEtaMod : IMod
 
         if (candidates.Count == 0)
         {
-            LogNoCandidate(game);
+            LogNoCandidate(game, footerTracker);
             Hide("no current action with an incomplete mastery task");
             return;
         }
@@ -139,8 +143,8 @@ public sealed class MasteryEtaMod : IMod
             double max = goal.MaxProgress;
 
             entries.Add(new MasteryBar.Entry(
-                candidate.Recipe.Icon ?? candidate.Task.Task.Media,
-                BuildTaskText(candidate.Task, candidate.Recipe, current, max),
+                candidate.Icon,
+                BuildTaskText(candidate, current, max),
                 current,
                 max,
                 FormatEta(candidate, state)));
@@ -152,7 +156,7 @@ public sealed class MasteryEtaMod : IMod
         {
             _loggedTasks = signature;
             _ctx.Log("Mastery ETA tasks: " + string.Join(" | ", candidates.Select(c =>
-                $"{c.Entity.DisplayName.Text}:{c.Recipe.DisplayName.Text} -> {BuildTaskText(c.Task, c.Recipe,
+                $"{c.Entity.DisplayName.Text}:{c.ActionName} -> {BuildTaskText(c,
                     c.Task.ActiveGoal!.CurrentProgress, c.Task.ActiveGoal.MaxProgress)}")));
         }
 
@@ -178,39 +182,73 @@ public sealed class MasteryEtaMod : IMod
             TrackerComponent? tracker = entity.Components.Values
                 .OfType<TrackerComponent>()
                 .FirstOrDefault();
+            bool trackerIsFooter = ReferenceEquals(tracker, footerTracker);
+
+            var actions = entity.Components.Values.OfType<ActionComponent>().ToList();
+            bool started = actions.Any(a => a.IsStarted);
 
             Candidate? best = null;
 
-            foreach (ActionComponent action in entity.Components.Values.OfType<ActionComponent>())
+            // Recipe actions (Cooking and artisan skills).
+            foreach (ActionComponent action in actions)
             {
                 ArtisanRecipe? recipe = CurrentRecipe(action);
                 if (recipe == null) continue;
 
                 bool producing = action.GetType().GetProperty("CreatingRecipe")?.GetValue(action) != null;
-                int priority = (action.IsStarted ? 2 : 0)
-                             + (producing ? 1 : 0)
-                             + (ReferenceEquals(tracker, footerTracker) ? 4 : 0);
+                int priority = (action.IsStarted ? 2 : 0) + (producing ? 1 : 0) + (trackerIsFooter ? 4 : 0);
 
                 foreach (ActiveMasteryGuildTask task in mastery.MasteryGuild.ActiveTasks.Values)
                 {
                     if (task.IsComplete || task.ActiveGoal == null) continue;
-
                     int score = MatchScore(task.Task.Goal, recipe);
                     if (score < 0) continue;
 
                     double remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress;
-                    if (best == null ||
-                        score > best.Score ||
+                    if (best == null || score > best.Score ||
                         (score == best.Score && remaining < best.Remaining))
                     {
                         best = new Candidate
                         {
                             Task = task,
-                            Recipe = recipe,
                             Entity = mastery,
                             Priority = priority,
                             Score = score,
-                            Remaining = remaining
+                            Remaining = remaining,
+                            Recipe = recipe,
+                            ActionName = recipe.DisplayName.Text,
+                            Icon = recipe.Icon ?? task.Task.Media,
+                            BaseIntervalMs = recipe.BaseInterval
+                        };
+                    }
+                }
+            }
+
+            // Gathering and other skills: match the tracked action against the task's data
+            // object properties (Recipe/Tree/Rock/Fish/Category).
+            if (tracker?.ActionDescription is { } actionDescription &&
+                actionDescription is not ArtisanRecipe)
+            {
+                int priority = (started ? 2 : 0) + (trackerIsFooter ? 4 : 0);
+                foreach (ActiveMasteryGuildTask task in mastery.MasteryGuild.ActiveTasks.Values)
+                {
+                    if (task.IsComplete || task.ActiveGoal == null) continue;
+                    if (!GoalMatchesAction(task.Task.Goal, actionDescription)) continue;
+
+                    double remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress;
+                    if (best == null || best.Score < 3 || remaining < best.Remaining)
+                    {
+                        best = new Candidate
+                        {
+                            Task = task,
+                            Entity = mastery,
+                            Priority = priority,
+                            Score = 3,
+                            Remaining = remaining,
+                            Recipe = null,
+                            ActionName = actionDescription.DisplayName.Text,
+                            Icon = actionDescription.Icon ?? task.Task.Media,
+                            BaseIntervalMs = 0
                         };
                     }
                 }
@@ -248,7 +286,6 @@ public sealed class MasteryEtaMod : IMod
             var state = new RateState
             {
                 Task = candidate.Task,
-                Recipe = candidate.Recipe,
                 LastProgress = candidate.Task.ActiveGoal?.CurrentProgress ?? 0,
                 LastMs = (long)Time.GetTicksMsec()
             };
@@ -315,7 +352,9 @@ public sealed class MasteryEtaMod : IMod
             return FormatSeconds(remaining / state.Rate) + " left";
         }
 
-        double fallback = remaining * Math.Max(1, candidate.Recipe.BaseInterval) / 1000.0;
+        if (candidate.BaseIntervalMs <= 0) return "estimating...";
+
+        double fallback = remaining * Math.Max(1, candidate.BaseIntervalMs) / 1000.0;
         return "~" + FormatSeconds(fallback) + " left";
     }
 
@@ -340,11 +379,19 @@ public sealed class MasteryEtaMod : IMod
         return $"{d}d {hh:00}h";
     }
 
-    string BuildTaskText(ActiveMasteryGuildTask active, ArtisanRecipe recipe, double current, double max)
+    string BuildTaskText(Candidate candidate, double current, double max)
     {
+        ActiveMasteryGuildTask active = candidate.Task;
+
         if (active.Task.CustomDescription is { } custom && !string.IsNullOrWhiteSpace(custom.Text))
         {
             return $"{custom.Text} ({current:N0} / {max:N0})";
+        }
+
+        if (candidate.Recipe == null && active.ActiveGoal != null)
+        {
+            string description = StripBbcode(active.ActiveGoal.GetBaseLocalDescription());
+            if (!string.IsNullOrWhiteSpace(description)) return description;
         }
 
         string verb = active.Task.Goal is CookRecipeGoal ? "Cook" : "Create";
@@ -358,10 +405,17 @@ public sealed class MasteryEtaMod : IMod
                                   ?? a.Subcategory?.DisplayName.Text
                                   ?? (a.Category is MasteryGuildCategory ? "items" : a.Category?.DisplayName.Text)
                                   ?? "items",
-            _ => recipe.DisplayName.Text
+            _ => candidate.ActionName
         };
 
         return $"{verb} {current:N0} / {max:N0} {name}";
+    }
+
+    static string StripBbcode(string text)
+    {
+        string result = Regex.Replace(text, @"\[img[^\]]*\].*?\[/img\]", "", RegexOptions.IgnoreCase);
+        result = Regex.Replace(result, @"\[[^\]]+\]", "");
+        return Regex.Replace(result, @"\s+", " ").Trim();
     }
 
     static int MatchScore(Goal? goal, ArtisanRecipe recipe)
@@ -388,6 +442,29 @@ public sealed class MasteryEtaMod : IMod
         return -1;
     }
 
+    static bool GoalMatchesAction(Goal? goal, IDescribedObject action)
+    {
+        if (goal == null) return false;
+
+        foreach (string name in new[] { "Recipe", "Tree", "Rock", "Fish", "Course", "Obstacle" })
+        {
+            object? value = goal.GetType().GetProperty(name)?.GetValue(goal);
+            if (value != null && SameData(value, action)) return true;
+        }
+
+        object? goalCategory = goal.GetType().GetProperty("Category")?.GetValue(goal);
+        object? actionCategory = action.GetType().GetProperty("Category")?.GetValue(action);
+        return goalCategory != null && actionCategory != null && SameData(goalCategory, actionCategory);
+    }
+
+    static bool SameData(object a, object b)
+    {
+        if (ReferenceEquals(a, b)) return true;
+        string? idA = a.GetType().GetProperty("Id")?.GetValue(a) as string;
+        string? idB = b.GetType().GetProperty("Id")?.GetValue(b) as string;
+        return idA != null && idA == idB;
+    }
+
     void Hide(string reason)
     {
         _bar.Hide();
@@ -400,8 +477,18 @@ public sealed class MasteryEtaMod : IMod
         _loggedPlacement = "";
     }
 
-    void LogNoCandidate(Game game)
+    void LogNoCandidate(Game game, TrackerComponent? footerTracker)
     {
+        if (footerTracker?.ActionDescription is { } tracked && tracked is not ArtisanRecipe)
+        {
+            string key = $"{footerTracker.Entity.DisplayName.Text}:{tracked.DisplayName.Text}";
+            if (_loggedTrackerAction != key)
+            {
+                _loggedTrackerAction = key;
+                _ctx.Log($"Mastery ETA tracker action: {key} (no matching mastery task).");
+            }
+        }
+
         foreach (GameEntity entity in game.Entities.GetAllObjects())
         {
             if (entity is not IMasteryGuildEntity mastery) continue;

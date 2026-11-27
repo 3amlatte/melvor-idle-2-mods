@@ -27,8 +27,10 @@ INSTALL
 
 NOTES
   - Reads the game's own Mastery Guild tasks; nothing is written to the save.
-  - Works for Cooking ("Cook ..." tasks) and artisan skills such as Smithing, Crafting and
-    Fletching ("Create ..." tasks). Other task types are left alone.
+  - Works for Cooking ("Cook ..." tasks), artisan skills such as Smithing, Crafting and
+    Fletching ("Create ..." tasks), and gathering skills whose tasks name the tree, rock, fish
+    or other action (Woodcutting, Mining, Fishing, Firemaking and similar). Other task types
+    are left alone.
   - The ETA uses measured progress, so it corrects itself for speed bonuses, multi-item
     actions and passive production.
   - Unofficial, fan-made. Not affiliated with Games by Malcs or Jagex.
