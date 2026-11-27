@@ -11,7 +11,7 @@ namespace MasteryEta;
 /// </summary>
 internal sealed class MasteryBar
 {
-    public sealed record Entry(Texture2D? ItemIcon, string Text, double Current, double Max, string Eta);
+    public sealed record Entry(Texture2D? ItemIcon, string Text, double Current, double Max, string Eta, Action? OnClick = null);
 
     static readonly Color Accent = new(0.929f, 0.749f, 0.349f);
     static readonly Color Text = new(0.92f, 0.92f, 0.94f);
@@ -27,9 +27,11 @@ internal sealed class MasteryBar
         public required Label Task;
         public required Label Eta;
         public required ProgressBar Progress;
+        public Action? OnClick;
 
         public void Set(Entry entry)
         {
+            OnClick = entry.OnClick;
             Icon.Texture = entry.ItemIcon;
             Task.Text = entry.Text;
             Eta.Text = entry.Eta;
@@ -173,7 +175,16 @@ internal sealed class MasteryBar
             var root = new VBoxContainer
             {
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                MouseFilter = Control.MouseFilterEnum.Ignore
+                MouseFilter = Control.MouseFilterEnum.Stop,
+                MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+                TooltipText = "Open this Mastery Guild task"
+            };
+            root.GuiInput += ev =>
+            {
+                if (ev is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+                {
+                    _cells.FirstOrDefault(c => ReferenceEquals(c.Root, root))?.OnClick?.Invoke();
+                }
             };
             root.AddThemeConstantOverride("separation", 2);
             _content.AddChild(root);

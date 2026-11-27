@@ -11,6 +11,7 @@ using GamesByMalcs.Melvor2.Data;
 using GamesByMalcs.Melvor2.Data.Recipes;
 using GamesByMalcs.Melvor2.Entities;
 using GamesByMalcs.Melvor2.Entities.Cooking;
+using GamesByMalcs.Melvor2.GameMenus;
 using GamesByMalcs.Melvor2.Goals;
 using Godot;
 using MelvorModLoader;
@@ -148,7 +149,8 @@ public sealed class MasteryEtaMod : IMod
                 BuildTaskText(candidate, current, max),
                 current,
                 max,
-                FormatEta(candidate, state)));
+                FormatEta(candidate, state),
+                () => OpenMastery(candidate)));
 
             signature += candidate.Task.Task.Id + ";";
         }
@@ -268,6 +270,45 @@ public sealed class MasteryEtaMod : IMod
             .ThenBy(c => c.Remaining)
             .Take(MaxTasks)
             .ToList();
+    }
+
+    void OpenMastery(Candidate candidate)
+    {
+        try
+        {
+            GameView? view = FindGameView(_ctx.Tree.Root);
+            if (view?.MasteryGuild == null)
+            {
+                _ctx.Log("Mastery ETA could not find the mastery window.");
+                return;
+            }
+
+            view.CloseExclusiveModals();
+            MasteryGuildComponent guild = candidate.Entity.MasteryGuild;
+            if (candidate.Task.Task.Category != null)
+            {
+                guild.SelectedCategory = candidate.Task.Task.Category;
+            }
+            view.MasteryGuild.Bind(guild);
+            view.MasteryGuild.Popup();
+            _ctx.Log($"Mastery ETA opened {candidate.Entity.DisplayName.Text} Mastery Guild " +
+                     $"({candidate.Task.Task.Category?.DisplayName.Text ?? "no category"}).");
+        }
+        catch (Exception e)
+        {
+            _ctx.Log($"Mastery ETA could not open the mastery window: {e.GetType().Name}: {e.Message}");
+        }
+    }
+
+    static GameView? FindGameView(Node node)
+    {
+        foreach (Node child in node.GetChildren())
+        {
+            if (child is GameView view) return view;
+            GameView? found = FindGameView(child);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     void SyncRates(List<Candidate> candidates)
