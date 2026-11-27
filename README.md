@@ -35,7 +35,7 @@ Tested with game **0.11.7-alpha** and Melvor Mod Loader **0.2.0**.
 
 On macOS, use [Mod Loader for MacOS](https://github.com/3amlatte/Mod-Loader-for-MacOS)
 and extract the same zips into `~/Library/Application Support/MelvorModLoader`, so the files end up under
-`.../MelvorModLoader/mods/<ModName>/`. Most mods are platform-neutral; Mod Viewer 0.1.11 added macOS versions
+`.../MelvorModLoader/mods/<ModName>/`. Most mods are platform-neutral; Mod Viewer 0.1.12 added macOS versions
 of its folder and restart actions.
 
 There is no installer. On Windows, install [Mod Viewer](ModViewer) for an in-game mod list, settings,
