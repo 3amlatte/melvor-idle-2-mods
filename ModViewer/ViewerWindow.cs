@@ -295,7 +295,7 @@ internal sealed class ViewerWindow
         info.AddChild(sub);
         row.AddChild(info);
 
-        bool required = Mods.IsModViewer(entry);
+        bool required = Mods.IsRequired(entry);
         var enabled = new CheckBox
         {
             Text = required ? "Required" : "Enabled",

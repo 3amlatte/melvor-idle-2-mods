@@ -160,10 +160,13 @@ internal static class Mods
         string.Equals(entry.Assembly, "ModViewer", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(entry.Name, "ModViewer", StringComparison.OrdinalIgnoreCase);
 
+    public static bool IsRequired(ModEntry entry) =>
+        OperatingSystem.IsMacOS() && IsModViewer(entry);
+
     public static bool SetEnabled(ModEntry entry, bool enabled, out string error)
     {
         error = "";
-        if (!enabled && IsModViewer(entry))
+        if (!enabled && IsRequired(entry))
         {
             error = "Mod Viewer is part of the loader and cannot be disabled.";
             return false;
