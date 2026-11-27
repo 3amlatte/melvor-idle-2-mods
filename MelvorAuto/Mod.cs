@@ -135,6 +135,7 @@ public sealed class MelvorAutoMod : IMod
         if (++_frame % 30 != 0) return;   // twice a second
         TryBind();
         ReloadSettingsIfChanged();
+        HideFreeAutomationCost();
         SweepOpenables();
 
         // The farming flags are applied once when a character opens. Plots bought later are
@@ -307,6 +308,29 @@ public sealed class MelvorAutoMod : IMod
         try { _bank.ItemOpening.OpenItem(item, quantity); }
         catch (Exception e) { LogOnce($"Open failed for {item.Id}: {e.Message}"); }
         finally { _depth--; }
+    }
+
+    void HideFreeAutomationCost()
+    {
+        // Wine is free while Melvor Auto is active, so the game's "Estimated N wine
+        // consumed per day" strip is misleading. Hide it whenever the Farming view creates it.
+        Node? node = FindByName(_ctx.Tree.Root, "AutomationCostContainer");
+        if (node is Control control && control.Visible)
+        {
+            control.Visible = false;
+            LogOnce("Hid the wine consumption estimate because Farming automation is free.");
+        }
+    }
+
+    static Node? FindByName(Node root, string name)
+    {
+        if (root.Name.ToString() == name) return root;
+        foreach (Node child in root.GetChildren())
+        {
+            Node? found = FindByName(child, name);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     void SweepOpenables()

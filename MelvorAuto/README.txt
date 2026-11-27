@@ -1,5 +1,9 @@
-MELVOR AUTO 0.1.8
+MELVOR AUTO 0.1.9
 for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
+
+WHAT'S NEW IN 0.1.9
+  - The Farming page's "Estimated wine consumed per day" strip is hidden, because the
+    mod makes all Farming automation costs free.
 
 WHAT'S NEW IN 0.1.8
   - Without Mod Viewer, F3 opens an Auto Farmer settings window (harvest, compost, water,
