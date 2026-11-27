@@ -97,29 +97,18 @@ internal sealed class MasteryBar
         Rect2 footerRect = footer != null && GodotObject.IsInstanceValid(footer)
             ? footer.GetGlobalRect()
             : new Rect2();
-        Rect2 anchorRect = new();
 
         float x, y, width;
         float desiredWidth = entries.Count <= 1
             ? 300f
             : Math.Min(520f, 220f + 150f * entries.Count);
 
-        Control? anchor = footer != null && GodotObject.IsInstanceValid(footer)
-            ? FindDepletionLabel(footer)
-            : null;
-
-        if (anchor != null && footerRect.Size.X >= 200)
+        if (footerRect.Size.X >= 200)
         {
-            anchorRect = anchor.GetGlobalRect();
-            x = anchorRect.End.X + 42f;
-            y = anchorRect.Position.Y + 1f;
-            width = footerRect.End.X - 104f - x;
-            width = Math.Clamp(width, 190f, desiredWidth);
-        }
-        else if (footerRect.Size.X >= 200)
-        {
+            // Fixed position relative to the footer's right edge, so changing rates, timers
+            // and other footer text never moves the widget.
             width = desiredWidth;
-            x = footerRect.End.X - width - (entries.Count <= 1 ? 216f : 100f);
+            x = footerRect.End.X - width - 150f;
             y = footerRect.End.Y - Height - 4f;
         }
         else
@@ -145,9 +134,7 @@ internal sealed class MasteryBar
         _panel.Position = new Vector2(x, y);
         _panel.Size = new Vector2(width, Height);
 
-        LastPlacement = anchor != null
-            ? $"label {anchorRect.Position:0}/{anchorRect.Size:0} -> panel {x:0},{y:0} {width:0}x{Height:0}, {entries.Count} task(s)"
-            : $"footer {footerRect.Position:0}/{footerRect.Size:0} -> panel {x:0},{y:0} {width:0}x{Height:0}, {entries.Count} task(s)";
+        LastPlacement = $"footer {footerRect.Position:0}/{footerRect.Size:0} -> panel {x:0},{y:0} {width:0}x{Height:0}, {entries.Count} task(s)";
 
         _layer.Visible = true;
     }

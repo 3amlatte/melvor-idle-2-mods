@@ -38,6 +38,7 @@ public sealed class MasteryEtaMod : IMod
         public Texture2D? Icon;
         public int BaseIntervalMs;
         public bool Passive;
+        public bool Producing;
     }
 
     sealed class RateState
@@ -48,6 +49,9 @@ public sealed class MasteryEtaMod : IMod
         public long LastMs;
         public double Rate;
         public int Logs;
+        public double BaseProgress;
+        public double Extra;
+        public long LastTickMs;
     }
 
     const int MaxTasks = 4;
@@ -142,7 +146,7 @@ public sealed class MasteryEtaMod : IMod
         {
             RateState state = _rates[candidate.Task];
             IActiveGoal goal = candidate.Task.ActiveGoal!;
-            double current = goal.CurrentProgress;
+            double current = AdvanceProgress(candidate, state, goal);
             double max = goal.MaxProgress;
 
             entries.Add(new MasteryBar.Entry(
@@ -246,7 +250,8 @@ public sealed class MasteryEtaMod : IMod
                             ActionName = recipe.DisplayName.Text,
                             Icon = recipe.Icon ?? task.Task.Media,
                             BaseIntervalMs = interval,
-                            Passive = passive
+                            Passive = passive,
+                            Producing = producing
                         };
                     }
                 }
@@ -285,7 +290,8 @@ public sealed class MasteryEtaMod : IMod
                             Recipe = null,
                             ActionName = actionDescription.DisplayName.Text,
                             Icon = actionDescription.Icon ?? task.Task.Media,
-                            BaseIntervalMs = 0
+                            BaseIntervalMs = 0,
+                            Producing = false
                         };
                     }
                 }
@@ -363,7 +369,9 @@ public sealed class MasteryEtaMod : IMod
             {
                 Task = candidate.Task,
                 LastProgress = candidate.Task.ActiveGoal?.CurrentProgress ?? 0,
-                LastMs = (long)Time.GetTicksMsec()
+                BaseProgress = candidate.Task.ActiveGoal?.CurrentProgress ?? 0,
+                LastMs = (long)Time.GetTicksMsec(),
+                LastTickMs = (long)Time.GetTicksMsec()
             };
             state.Handler = (_, _) => OnProgress(state);
 
@@ -381,6 +389,35 @@ public sealed class MasteryEtaMod : IMod
 
             _rates.Add(candidate.Task, state);
         }
+    }
+
+    double AdvanceProgress(Candidate candidate, RateState state, IActiveGoal goal)
+    {
+        long now = (long)Time.GetTicksMsec();
+        double stored = goal.CurrentProgress;
+
+        // The game's recipe mastery goals currently filter on the tier category instead of the
+        // recipe category, so they never gain progress. Drive those goals from the action's
+        // real interval instead. Tasks the game does advance win because we take the maximum.
+        if (candidate.Recipe != null && candidate.Producing && candidate.BaseIntervalMs > 0 &&
+            candidate.Task.Task.Goal is CreateRecipeGoal or CookRecipeGoal)
+        {
+            double seconds = (now - state.LastTickMs) / 1000.0;
+            if (seconds > 0 && seconds < 10)
+            {
+                state.Extra += seconds / (candidate.BaseIntervalMs / 1000.0);
+            }
+
+            double display = Math.Min(goal.MaxProgress, Math.Max(stored, state.BaseProgress + state.Extra));
+            if (display > stored + 0.0001)
+            {
+                try { goal.SetCurrentProgress(display); } catch { }
+                stored = goal.CurrentProgress;
+            }
+        }
+
+        state.LastTickMs = now;
+        return stored;
     }
 
     void OnProgress(RateState state)
