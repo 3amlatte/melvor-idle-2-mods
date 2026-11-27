@@ -19,6 +19,8 @@ internal sealed class MasteryBar
 
     const float Height = 30f;
     const int MaxCells = 4;
+    const float SingleRightMargin = 590f;
+    const float MultiRightMargin = 300f;
 
     sealed class Cell
     {
@@ -108,7 +110,7 @@ internal sealed class MasteryBar
             // Fixed position relative to the footer's right edge, so changing rates, timers
             // and other footer text never moves the widget.
             width = desiredWidth;
-            x = footerRect.End.X - width - (entries.Count <= 1 ? 380f : 220f);
+            x = footerRect.End.X - width - (entries.Count <= 1 ? SingleRightMargin : MultiRightMargin);
             y = footerRect.End.Y - Height - 4f;
         }
         else
