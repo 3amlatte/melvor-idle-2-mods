@@ -320,6 +320,30 @@ public sealed class MelvorAutoMod : IMod
             control.Visible = false;
             LogOnce("Hid the wine consumption estimate because Farming automation is free.");
         }
+
+        HideWineText(_ctx.Tree.Root);
+    }
+
+    static void HideWineText(Node root)
+    {
+        foreach (Node child in root.GetChildren())
+        {
+            string? text = child switch
+            {
+                Label label => label.Text,
+                RichTextLabel rich => rich.Text,
+                _ => null
+            };
+
+            if (text != null && text.Contains("consumed per day", StringComparison.OrdinalIgnoreCase))
+            {
+                if (child.GetParent() is Control strip) strip.Visible = false;
+                else if (child is Control labelControl) labelControl.Visible = false;
+                continue;
+            }
+
+            HideWineText(child);
+        }
     }
 
     static Node? FindByName(Node root, string name)

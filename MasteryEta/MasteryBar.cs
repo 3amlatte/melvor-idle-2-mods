@@ -101,9 +101,9 @@ internal sealed class MasteryBar
             : new Rect2();
 
         float x, y, width;
-        float desiredWidth = entries.Count <= 1
+        float desiredWidth = (entries.Count <= 1
             ? 300f
-            : Math.Min(520f, 220f + 150f * entries.Count);
+            : Math.Min(520f, 220f + 150f * entries.Count)) * 0.85f;
 
         if (footerRect.Size.X >= 200)
         {
@@ -126,7 +126,17 @@ internal sealed class MasteryBar
             }
             else
             {
-                x = footerRect.End.X - width - (entries.Count <= 1 ? SingleRightMargin : MultiRightMargin);
+                Control? depleted = footer != null && GodotObject.IsInstanceValid(footer)
+                    ? FindDepletionLabel(footer)
+                    : null;
+                if (depleted != null)
+                {
+                    x = depleted.GetGlobalRect().End.X + 48f;
+                }
+                else
+                {
+                    x = footerRect.End.X - width - (entries.Count <= 1 ? 420f : MultiRightMargin);
+                }
             }
         }
         else
