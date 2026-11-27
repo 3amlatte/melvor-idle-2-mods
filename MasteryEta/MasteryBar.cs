@@ -75,17 +75,6 @@ internal sealed class MasteryBar
         catch { /* texture missing */ }
         _content.AddChild(masteryIcon);
 
-        var title = new Label
-        {
-            Text = "Mastery",
-            VerticalAlignment = VerticalAlignment.Center,
-            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
-            MouseFilter = Control.MouseFilterEnum.Ignore
-        };
-        title.AddThemeFontSizeOverride("font_size", 11);
-        title.AddThemeColorOverride("font_color", Accent);
-        _content.AddChild(title);
-
         ctx.Tree.Root.AddChild(_layer);
     }
 
@@ -234,7 +223,7 @@ internal sealed class MasteryBar
             {
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
-                CustomMinimumSize = new Vector2(68, 0),
+                CustomMinimumSize = new Vector2(60, 0),
                 MouseFilter = Control.MouseFilterEnum.Ignore
             };
             eta.AddThemeFontSizeOverride("font_size", 11);

@@ -313,19 +313,23 @@ public sealed class MelvorAutoMod : IMod
     void HideFreeAutomationCost()
     {
         // Wine is free while Melvor Auto is active, so the game's "Estimated N wine
-        // consumed per day" strip is misleading. Hide it whenever the Farming view creates it.
-        Node? node = FindByName(_ctx.Tree.Root, "AutomationCostContainer");
-        if (node is Control control && control.Visible)
+        // consumed per day" strip is misleading. There can be one strip per Farming view.
+        if (HideWineStrips(_ctx.Tree.Root))
         {
-            control.Visible = false;
             LogOnce("Hid the wine consumption estimate because Farming automation is free.");
         }
-
-        HideWineText(_ctx.Tree.Root);
     }
 
-    static void HideWineText(Node root)
+    static bool HideWineStrips(Node root)
     {
+        bool hid = false;
+
+        if (root.Name.ToString() == "AutomationCostContainer" && root is Control container && container.Visible)
+        {
+            container.Visible = false;
+            hid = true;
+        }
+
         foreach (Node child in root.GetChildren())
         {
             string? text = child switch
@@ -337,13 +341,23 @@ public sealed class MelvorAutoMod : IMod
 
             if (text != null && text.Contains("consumed per day", StringComparison.OrdinalIgnoreCase))
             {
-                if (child.GetParent() is Control strip) strip.Visible = false;
-                else if (child is Control labelControl) labelControl.Visible = false;
+                if (child.GetParent() is Control strip && strip.Visible)
+                {
+                    strip.Visible = false;
+                    hid = true;
+                }
+                else if (child is Control labelControl && labelControl.Visible)
+                {
+                    labelControl.Visible = false;
+                    hid = true;
+                }
                 continue;
             }
 
-            HideWineText(child);
+            if (HideWineStrips(child)) hid = true;
         }
+
+        return hid;
     }
 
     static Node? FindByName(Node root, string name)
