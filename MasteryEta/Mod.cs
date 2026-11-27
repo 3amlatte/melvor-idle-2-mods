@@ -35,6 +35,7 @@ public sealed class MasteryEtaMod : IMod
         public string ActionName = "";
         public Texture2D? Icon;
         public int BaseIntervalMs;
+        public bool Passive;
     }
 
     sealed class RateState
@@ -156,8 +157,8 @@ public sealed class MasteryEtaMod : IMod
         {
             _loggedTasks = signature;
             _ctx.Log("Mastery ETA tasks: " + string.Join(" | ", candidates.Select(c =>
-                $"{c.Entity.DisplayName.Text}:{c.ActionName} -> {BuildTaskText(c,
-                    c.Task.ActiveGoal!.CurrentProgress, c.Task.ActiveGoal.MaxProgress)}")));
+                $"{(c.Passive ? "passive " : "")}{c.Entity.DisplayName.Text}:{c.ActionName} -> " +
+                $"{BuildTaskText(c, c.Task.ActiveGoal!.CurrentProgress, c.Task.ActiveGoal.MaxProgress)}")));
         }
 
         _bar.Show(_footer, entries);
@@ -195,8 +196,11 @@ public sealed class MasteryEtaMod : IMod
                 ArtisanRecipe? recipe = CurrentRecipe(action);
                 if (recipe == null) continue;
 
-                bool producing = action.GetType().GetProperty("CreatingRecipe")?.GetValue(action) != null;
+                object? creating = action.GetType().GetProperty("CreatingRecipe")?.GetValue(action);
+                bool producing = creating != null;
+                bool passive = producing && !action.IsStarted;
                 int priority = (action.IsStarted ? 2 : 0) + (producing ? 1 : 0) + (trackerIsFooter ? 4 : 0);
+                int interval = ActualInterval(creating) ?? recipe.BaseInterval;
 
                 foreach (ActiveMasteryGuildTask task in mastery.MasteryGuild.ActiveTasks.Values)
                 {
@@ -218,7 +222,8 @@ public sealed class MasteryEtaMod : IMod
                             Recipe = recipe,
                             ActionName = recipe.DisplayName.Text,
                             Icon = recipe.Icon ?? task.Task.Media,
-                            BaseIntervalMs = recipe.BaseInterval
+                            BaseIntervalMs = interval,
+                            Passive = passive
                         };
                     }
                 }
@@ -440,6 +445,21 @@ public sealed class MasteryEtaMod : IMod
         }
 
         return -1;
+    }
+
+    static int? ActualInterval(object? creating)
+    {
+        if (creating == null) return null;
+        try
+        {
+            object? stats = creating.GetType().GetProperty("Stats")?.GetValue(creating);
+            object? node = stats?.GetType().GetProperty("Interval")?.GetValue(stats);
+            object? value = node?.GetType().GetProperty("Value")?.GetValue(node);
+            if (value is double d && d > 0) return (int)Math.Round(d);
+            if (value is float f && f > 0) return (int)Math.Round(f);
+        }
+        catch { }
+        return null;
     }
 
     static bool GoalMatchesAction(Goal? goal, IDescribedObject action)
