@@ -160,7 +160,8 @@ public sealed class MasteryEtaMod : IMod
             _loggedTasks = signature;
             _ctx.Log("Mastery ETA tasks: " + string.Join(" | ", candidates.Select(c =>
                 $"{(c.Passive ? "passive " : "")}{c.Entity.DisplayName.Text}:{c.ActionName} -> " +
-                $"{BuildTaskText(c, c.Task.ActiveGoal!.CurrentProgress, c.Task.ActiveGoal.MaxProgress)}")));
+                $"{BuildTaskText(c, c.Task.ActiveGoal!.CurrentProgress, c.Task.ActiveGoal.MaxProgress)} " +
+                $"[{c.Task.Task.Category?.DisplayName.Text ?? "?"}]")));
         }
 
         _bar.Show(_footer, entries);
