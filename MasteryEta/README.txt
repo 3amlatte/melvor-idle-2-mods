@@ -9,15 +9,13 @@ the row shows:
   - the item/action icon;
   - a progress bar;
   - the estimated time left, based on the progress rate you are actually getting, with a
-    rough base-interval estimate until the first actions finish;
-  - a one-line reminder of what mastery is: long-term skill goals that earn Mastery Guild
-    points and ranks.
+    rough current-interval estimate until the first actions finish.
 
 Click a cell to open that skill's Mastery Guild on the matching category. The readout sits
 in the footer next to the item-depletion timer and disappears when the
 current action has no matching incomplete mastery task. If more than one active skill has a
 matching mastery task at once, one compact cell is shown per skill along the footer. It follows the footer when the window
-is resized; hover it for the one-line mastery explanation.
+is resized.
 
 INSTALL
   Extract this zip into the Melvor Idle 2 game folder, so the file ends up as

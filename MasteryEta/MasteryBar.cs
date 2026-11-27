@@ -52,8 +52,7 @@ internal sealed class MasteryBar
 
         _panel = new PanelContainer
         {
-            MouseFilter = Control.MouseFilterEnum.Pass,
-            TooltipText = "Mastery tasks are long-term skill goals that earn Mastery Guild points and ranks."
+            MouseFilter = Control.MouseFilterEnum.Pass
         };
         _panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         _layer.AddChild(_panel);
@@ -101,6 +100,9 @@ internal sealed class MasteryBar
         Rect2 anchorRect = new();
 
         float x, y, width;
+        float desiredWidth = entries.Count <= 1
+            ? 300f
+            : Math.Min(520f, 220f + 150f * entries.Count);
 
         Control? anchor = footer != null && GodotObject.IsInstanceValid(footer)
             ? FindDepletionLabel(footer)
@@ -112,17 +114,17 @@ internal sealed class MasteryBar
             x = anchorRect.End.X + 18f;
             y = anchorRect.Position.Y + 1f;
             width = footerRect.End.X - 104f - x;
-            width = Math.Clamp(width, 220f, 900f);
+            width = Math.Clamp(width, 190f, desiredWidth);
         }
         else if (footerRect.Size.X >= 200)
         {
-            width = 380f;
-            x = footerRect.End.X - width - 100f;
+            width = desiredWidth;
+            x = footerRect.End.X - width - (entries.Count <= 1 ? 240f : 100f);
             y = footerRect.End.Y - Height - 4f;
         }
         else
         {
-            width = Math.Min(420f, viewport.X - 32f);
+            width = Math.Min(desiredWidth, viewport.X - 32f);
             x = (viewport.X - width) / 2f;
             y = viewport.Y - Height - 150f;
         }
@@ -176,8 +178,7 @@ internal sealed class MasteryBar
             {
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                 MouseFilter = Control.MouseFilterEnum.Stop,
-                MouseDefaultCursorShape = Control.CursorShape.PointingHand,
-                TooltipText = "Open this Mastery Guild task"
+                MouseDefaultCursorShape = Control.CursorShape.PointingHand
             };
             root.GuiInput += ev =>
             {
@@ -218,7 +219,7 @@ internal sealed class MasteryBar
             {
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
-                CustomMinimumSize = new Vector2(78, 0),
+                CustomMinimumSize = new Vector2(68, 0),
                 MouseFilter = Control.MouseFilterEnum.Ignore
             };
             eta.AddThemeFontSizeOverride("font_size", 11);
