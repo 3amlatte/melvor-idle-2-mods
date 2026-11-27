@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 using MelvorModLoader;
 
@@ -6,24 +7,42 @@ namespace MasteryEta;
 
 /// <summary>
 /// Compact mastery readout that sits inside the game's action footer, to the right of the
-/// item-depletion timer. It uses the footer's small icon and text sizing rather than a
-/// separate panel.
+/// item-depletion timer. One cell is shown per active skill that has a matching mastery task.
 /// </summary>
 internal sealed class MasteryBar
 {
+    public sealed record Entry(Texture2D? ItemIcon, string Text, double Current, double Max, string Eta);
+
     static readonly Color Accent = new(0.929f, 0.749f, 0.349f);
     static readonly Color Text = new(0.92f, 0.92f, 0.94f);
     static readonly Color Track = new(0.18f, 0.19f, 0.24f);
 
     const float Height = 30f;
+    const int MaxCells = 4;
+
+    sealed class Cell
+    {
+        public required VBoxContainer Root;
+        public required TextureRect Icon;
+        public required Label Task;
+        public required Label Eta;
+        public required ProgressBar Progress;
+
+        public void Set(Entry entry)
+        {
+            Icon.Texture = entry.ItemIcon;
+            Task.Text = entry.Text;
+            Eta.Text = entry.Eta;
+            Progress.Value = entry.Max > 0 ? Math.Clamp(entry.Current / entry.Max, 0, 1) : 0;
+            Root.Visible = true;
+        }
+    }
 
     readonly CanvasLayer _layer;
     readonly PanelContainer _panel;
-    readonly TextureRect _masteryIcon;
-    readonly TextureRect _itemIcon;
-    readonly Label _task;
-    readonly Label _eta;
-    readonly ProgressBar _progress;
+    readonly HBoxContainer _content;
+    readonly List<Cell> _cells = new();
+    readonly List<Control> _separators = new();
 
     public MasteryBar(ModContext ctx)
     {
@@ -37,86 +56,42 @@ internal sealed class MasteryBar
         _panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         _layer.AddChild(_panel);
 
-        var column = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        column.AddThemeConstantOverride("separation", 2);
-        _panel.AddChild(column);
+        _content = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        _content.AddThemeConstantOverride("separation", 8);
+        _panel.AddChild(_content);
 
-        var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        row.AddThemeConstantOverride("separation", 5);
-        column.AddChild(row);
-
-        _masteryIcon = Icon();
-        row.AddChild(_masteryIcon);
+        var masteryIcon = new TextureRect
+        {
+            CustomMinimumSize = new Vector2(16, 16),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+            MouseFilter = Control.MouseFilterEnum.Ignore
+        };
+        try { masteryIcon.Texture = GD.Load<Texture2D>("res://Assets/Icons/Mastery_Icon.png"); }
+        catch { /* texture missing */ }
+        _content.AddChild(masteryIcon);
 
         var title = new Label
         {
             Text = "Mastery",
             VerticalAlignment = VerticalAlignment.Center,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
             MouseFilter = Control.MouseFilterEnum.Ignore
         };
         title.AddThemeFontSizeOverride("font_size", 11);
         title.AddThemeColorOverride("font_color", Accent);
-        row.AddChild(title);
-
-        _itemIcon = Icon();
-        row.AddChild(_itemIcon);
-
-        _task = new Label
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
-            VerticalAlignment = VerticalAlignment.Center,
-            MouseFilter = Control.MouseFilterEnum.Ignore
-        };
-        _task.AddThemeFontSizeOverride("font_size", 11);
-        _task.AddThemeColorOverride("font_color", Text);
-        row.AddChild(_task);
-
-        _eta = new Label
-        {
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            CustomMinimumSize = new Vector2(92, 0),
-            MouseFilter = Control.MouseFilterEnum.Ignore
-        };
-        _eta.AddThemeFontSizeOverride("font_size", 11);
-        _eta.AddThemeColorOverride("font_color", Accent);
-        row.AddChild(_eta);
-
-        _progress = new ProgressBar
-        {
-            MinValue = 0,
-            MaxValue = 1,
-            Value = 0,
-            ShowPercentage = false,
-            Step = 0.001,
-            CustomMinimumSize = new Vector2(0, 3),
-            MouseFilter = Control.MouseFilterEnum.Ignore
-        };
-        var trackStyle = new StyleBoxFlat { BgColor = Track };
-        trackStyle.SetCornerRadiusAll(1);
-        var fillStyle = new StyleBoxFlat { BgColor = Accent };
-        fillStyle.SetCornerRadiusAll(1);
-        _progress.AddThemeStyleboxOverride("background", trackStyle);
-        _progress.AddThemeStyleboxOverride("fill", fillStyle);
-        column.AddChild(_progress);
+        _content.AddChild(title);
 
         ctx.Tree.Root.AddChild(_layer);
     }
 
-    static TextureRect Icon() => new()
-    {
-        CustomMinimumSize = new Vector2(16, 16),
-        ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-        StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-        MouseFilter = Control.MouseFilterEnum.Ignore
-    };
+    public string LastPlacement { get; private set; } = "";
 
-    public void Show(Control? footer, Texture2D? masteryIcon, Texture2D? itemIcon,
-        string task, double current, double max, string eta)
+    public void Show(Control? footer, IReadOnlyList<Entry> entries)
     {
         Vector2 viewport = _panel.GetViewportRect().Size;
-        if (viewport.X < 200) { Hide(); return; }
+        if (viewport.X < 200 || entries.Count == 0) { Hide(); return; }
 
         Rect2 footerRect = footer != null && GodotObject.IsInstanceValid(footer)
             ? footer.GetGlobalRect()
@@ -135,17 +110,17 @@ internal sealed class MasteryBar
             x = anchorRect.End.X + 18f;
             y = anchorRect.Position.Y + 1f;
             width = footerRect.End.X - 104f - x;
-            width = Math.Clamp(width, 190f, 360f);
+            width = Math.Clamp(width, 220f, 900f);
         }
         else if (footerRect.Size.X >= 200)
         {
-            width = 340f;
+            width = 380f;
             x = footerRect.End.X - width - 100f;
             y = footerRect.End.Y - Height - 4f;
         }
         else
         {
-            width = Math.Min(360f, viewport.X - 32f);
+            width = Math.Min(420f, viewport.X - 32f);
             x = (viewport.X - width) / 2f;
             y = viewport.Y - Height - 150f;
         }
@@ -153,27 +128,119 @@ internal sealed class MasteryBar
         x = Math.Clamp(x, 8f, Math.Max(8f, viewport.X - width - 8f));
         y = Math.Clamp(y, 8f, Math.Max(8f, viewport.Y - Height - 8f));
 
+        EnsureCells(entries.Count);
+
+        for (int i = 0; i < _cells.Count; i++)
+        {
+            bool used = i < entries.Count;
+            _cells[i].Root.Visible = used;
+            if (i > 0) _separators[i - 1].Visible = used;
+            if (used) _cells[i].Set(entries[i]);
+        }
+
         _panel.Position = new Vector2(x, y);
         _panel.Size = new Vector2(width, Height);
 
-        _masteryIcon.Texture = masteryIcon;
-        _itemIcon.Texture = itemIcon;
-        _task.Text = task;
-        _eta.Text = eta;
-        _progress.Value = max > 0 ? Math.Clamp(current / max, 0, 1) : 0;
-
         LastPlacement = anchor != null
-            ? $"label {anchorRect.Position:0}/{anchorRect.Size:0} -> panel {x:0},{y:0} {width:0}x{Height:0}"
-            : $"footer {footerRect.Position:0}/{footerRect.Size:0} -> panel {x:0},{y:0} {width:0}x{Height:0}";
+            ? $"label {anchorRect.Position:0}/{anchorRect.Size:0} -> panel {x:0},{y:0} {width:0}x{Height:0}, {entries.Count} task(s)"
+            : $"footer {footerRect.Position:0}/{footerRect.Size:0} -> panel {x:0},{y:0} {width:0}x{Height:0}, {entries.Count} task(s)";
 
         _layer.Visible = true;
     }
 
-    public string LastPlacement { get; private set; } = "";
-
     public void Hide()
     {
         _layer.Visible = false;
+    }
+
+    void EnsureCells(int count)
+    {
+        for (int i = _cells.Count; i < Math.Min(count, MaxCells); i++)
+        {
+            if (i > 0)
+            {
+                var separator = new ColorRect
+                {
+                    Color = new Color(0.55f, 0.58f, 0.66f, 0.28f),
+                    CustomMinimumSize = new Vector2(1, 18),
+                    SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+                    MouseFilter = Control.MouseFilterEnum.Ignore
+                };
+                _content.AddChild(separator);
+                _separators.Add(separator);
+            }
+
+            var root = new VBoxContainer
+            {
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                MouseFilter = Control.MouseFilterEnum.Ignore
+            };
+            root.AddThemeConstantOverride("separation", 2);
+            _content.AddChild(root);
+
+            var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+            row.AddThemeConstantOverride("separation", 5);
+            root.AddChild(row);
+
+            var icon = new TextureRect
+            {
+                CustomMinimumSize = new Vector2(16, 16),
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+                MouseFilter = Control.MouseFilterEnum.Ignore
+            };
+            row.AddChild(icon);
+
+            var task = new Label
+            {
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
+                VerticalAlignment = VerticalAlignment.Center,
+                MouseFilter = Control.MouseFilterEnum.Ignore
+            };
+            task.AddThemeFontSizeOverride("font_size", 11);
+            task.AddThemeColorOverride("font_color", Text);
+            row.AddChild(task);
+
+            var eta = new Label
+            {
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                CustomMinimumSize = new Vector2(78, 0),
+                MouseFilter = Control.MouseFilterEnum.Ignore
+            };
+            eta.AddThemeFontSizeOverride("font_size", 11);
+            eta.AddThemeColorOverride("font_color", Accent);
+            row.AddChild(eta);
+
+            var progress = new ProgressBar
+            {
+                MinValue = 0,
+                MaxValue = 1,
+                Value = 0,
+                ShowPercentage = false,
+                Step = 0.001,
+                CustomMinimumSize = new Vector2(0, 3),
+                MouseFilter = Control.MouseFilterEnum.Ignore
+            };
+            var trackStyle = new StyleBoxFlat { BgColor = Track };
+            trackStyle.SetCornerRadiusAll(1);
+            var fillStyle = new StyleBoxFlat { BgColor = Accent };
+            fillStyle.SetCornerRadiusAll(1);
+            progress.AddThemeStyleboxOverride("background", trackStyle);
+            progress.AddThemeStyleboxOverride("fill", fillStyle);
+            root.AddChild(progress);
+
+            _cells.Add(new Cell
+            {
+                Root = root,
+                Icon = icon,
+                Task = task,
+                Eta = eta,
+                Progress = progress
+            });
+        }
     }
 
     static Control? FindDepletionLabel(Node node)

@@ -14,7 +14,8 @@ the row shows:
     points and ranks.
 
 The readout sits in the footer next to the item-depletion timer and disappears when the
-current action has no matching incomplete mastery task. It follows the footer when the window
+current action has no matching incomplete mastery task. If more than one active skill has a
+matching mastery task at once, one compact cell is shown per skill along the footer. It follows the footer when the window
 is resized; hover it for the one-line mastery explanation.
 
 INSTALL

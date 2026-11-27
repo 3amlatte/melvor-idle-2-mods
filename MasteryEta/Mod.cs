@@ -17,9 +17,9 @@ using MelvorModLoader;
 namespace MasteryEta;
 
 /// <summary>
-/// Adds a second tracker row next to the game's action bar. It looks at every skill that has a
-/// Mastery Guild, finds the one whose current tracked action belongs to an incomplete task
-/// ("Cook 400 Beef", "Create 400 Rune Defenders"), and shows the task, progress, icon and ETA.
+/// Adds compact mastery cells inside the game's action footer. One cell per active skill that
+/// has an incomplete Mastery Guild task matching the action it is currently running, so two
+/// skills training at once produce two cells along the bar.
 /// </summary>
 public sealed class MasteryEtaMod : IMod
 {
@@ -29,36 +29,41 @@ public sealed class MasteryEtaMod : IMod
         public required ArtisanRecipe Recipe;
         public required IMasteryGuildEntity Entity;
         public required int Priority;
+        public required int Score;
+        public required double Remaining;
     }
+
+    sealed class RateState
+    {
+        public required ActiveMasteryGuildTask Task;
+        public required ArtisanRecipe Recipe;
+        public EventHandler<GoalProgressedEventArgs>? Handler;
+        public double LastProgress;
+        public long LastMs;
+        public double Rate;
+        public int Logs;
+    }
+
+    const int MaxTasks = 4;
 
     ModContext _ctx = null!;
     MasteryBar _bar = null!;
-    Texture2D? _masteryIcon;
     TrackerComponentFooterView? _footer;
     Game? _game;
     int _frame;
 
-    ActiveMasteryGuildTask? _task;
-    EventHandler<GoalProgressedEventArgs>? _progressHandler;
-    double _lastProgress;
-    long _lastProgressMs;
-    double _rate;
-    int _progressCount;
-
+    readonly Dictionary<ActiveMasteryGuildTask, RateState> _rates = new();
     string _loggedReason = "";
     string _loggedError = "";
-    string _loggedAction = "";
-    string _loggedTask = "";
+    string _loggedTasks = "";
     string _loggedPlacement = "";
-    bool _footerLogged;
     string _loggedNoMatchAction = "";
+    bool _footerLogged;
 
     public void OnLoad(ModContext ctx)
     {
         _ctx = ctx;
         _bar = new MasteryBar(ctx);
-        try { _masteryIcon = GD.Load<Texture2D>("res://Assets/Icons/Mastery_Icon.png"); }
-        catch { _masteryIcon = null; }
         ctx.Frame += OnFrame;
         ctx.Log("Loaded.");
     }
@@ -108,55 +113,63 @@ public sealed class MasteryEtaMod : IMod
                 if (_loggedError != "tracker-access")
                 {
                     _loggedError = "tracker-access";
-                    _ctx.Log($"Mastery ETA cannot read the tracker ({e.GetType().Name}: {e.Message}); using skill trackers.");
+                    _ctx.Log($"Mastery ETA cannot read the tracker ({e.GetType().Name}: {e.Message}); using skill actions.");
                 }
             }
         }
 
-        Candidate? best = FindCandidate(game, footerTracker);
-        if (best == null)
+        List<Candidate> candidates = FindCandidates(game, footerTracker);
+        SyncRates(candidates);
+
+        if (candidates.Count == 0)
         {
             LogNoCandidate(game);
             Hide("no current action with an incomplete mastery task");
             return;
         }
 
-        IActiveGoal goal = best.Task.ActiveGoal!;
-        double current = goal.CurrentProgress;
-        double max = goal.MaxProgress;
-        double remaining = Math.Max(0, max - current);
+        var entries = new List<MasteryBar.Entry>(candidates.Count);
+        string signature = "";
 
-        if (_loggedAction != $"{best.Entity.DisplayName.Text}:{best.Recipe.DisplayName.Text}")
+        foreach (Candidate candidate in candidates)
         {
-            _loggedAction = $"{best.Entity.DisplayName.Text}:{best.Recipe.DisplayName.Text}";
-            string category = best.Recipe.Category?.Id ?? "none";
-            string subcategory = best.Recipe.Subcategory?.Id ?? "none";
-            _ctx.Log($"Mastery ETA action: {_loggedAction} (category {category}, subcategory {subcategory}); " +
-                     $"task {BuildTaskText(best.Task, best.Recipe, current, max)}.");
+            RateState state = _rates[candidate.Task];
+            IActiveGoal goal = candidate.Task.ActiveGoal!;
+            double current = goal.CurrentProgress;
+            double max = goal.MaxProgress;
+
+            entries.Add(new MasteryBar.Entry(
+                candidate.Recipe.Icon ?? candidate.Task.Task.Media,
+                BuildTaskText(candidate.Task, candidate.Recipe, current, max),
+                current,
+                max,
+                FormatEta(candidate, state)));
+
+            signature += candidate.Task.Task.Id + ";";
         }
 
-        BindTask(best.Task);
+        if (signature != _loggedTasks)
+        {
+            _loggedTasks = signature;
+            _ctx.Log("Mastery ETA tasks: " + string.Join(" | ", candidates.Select(c =>
+                $"{c.Entity.DisplayName.Text}:{c.Recipe.DisplayName.Text} -> {BuildTaskText(c.Task, c.Recipe,
+                    c.Task.ActiveGoal!.CurrentProgress, c.Task.ActiveGoal.MaxProgress)}")));
+        }
 
-        string eta = FormatEta(remaining, best.Recipe);
-        string text = BuildTaskText(best.Task, best.Recipe, current, max);
-        Texture2D? itemIcon = best.Recipe.Icon ?? best.Task.Task.Media ?? _masteryIcon;
+        _bar.Show(_footer, entries);
 
-        _bar.Show(_footer, _masteryIcon, itemIcon, text, current, max, eta);
         if (_loggedPlacement != _bar.LastPlacement)
         {
             _loggedPlacement = _bar.LastPlacement;
             _ctx.Log($"Mastery ETA placement: {_loggedPlacement}.");
         }
-        if (_loggedTask != text)
-        {
-            _loggedTask = text;
-            _ctx.Log($"Mastery ETA showing: {text}, {eta}.");
-        }
+
+        _loggedReason = "";
     }
 
-    Candidate? FindCandidate(Game game, TrackerComponent? footerTracker)
+    List<Candidate> FindCandidates(Game game, TrackerComponent? footerTracker)
     {
-        Candidate? best = null;
+        var found = new List<Candidate>();
 
         foreach (GameEntity entity in game.Entities.GetAllObjects())
         {
@@ -166,174 +179,143 @@ public sealed class MasteryEtaMod : IMod
                 .OfType<TrackerComponent>()
                 .FirstOrDefault();
 
+            Candidate? best = null;
+
             foreach (ActionComponent action in entity.Components.Values.OfType<ActionComponent>())
             {
                 ArtisanRecipe? recipe = CurrentRecipe(action);
                 if (recipe == null) continue;
-
-                ActiveMasteryGuildTask? task = FindTask(mastery.MasteryGuild, recipe);
-                if (task?.ActiveGoal == null) continue;
 
                 bool producing = action.GetType().GetProperty("CreatingRecipe")?.GetValue(action) != null;
                 int priority = (action.IsStarted ? 2 : 0)
                              + (producing ? 1 : 0)
                              + (ReferenceEquals(tracker, footerTracker) ? 4 : 0);
 
-                if (best == null || priority > best.Priority)
+                foreach (ActiveMasteryGuildTask task in mastery.MasteryGuild.ActiveTasks.Values)
                 {
-                    best = new Candidate
+                    if (task.IsComplete || task.ActiveGoal == null) continue;
+
+                    int score = MatchScore(task.Task.Goal, recipe);
+                    if (score < 0) continue;
+
+                    double remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress;
+                    if (best == null ||
+                        score > best.Score ||
+                        (score == best.Score && remaining < best.Remaining))
                     {
-                        Task = task,
-                        Recipe = recipe,
-                        Entity = mastery,
-                        Priority = priority
-                    };
+                        best = new Candidate
+                        {
+                            Task = task,
+                            Recipe = recipe,
+                            Entity = mastery,
+                            Priority = priority,
+                            Score = score,
+                            Remaining = remaining
+                        };
+                    }
                 }
             }
+
+            if (best != null) found.Add(best);
         }
 
-        return best;
+        return found
+            .OrderByDescending(c => c.Priority)
+            .ThenByDescending(c => c.Score)
+            .ThenBy(c => c.Remaining)
+            .Take(MaxTasks)
+            .ToList();
     }
 
-    void LogNoCandidate(Game game)
+    void SyncRates(List<Candidate> candidates)
     {
-        foreach (GameEntity entity in game.Entities.GetAllObjects())
-        {
-            if (entity is not IMasteryGuildEntity mastery) continue;
+        var keep = new HashSet<ActiveMasteryGuildTask>(candidates.Select(c => c.Task));
 
-            foreach (ActionComponent action in entity.Components.Values.OfType<ActionComponent>())
+        foreach (var pair in _rates.ToList())
+        {
+            if (keep.Contains(pair.Key)) continue;
+            if (pair.Value.Task.ActiveGoal != null && pair.Value.Handler != null)
             {
-                ArtisanRecipe? recipe = CurrentRecipe(action);
-                if (recipe == null) continue;
-
-                string key = $"{entity.DisplayName.Text}:{recipe.DisplayName.Text}";
-                if (_loggedNoMatchAction == key) return;
-                _loggedNoMatchAction = key;
-
-                var incomplete = mastery.MasteryGuild.ActiveTasks.Values
-                    .Where(t => !t.IsComplete)
-                    .ToList();
-                var goalTypes = incomplete
-                    .Select(t => t.Task.Goal?.GetType().Name ?? "no goal")
-                    .GroupBy(x => x)
-                    .Select(g => $"{g.Key} x{g.Count()}");
-                var scoreTypes = incomplete
-                    .Select(t => MatchScore(t.Task.Goal, recipe))
-                    .GroupBy(x => x)
-                    .Select(g => $"{g.Key} x{g.Count()}");
-
-                _ctx.Log($"Mastery ETA sees {key} but no task matched. " +
-                         $"Incomplete tasks: {incomplete.Count}; goal types: {string.Join(", ", goalTypes)}; " +
-                         $"match scores: {string.Join(", ", scoreTypes)}.");
-                return;
+                try { pair.Value.Task.ActiveGoal.Progressed -= pair.Value.Handler; } catch { }
             }
+            _rates.Remove(pair.Key);
         }
 
-        _loggedNoMatchAction = "";
-    }
-
-    static ArtisanRecipe? CurrentRecipe(ActionComponent action)
-    {
-        object? creating = action.GetType().GetProperty("CreatingRecipe")?.GetValue(action);
-        return creating?.GetType().GetProperty("Recipe")?.GetValue(creating) as ArtisanRecipe;
-    }
-
-    void Hide(string reason)
-    {
-        _bar.Hide();
-        if (_loggedReason != reason)
+        foreach (Candidate candidate in candidates)
         {
-            _loggedReason = reason;
-            _ctx.Log($"Mastery ETA hidden: {reason}.");
-        }
-        _loggedTask = "";
-        UnbindTask();
-    }
+            if (_rates.ContainsKey(candidate.Task)) continue;
 
-    void BindTask(ActiveMasteryGuildTask task)
-    {
-        if (ReferenceEquals(task, _task)) return;
-
-        UnbindTask();
-        _task = task;
-        _progressHandler ??= OnProgress;
-        if (task.ActiveGoal is { } goal)
-        {
-            _ctx.Log($"Mastery ETA task state: {task.Task.Id}, active={goal.IsActive}, " +
-                     $"complete={goal.IsComplete}, progress={goal.CurrentProgress:N0}/{goal.MaxProgress:N0}.");
-            if (!goal.IsActive && !goal.IsComplete)
+            var state = new RateState
             {
-                try { goal.SetActive(); _ctx.Log($"Mastery ETA activated inactive task {task.Task.Id}."); }
-                catch { /* old game */ }
+                Task = candidate.Task,
+                Recipe = candidate.Recipe,
+                LastProgress = candidate.Task.ActiveGoal?.CurrentProgress ?? 0,
+                LastMs = (long)Time.GetTicksMsec()
+            };
+            state.Handler = (_, _) => OnProgress(state);
+
+            if (candidate.Task.ActiveGoal is { } goal)
+            {
+                _ctx.Log($"Mastery ETA task state: {candidate.Task.Task.Id}, active={goal.IsActive}, " +
+                         $"complete={goal.IsComplete}, progress={goal.CurrentProgress:N0}/{goal.MaxProgress:N0}.");
+                if (!goal.IsActive && !goal.IsComplete)
+                {
+                    try { goal.SetActive(); _ctx.Log($"Mastery ETA activated inactive task {candidate.Task.Task.Id}."); }
+                    catch { }
+                }
+                goal.Progressed += state.Handler;
             }
-            goal.Progressed += _progressHandler;
-        }
 
-        _progressCount = 0;
-        _rate = 0;
-        _lastProgress = task.ActiveGoal?.CurrentProgress ?? 0;
-        _lastProgressMs = (long)Time.GetTicksMsec();
-        _loggedReason = "";
+            _rates.Add(candidate.Task, state);
+        }
     }
 
-    void UnbindTask()
+    void OnProgress(RateState state)
     {
-        if (_task?.ActiveGoal != null && _progressHandler != null)
-        {
-            try { _task.ActiveGoal.Progressed -= _progressHandler; } catch { /* old game */ }
-        }
-        _task = null;
-        _rate = 0;
-        _lastProgress = 0;
-        _lastProgressMs = 0;
-    }
-
-    void OnProgress(object? sender, GoalProgressedEventArgs e)
-    {
-        if (_task?.ActiveGoal is not { } goal) return;
+        if (state.Task.ActiveGoal is not { } goal) return;
 
         long now = (long)Time.GetTicksMsec();
         double progress = goal.CurrentProgress;
 
-        if (_lastProgressMs > 0)
+        if (state.LastMs > 0)
         {
-            double seconds = (now - _lastProgressMs) / 1000.0;
-            double gained = progress - _lastProgress;
+            double seconds = (now - state.LastMs) / 1000.0;
+            double gained = progress - state.LastProgress;
             if (seconds > 0.2 && gained > 0)
             {
                 double instant = gained / seconds;
-                _rate = _rate <= 0 ? instant : _rate * 0.7 + instant * 0.3;
+                state.Rate = state.Rate <= 0 ? instant : state.Rate * 0.7 + instant * 0.3;
             }
         }
 
-        _lastProgress = progress;
-        _lastProgressMs = now;
+        state.LastProgress = progress;
+        state.LastMs = now;
 
-        if (_progressCount < 5)
+        if (state.Logs < 5)
         {
-            _progressCount++;
-            _ctx.Log($"Mastery ETA progress: {progress:N0}/{goal.MaxProgress:N0}.");
+            state.Logs++;
+            _ctx.Log($"Mastery ETA progress: {state.Task.Task.Id} {progress:N0}/{goal.MaxProgress:N0}.");
         }
     }
 
-    string FormatEta(double remaining, ArtisanRecipe recipe)
+    string FormatEta(Candidate candidate, RateState state)
     {
+        double remaining = Math.Max(0, candidate.Task.ActiveGoal!.MaxProgress -
+                                       candidate.Task.ActiveGoal.CurrentProgress);
         if (remaining <= 0) return "complete";
 
         long now = (long)Time.GetTicksMsec();
-        if (_lastProgressMs > 0 && now - _lastProgressMs > 120_000)
+        if (state.LastMs > 0 && now - state.LastMs > 120_000)
         {
             return "paused";
         }
 
-        if (_rate > 0)
+        if (state.Rate > 0)
         {
-            return FormatSeconds(remaining / _rate) + " left";
+            return FormatSeconds(remaining / state.Rate) + " left";
         }
 
-        // No measured rate yet: estimate from the recipe's base interval, one progress per
-        // action, and mark it approximate.
-        double fallback = remaining * Math.Max(1, recipe.BaseInterval) / 1000.0;
+        double fallback = remaining * Math.Max(1, candidate.Recipe.BaseInterval) / 1000.0;
         return "~" + FormatSeconds(fallback) + " left";
     }
 
@@ -382,31 +364,6 @@ public sealed class MasteryEtaMod : IMod
         return $"{verb} {current:N0} / {max:N0} {name}";
     }
 
-    static ActiveMasteryGuildTask? FindTask(MasteryGuildComponent guild, ArtisanRecipe recipe)
-    {
-        ActiveMasteryGuildTask? best = null;
-        int bestScore = -1;
-        double bestRemaining = double.MaxValue;
-
-        foreach (ActiveMasteryGuildTask active in guild.ActiveTasks.Values)
-        {
-            if (active.IsComplete || active.ActiveGoal == null) continue;
-
-            int score = MatchScore(active.Task.Goal, recipe);
-            if (score < 0) continue;
-
-            double remaining = active.ActiveGoal.MaxProgress - active.ActiveGoal.CurrentProgress;
-            if (score > bestScore || (score == bestScore && remaining < bestRemaining))
-            {
-                best = active;
-                bestScore = score;
-                bestRemaining = remaining;
-            }
-        }
-
-        return best;
-    }
-
     static int MatchScore(Goal? goal, ArtisanRecipe recipe)
     {
         // The task's Category is the Mastery Guild tier (Novice/Easy/...), not the recipe
@@ -429,6 +386,61 @@ public sealed class MasteryEtaMod : IMod
         }
 
         return -1;
+    }
+
+    void Hide(string reason)
+    {
+        _bar.Hide();
+        if (_loggedReason != reason)
+        {
+            _loggedReason = reason;
+            _ctx.Log($"Mastery ETA hidden: {reason}.");
+        }
+        _loggedTasks = "";
+        _loggedPlacement = "";
+    }
+
+    void LogNoCandidate(Game game)
+    {
+        foreach (GameEntity entity in game.Entities.GetAllObjects())
+        {
+            if (entity is not IMasteryGuildEntity mastery) continue;
+
+            foreach (ActionComponent action in entity.Components.Values.OfType<ActionComponent>())
+            {
+                ArtisanRecipe? recipe = CurrentRecipe(action);
+                if (recipe == null) continue;
+
+                string key = $"{entity.DisplayName.Text}:{recipe.DisplayName.Text}";
+                if (_loggedNoMatchAction == key) return;
+                _loggedNoMatchAction = key;
+
+                var incomplete = mastery.MasteryGuild.ActiveTasks.Values
+                    .Where(t => !t.IsComplete)
+                    .ToList();
+                var goalTypes = incomplete
+                    .Select(t => t.Task.Goal?.GetType().Name ?? "no goal")
+                    .GroupBy(x => x)
+                    .Select(g => $"{g.Key} x{g.Count()}");
+                var scoreTypes = incomplete
+                    .Select(t => MatchScore(t.Task.Goal, recipe))
+                    .GroupBy(x => x)
+                    .Select(g => $"{g.Key} x{g.Count()}");
+
+                _ctx.Log($"Mastery ETA sees {key} but no task matched. " +
+                         $"Incomplete tasks: {incomplete.Count}; goal types: {string.Join(", ", goalTypes)}; " +
+                         $"match scores: {string.Join(", ", scoreTypes)}.");
+                return;
+            }
+        }
+
+        _loggedNoMatchAction = "";
+    }
+
+    static ArtisanRecipe? CurrentRecipe(ActionComponent action)
+    {
+        object? creating = action.GetType().GetProperty("CreatingRecipe")?.GetValue(action);
+        return creating?.GetType().GetProperty("Recipe")?.GetValue(creating) as ArtisanRecipe;
     }
 
     static TrackerComponentFooterView? FindFooter(Node node)
