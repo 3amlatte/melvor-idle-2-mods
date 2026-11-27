@@ -49,9 +49,6 @@ public sealed class MasteryEtaMod : IMod
         public long LastMs;
         public double Rate;
         public int Logs;
-        public double BaseProgress;
-        public double Extra;
-        public long LastTickMs;
     }
 
     const int MaxTasks = 4;
@@ -371,9 +368,7 @@ public sealed class MasteryEtaMod : IMod
             {
                 Task = candidate.Task,
                 LastProgress = candidate.Task.ActiveGoal?.CurrentProgress ?? 0,
-                BaseProgress = candidate.Task.ActiveGoal?.CurrentProgress ?? 0,
-                LastMs = (long)Time.GetTicksMsec(),
-                LastTickMs = (long)Time.GetTicksMsec()
+                LastMs = (long)Time.GetTicksMsec()
             };
             state.Handler = (_, _) => OnProgress(state);
 
@@ -469,32 +464,21 @@ public sealed class MasteryEtaMod : IMod
     {
         ActiveMasteryGuildTask active = candidate.Task;
 
-        if (active.Task.CustomDescription is { } custom && !string.IsNullOrWhiteSpace(custom.Text))
+        string verb;
+        if (active.Task.Goal is CookRecipeGoal) verb = "Cook";
+        else if (active.Task.Goal is CreateRecipeGoal) verb = "Create";
+        else
         {
-            return $"{custom.Text} ({current:N0} / {max:N0})";
+            verb = "Mastery";
+            if (active.ActiveGoal != null)
+            {
+                string description = StripBbcode(active.ActiveGoal.GetBaseLocalDescription());
+                Match match = Regex.Match(description, @"^([A-Za-z]+)");
+                if (match.Success) verb = match.Groups[1].Value;
+            }
         }
 
-        if (candidate.Recipe == null && active.ActiveGoal != null)
-        {
-            string description = StripBbcode(active.ActiveGoal.GetBaseLocalDescription());
-            if (!string.IsNullOrWhiteSpace(description)) return description;
-        }
-
-        string verb = active.Task.Goal is CookRecipeGoal ? "Cook" : "Create";
-        string name = active.Task.Goal switch
-        {
-            CookRecipeGoal c => c.Recipe?.DisplayName.Text
-                                ?? c.Subcategory?.DisplayName.Text
-                                ?? (c.Category is MasteryGuildCategory ? "products" : c.Category?.DisplayName.Text)
-                                ?? "products",
-            CreateRecipeGoal a => a.Recipe?.DisplayName.Text
-                                  ?? a.Subcategory?.DisplayName.Text
-                                  ?? (a.Category is MasteryGuildCategory ? "items" : a.Category?.DisplayName.Text)
-                                  ?? "items",
-            _ => candidate.ActionName
-        };
-
-        return $"{verb} {current:N0} / {max:N0} {name}";
+        return $"{verb} {current:N0} / {max:N0}";
     }
 
     static string StripBbcode(string text)
