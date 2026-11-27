@@ -107,11 +107,27 @@ internal sealed class MasteryBar
 
         if (footerRect.Size.X >= 200)
         {
-            // Fixed position relative to the footer's right edge, so changing rates, timers
-            // and other footer text never moves the widget.
             width = desiredWidth;
-            x = footerRect.End.X - width - (entries.Count <= 1 ? SingleRightMargin : MultiRightMargin);
             y = footerRect.End.Y - Height - 4f;
+
+            // Sit just after the item-rate section (the rates end at the orange separator),
+            // so growing numbers push the cell right instead of overlapping them.
+            Control? rate = footer != null && GodotObject.IsInstanceValid(footer)
+                ? FindRightmostRate(footer)
+                : null;
+
+            if (rate != null)
+            {
+                Rect2 rr = rate.GetGlobalRect();
+                x = rr.End.X + 48f;
+                x = (float)(Math.Ceiling(x / 10.0) * 10.0);
+                // Keep it out of the far-right music/New buttons.
+                x = Math.Min(x, footerRect.End.X - width - 70f);
+            }
+            else
+            {
+                x = footerRect.End.X - width - (entries.Count <= 1 ? SingleRightMargin : MultiRightMargin);
+            }
         }
         else
         {
@@ -242,6 +258,32 @@ internal sealed class MasteryBar
                 Progress = progress
             });
         }
+    }
+
+    static Control? FindRightmostRate(Node node)
+    {
+        Control? best = null;
+        float bestX = float.MinValue;
+
+        void Walk(Node root)
+        {
+            foreach (Node child in root.GetChildren())
+            {
+                if (child is Label label &&
+                    label.IsVisibleInTree() &&
+                    (label.Text.Contains("/hr", StringComparison.OrdinalIgnoreCase) ||
+                     label.Text.Contains("Show all", StringComparison.OrdinalIgnoreCase)) &&
+                    label.Size.X > 10)
+                {
+                    float x = label.GetGlobalRect().End.X;
+                    if (x > bestX) { bestX = x; best = label; }
+                }
+                Walk(child);
+            }
+        }
+
+        Walk(node);
+        return best;
     }
 
     static Control? FindDepletionLabel(Node node)
