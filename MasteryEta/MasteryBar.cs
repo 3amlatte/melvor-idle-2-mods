@@ -5,22 +5,22 @@ using MelvorModLoader;
 namespace MasteryEta;
 
 /// <summary>
-/// The mastery notification row. It is placed next to the game's own action tracker bar
-/// (above the footer on a normal window, or just below it if the bar is at the top).
+/// Compact mastery readout that sits inside the game's action footer, to the right of the
+/// item-depletion timer. It uses the footer's small icon and text sizing rather than a
+/// separate panel.
 /// </summary>
 internal sealed class MasteryBar
 {
     static readonly Color Accent = new(0.929f, 0.749f, 0.349f);
-    static readonly Color Panel = new(0.071f, 0.078f, 0.110f);
-    static readonly Color Muted = new(0.690f, 0.690f, 0.690f);
-    static readonly Color Text = new(1f, 1f, 1f);
-    static readonly Color Track = new(0.16f, 0.17f, 0.22f);
+    static readonly Color Text = new(0.92f, 0.92f, 0.94f);
+    static readonly Color Track = new(0.18f, 0.19f, 0.24f);
 
-    const float Height = 72f;
+    const float Height = 30f;
 
     readonly CanvasLayer _layer;
     readonly PanelContainer _panel;
-    readonly TextureRect _icon;
+    readonly TextureRect _masteryIcon;
+    readonly TextureRect _itemIcon;
     readonly Label _task;
     readonly Label _eta;
     readonly ProgressBar _progress;
@@ -29,41 +29,37 @@ internal sealed class MasteryBar
     {
         _layer = new CanvasLayer { Layer = 200, Visible = false };
 
-        _panel = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        var style = new StyleBoxFlat { BgColor = Panel, BorderColor = Accent };
-        style.SetBorderWidthAll(1);
-        style.SetCornerRadiusAll(6);
-        style.SetContentMarginAll(8);
-        _panel.AddThemeStyleboxOverride("panel", style);
+        _panel = new PanelContainer
+        {
+            MouseFilter = Control.MouseFilterEnum.Pass,
+            TooltipText = "Mastery tasks are long-term skill goals that earn Mastery Guild points and ranks."
+        };
+        _panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         _layer.AddChild(_panel);
 
-        var column = new VBoxContainer
-        {
-            MouseFilter = Control.MouseFilterEnum.Ignore
-        };
-        column.AddThemeConstantOverride("separation", 3);
+        var column = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        column.AddThemeConstantOverride("separation", 2);
         _panel.AddChild(column);
 
-        var row = new HBoxContainer
-        {
-            MouseFilter = Control.MouseFilterEnum.Ignore
-        };
-        row.AddThemeConstantOverride("separation", 6);
+        var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("separation", 5);
         column.AddChild(row);
 
-        _icon = new TextureRect
+        _masteryIcon = Icon();
+        row.AddChild(_masteryIcon);
+
+        var title = new Label
         {
-            CustomMinimumSize = new Vector2(24, 24),
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            Text = "Mastery",
+            VerticalAlignment = VerticalAlignment.Center,
             MouseFilter = Control.MouseFilterEnum.Ignore
         };
-        row.AddChild(_icon);
-
-        var title = new Label { Text = "Mastery", MouseFilter = Control.MouseFilterEnum.Ignore };
-        title.AddThemeFontSizeOverride("font_size", 12);
+        title.AddThemeFontSizeOverride("font_size", 11);
         title.AddThemeColorOverride("font_color", Accent);
         row.AddChild(title);
+
+        _itemIcon = Icon();
+        row.AddChild(_itemIcon);
 
         _task = new Label
         {
@@ -72,7 +68,7 @@ internal sealed class MasteryBar
             VerticalAlignment = VerticalAlignment.Center,
             MouseFilter = Control.MouseFilterEnum.Ignore
         };
-        _task.AddThemeFontSizeOverride("font_size", 13);
+        _task.AddThemeFontSizeOverride("font_size", 11);
         _task.AddThemeColorOverride("font_color", Text);
         row.AddChild(_task);
 
@@ -80,10 +76,10 @@ internal sealed class MasteryBar
         {
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
-            CustomMinimumSize = new Vector2(120, 0),
+            CustomMinimumSize = new Vector2(92, 0),
             MouseFilter = Control.MouseFilterEnum.Ignore
         };
-        _eta.AddThemeFontSizeOverride("font_size", 13);
+        _eta.AddThemeFontSizeOverride("font_size", 11);
         _eta.AddThemeColorOverride("font_color", Accent);
         row.AddChild(_eta);
 
@@ -94,63 +90,73 @@ internal sealed class MasteryBar
             Value = 0,
             ShowPercentage = false,
             Step = 0.001,
-            CustomMinimumSize = new Vector2(0, 7),
+            CustomMinimumSize = new Vector2(0, 3),
             MouseFilter = Control.MouseFilterEnum.Ignore
         };
         var trackStyle = new StyleBoxFlat { BgColor = Track };
-        trackStyle.SetCornerRadiusAll(3);
+        trackStyle.SetCornerRadiusAll(1);
         var fillStyle = new StyleBoxFlat { BgColor = Accent };
-        fillStyle.SetCornerRadiusAll(3);
+        fillStyle.SetCornerRadiusAll(1);
         _progress.AddThemeStyleboxOverride("background", trackStyle);
         _progress.AddThemeStyleboxOverride("fill", fillStyle);
         column.AddChild(_progress);
 
-        var outline = new Label
-        {
-            Text = "Mastery tasks are long-term skill goals that earn Mastery Guild points and ranks.",
-            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
-            MouseFilter = Control.MouseFilterEnum.Ignore
-        };
-        outline.AddThemeFontSizeOverride("font_size", 9);
-        outline.AddThemeColorOverride("font_color", Muted);
-        column.AddChild(outline);
-
         ctx.Tree.Root.AddChild(_layer);
     }
 
-    public void Show(Control? footer, Texture2D? icon, string task, double current, double max, string eta)
+    static TextureRect Icon() => new()
+    {
+        CustomMinimumSize = new Vector2(16, 16),
+        ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+        StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+        MouseFilter = Control.MouseFilterEnum.Ignore
+    };
+
+    public void Show(Control? footer, Texture2D? masteryIcon, Texture2D? itemIcon,
+        string task, double current, double max, string eta)
     {
         Vector2 viewport = _panel.GetViewportRect().Size;
         if (viewport.X < 200) { Hide(); return; }
 
-        float width;
-        float x;
-        float y;
-
-        Rect2 rect = footer != null && GodotObject.IsInstanceValid(footer)
+        Rect2 footerRect = footer != null && GodotObject.IsInstanceValid(footer)
             ? footer.GetGlobalRect()
             : new Rect2();
 
-        if (rect.Size.X >= 200)
+        float x, y, width;
+
+        Control? anchor = footer != null && GodotObject.IsInstanceValid(footer)
+            ? FindDepletionLabel(footer)
+            : null;
+
+        if (anchor != null && footerRect.Size.X >= 200)
         {
-            width = Math.Clamp(rect.Size.X - 16f, 460f, viewport.X - 16f);
-            x = Math.Clamp(rect.Position.X + 8f, 8f, Math.Max(8f, viewport.X - width - 8f));
-            bool footerAtBottom = rect.Position.Y > viewport.Y * 0.5f;
-            y = footerAtBottom ? rect.Position.Y - Height - 6f : rect.End.Y + 6f;
-            y = Math.Clamp(y, 8f, Math.Max(8f, viewport.Y - Height - 8f));
+            Rect2 a = anchor.GetGlobalRect();
+            x = a.End.X + 18f;
+            y = a.Position.Y - 3f;
+            width = footerRect.End.X - 104f - x;
+            width = Math.Clamp(width, 190f, 360f);
+        }
+        else if (footerRect.Size.X >= 200)
+        {
+            width = 340f;
+            x = footerRect.End.X - width - 100f;
+            y = footerRect.End.Y - Height - 4f;
         }
         else
         {
-            // No tracker footer yet: float above the bottom edge until it appears.
-            width = Math.Min(760f, viewport.X - 32f);
+            width = Math.Min(360f, viewport.X - 32f);
             x = (viewport.X - width) / 2f;
-            y = Math.Max(8f, viewport.Y - Height - 150f);
+            y = viewport.Y - Height - 150f;
         }
+
+        x = Math.Clamp(x, 8f, Math.Max(8f, viewport.X - width - 8f));
+        y = Math.Clamp(y, 8f, Math.Max(8f, viewport.Y - Height - 8f));
 
         _panel.Position = new Vector2(x, y);
         _panel.Size = new Vector2(width, Height);
 
-        _icon.Texture = icon;
+        _masteryIcon.Texture = masteryIcon;
+        _itemIcon.Texture = itemIcon;
         _task.Text = task;
         _eta.Text = eta;
         _progress.Value = max > 0 ? Math.Clamp(current / max, 0, 1) : 0;
@@ -161,5 +167,24 @@ internal sealed class MasteryBar
     public void Hide()
     {
         _layer.Visible = false;
+    }
+
+    static Control? FindDepletionLabel(Node node)
+    {
+        foreach (Node child in node.GetChildren())
+        {
+            if (child is Label label && label.Text.Contains("depleted", StringComparison.OrdinalIgnoreCase))
+            {
+                return label;
+            }
+            if (child is RichTextLabel rich && rich.Text.Contains("depleted", StringComparison.OrdinalIgnoreCase))
+            {
+                return rich;
+            }
+
+            Control? found = FindDepletionLabel(child);
+            if (found != null) return found;
+        }
+        return null;
     }
 }

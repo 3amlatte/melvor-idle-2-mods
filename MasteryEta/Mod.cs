@@ -33,6 +33,7 @@ public sealed class MasteryEtaMod : IMod
 
     ModContext _ctx = null!;
     MasteryBar _bar = null!;
+    Texture2D? _masteryIcon;
     TrackerComponentFooterView? _footer;
     Game? _game;
     int _frame;
@@ -54,6 +55,8 @@ public sealed class MasteryEtaMod : IMod
     {
         _ctx = ctx;
         _bar = new MasteryBar(ctx);
+        try { _masteryIcon = GD.Load<Texture2D>("res://Assets/Icons/Mastery_Icon.png"); }
+        catch { _masteryIcon = null; }
         ctx.Frame += OnFrame;
         ctx.Log("Loaded.");
     }
@@ -131,9 +134,9 @@ public sealed class MasteryEtaMod : IMod
 
         string eta = FormatEta(remaining, best.Recipe);
         string text = BuildTaskText(best.Task, best.Recipe, current, max);
-        Texture2D? icon = best.Task.Task.Media ?? best.Recipe.Icon;
+        Texture2D? itemIcon = best.Task.Task.Media ?? best.Recipe.Icon;
 
-        _bar.Show(_footer, icon, text, current, max, eta);
+        _bar.Show(_footer, _masteryIcon, itemIcon, text, current, max, eta);
         if (_loggedTask != text)
         {
             _loggedTask = text;
