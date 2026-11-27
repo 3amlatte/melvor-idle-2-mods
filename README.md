@@ -33,13 +33,14 @@ Tested with game **0.11.7-alpha** and Melvor Mod Loader **0.2.0**.
 3. Extract it into the game folder (Steam → Melvor Idle 2 → Manage → Browse local files), so the
    files end up under `mods\<ModName>\`.
 
-On macOS, use the [experimental macOS loader](https://github.com/falorfrozen-cmd/MelvorModLoader/tree/main/macos)
+On macOS, use [Mod Loader for MacOS](https://github.com/3amlatte/Mod-Loader-for-MacOS)
 and extract the same zips into `~/Library/Application Support/MelvorModLoader`, so the files end up under
 `.../MelvorModLoader/mods/<ModName>/`. Most mods are platform-neutral; Mod Viewer 0.1.11 added macOS versions
 of its folder and restart actions.
 
-There is no installer. Install [Mod Viewer](ModViewer) for an in-game mod list, settings,
-enable/disable and quick restarts. Without it, a mod with options reads `settings.json` from
+There is no installer. On Windows, install [Mod Viewer](ModViewer) for an in-game mod list, settings,
+enable/disable and quick restarts. Mod Viewer is already bundled with Mod Loader for MacOS, so macOS
+users do not install it separately. Without it, a mod with options reads `settings.json` from
 its own folder; delete the mod's folder to uninstall it.
 
 Mod authors can group their mods automatically with a `group.txt` file; see
