@@ -146,7 +146,7 @@ public sealed class MasteryEtaMod : IMod
         {
             RateState state = _rates[candidate.Task];
             IActiveGoal goal = candidate.Task.ActiveGoal!;
-            double current = AdvanceProgress(candidate, state, goal);
+            double current = goal.CurrentProgress;
             double max = goal.MaxProgress;
 
             entries.Add(new MasteryBar.Entry(
@@ -220,6 +220,8 @@ public sealed class MasteryEtaMod : IMod
                 object? creating = action.GetType().GetProperty("CreatingRecipe")?.GetValue(action);
                 bool producing = creating != null;
                 bool passive = producing && !action.IsStarted;
+                if (!producing && !action.IsStarted) continue;
+                if (producing && !action.IsStarted && !ActionTimerRunning(action)) continue;
                 int priority = (action.IsStarted ? 2 : 0) + (producing ? 1 : 0) + (trackerIsFooter ? 4 : 0);
                 int interval = ActualInterval(creating) ?? recipe.BaseInterval;
 
@@ -259,7 +261,7 @@ public sealed class MasteryEtaMod : IMod
 
             // Gathering and other skills: match the tracked action against the task's data
             // object properties (Recipe/Tree/Rock/Fish/Category).
-            if (tracker?.ActionDescription is { } actionDescription &&
+            if (started && tracker?.ActionDescription is { } actionDescription &&
                 actionDescription is not ArtisanRecipe)
             {
                 int priority = (started ? 2 : 0) + (trackerIsFooter ? 4 : 0);
@@ -391,35 +393,6 @@ public sealed class MasteryEtaMod : IMod
         }
     }
 
-    double AdvanceProgress(Candidate candidate, RateState state, IActiveGoal goal)
-    {
-        long now = (long)Time.GetTicksMsec();
-        double stored = goal.CurrentProgress;
-
-        // The game's recipe mastery goals currently filter on the tier category instead of the
-        // recipe category, so they never gain progress. Drive those goals from the action's
-        // real interval instead. Tasks the game does advance win because we take the maximum.
-        if (candidate.Recipe != null && candidate.Producing && candidate.BaseIntervalMs > 0 &&
-            candidate.Task.Task.Goal is CreateRecipeGoal or CookRecipeGoal)
-        {
-            double seconds = (now - state.LastTickMs) / 1000.0;
-            if (seconds > 0 && seconds < 10)
-            {
-                state.Extra += seconds / (candidate.BaseIntervalMs / 1000.0);
-            }
-
-            double display = Math.Min(goal.MaxProgress, Math.Max(stored, state.BaseProgress + state.Extra));
-            if (display > stored + 0.0001)
-            {
-                try { goal.SetCurrentProgress(display); } catch { }
-                stored = goal.CurrentProgress;
-            }
-        }
-
-        state.LastTickMs = now;
-        return stored;
-    }
-
     void OnProgress(RateState state)
     {
         if (state.Task.ActiveGoal is not { } goal) return;
@@ -533,26 +506,45 @@ public sealed class MasteryEtaMod : IMod
 
     static int MatchScore(Goal? goal, ArtisanRecipe recipe)
     {
-        // The task's Category is the Mastery Guild tier (Novice/Easy/...), not the recipe
-        // category, so it is deliberately not compared here. Recipe first, then subcategory,
-        // then any product of the skill.
         if (goal is CookRecipeGoal cook)
         {
             if (recipe is not CookingRecipe cooking) return -1;
             if (cook.Recipe != null) return cook.Recipe == cooking ? 3 : -1;
+            if (!CategoryMatches(cook.Category, cooking.Category)) return -1;
             if (cook.Subcategory != null) return cooking.Subcategory == cook.Subcategory ? 2 : -1;
-            return 1;
+            return cook.Category is MasteryGuildCategory ? 1 : -1;
         }
 
         if (goal is CreateRecipeGoal create)
         {
             if (recipe is CookingRecipe) return -1;
             if (create.Recipe != null) return create.Recipe == recipe ? 3 : -1;
+            if (!CategoryMatches(create.Category, recipe.Category)) return -1;
             if (create.Subcategory != null) return recipe.Subcategory == create.Subcategory ? 2 : -1;
-            return 1;
+            return create.Category is MasteryGuildCategory ? 1 : -1;
         }
 
         return -1;
+    }
+
+    static bool CategoryMatches(RecipeCategory? goalCategory, RecipeCategory? recipeCategory)
+    {
+        if (goalCategory == null) return true;
+        // Novice/Easy/Adept... are Mastery Guild tiers, not recipe categories.
+        if (goalCategory is MasteryGuildCategory) return true;
+        return ReferenceEquals(goalCategory, recipeCategory) ||
+               (recipeCategory != null && recipeCategory.Id == goalCategory.Id);
+    }
+
+    static bool ActionTimerRunning(ActionComponent action)
+    {
+        try
+        {
+            object? timer = action.GetType().GetProperty("ActionTimer")?.GetValue(action);
+            object? running = timer?.GetType().GetProperty("IsRunning")?.GetValue(timer);
+            return running is true;
+        }
+        catch { return false; }
     }
 
     static int? ActualInterval(object? creating)
@@ -580,9 +572,7 @@ public sealed class MasteryEtaMod : IMod
             if (value != null && SameData(value, action)) return true;
         }
 
-        object? goalCategory = goal.GetType().GetProperty("Category")?.GetValue(goal);
-        object? actionCategory = action.GetType().GetProperty("Category")?.GetValue(action);
-        return goalCategory != null && actionCategory != null && SameData(goalCategory, actionCategory);
+        return false;
     }
 
     static bool SameData(object a, object b)
