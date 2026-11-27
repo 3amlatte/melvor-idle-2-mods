@@ -331,6 +331,16 @@ public sealed class MelvorAutoMod : IMod
             hid = true;
         }
 
+        if (root is GamesByMalcs.Melvor2.Entities.Farming.FarmingCategorySelect)
+        {
+            Node? quickBuy = FindByName(root, "QuickBuyButton");
+            if (quickBuy is Control button && button.Visible)
+            {
+                button.Visible = false;
+                hid = true;
+            }
+        }
+
         foreach (Node child in root.GetChildren())
         {
             string? text = child switch
