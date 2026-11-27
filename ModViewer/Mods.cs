@@ -156,9 +156,19 @@ internal static class Mods
         catch { return ("", ""); }
     }
 
+    public static bool IsModViewer(ModEntry entry) =>
+        string.Equals(entry.Assembly, "ModViewer", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(entry.Name, "ModViewer", StringComparison.OrdinalIgnoreCase);
+
     public static bool SetEnabled(ModEntry entry, bool enabled, out string error)
     {
         error = "";
+        if (!enabled && IsModViewer(entry))
+        {
+            error = "Mod Viewer is part of the loader and cannot be disabled.";
+            return false;
+        }
+
         string root = enabled ? ModsDir : DisabledDir;
         if (string.IsNullOrEmpty(root)) { error = "Mod directory is unknown."; return false; }
 

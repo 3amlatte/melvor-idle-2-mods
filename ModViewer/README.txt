@@ -1,11 +1,12 @@
-MOD VIEWER 0.1.11
+MOD VIEWER 0.1.12
 for Melvor Idle 2 (tested on 0.11.7-alpha).
 
-Requires Melvor Mod Loader 0.2.0 or newer:
-  https://www.nexusmods.com/melvoridle2/mods/2
+Requires Melvor Mod Loader 0.2.0 or newer.
+  Windows: https://www.nexusmods.com/melvoridle2/mods/2
+  macOS:   https://github.com/3amlatte/Mod-Loader-for-MacOS
 Install the loader first; Mod Viewer will not load without it.
 
-Press F2 (or pick it in the loader's Mods menu) to open a list of every installed mod, both
+Press F2, click the loader's Mods button, or press F1 to open a list of every installed mod, both
 enabled and disabled.
 
 GROUPS

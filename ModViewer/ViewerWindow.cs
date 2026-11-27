@@ -295,7 +295,14 @@ internal sealed class ViewerWindow
         info.AddChild(sub);
         row.AddChild(info);
 
-        var enabled = new CheckBox { Text = "Enabled", ButtonPressed = entry.Enabled };
+        bool required = Mods.IsModViewer(entry);
+        var enabled = new CheckBox
+        {
+            Text = required ? "Required" : "Enabled",
+            ButtonPressed = entry.Enabled,
+            Disabled = required,
+            TooltipText = required ? "Mod Viewer is part of the loader and cannot be disabled." : ""
+        };
         enabled.Toggled += pressed =>
         {
             if (Mods.SetEnabled(entry, pressed, out string error))
