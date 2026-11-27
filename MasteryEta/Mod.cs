@@ -455,7 +455,7 @@ public sealed class MasteryEtaMod : IMod
         if (remaining <= 0) return "complete";
 
         long now = (long)Time.GetTicksMsec();
-        if (state.LastMs > 0 && now - state.LastMs > 120_000)
+        if (!candidate.Producing && state.LastMs > 0 && now - state.LastMs > 120_000)
         {
             return "paused";
         }
