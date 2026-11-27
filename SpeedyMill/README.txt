@@ -1,4 +1,4 @@
-SPEEDY MILL 0.1.1
+SPEEDY MILL 0.1.2
 for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 Makes the grain mill produce six times as fast. "500% faster" is a +500% speed

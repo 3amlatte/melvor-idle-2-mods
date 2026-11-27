@@ -35,6 +35,7 @@ public sealed class SpeedyMillMod : IMod
     ModifierSystem? _mods;
     ModifierValues? _values;
     FarmingGrainMillComponent? _mill;
+    Game? _earlyGame;
     string _loggedRecipeId = "";
     int _frame;
 
@@ -43,7 +44,26 @@ public sealed class SpeedyMillMod : IMod
         _ctx = ctx;
         ctx.Tree.NodeAdded += OnNodeAdded;
         ctx.Frame += OnFrame;
+        ctx.Frame += SubscribeSaveLoaded;
         ctx.Log("Loaded. Grain mill production runs 500% faster (6x).");
+    }
+
+    void SubscribeSaveLoaded()
+    {
+        Game? game = GameAccess.CurrentGame;
+        if (game == null || ReferenceEquals(game, _earlyGame)) return;
+
+        try { if (_earlyGame != null) _earlyGame.SaveLoaded -= OnGameSaveLoaded; } catch { }
+        _earlyGame = game;
+        try { game.SaveLoaded += OnGameSaveLoaded; } catch { }
+    }
+
+    void OnGameSaveLoaded(object? sender, EventArgs e)
+    {
+        // Fires before the game runs load-time offline ticks. Re-apply the modifier here so
+        // the mill's offline cycles use the 6x interval too.
+        _game = null;
+        TryBind();
     }
 
     void OnNodeAdded(Node node)

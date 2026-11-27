@@ -43,6 +43,7 @@ public sealed class MasteryEtaMod : IMod
     double _lastProgress;
     long _lastProgressMs;
     double _rate;
+    int _progressCount;
 
     string _loggedReason = "";
     string _loggedError = "";
@@ -127,14 +128,17 @@ public sealed class MasteryEtaMod : IMod
         if (_loggedAction != $"{best.Entity.DisplayName.Text}:{best.Recipe.DisplayName.Text}")
         {
             _loggedAction = $"{best.Entity.DisplayName.Text}:{best.Recipe.DisplayName.Text}";
-            _ctx.Log($"Mastery ETA action: {_loggedAction}; task {BuildTaskText(best.Task, best.Recipe, current, max)}.");
+            string category = best.Recipe.Category?.Id ?? "none";
+            string subcategory = best.Recipe.Subcategory?.Id ?? "none";
+            _ctx.Log($"Mastery ETA action: {_loggedAction} (category {category}, subcategory {subcategory}); " +
+                     $"task {BuildTaskText(best.Task, best.Recipe, current, max)}.");
         }
 
         BindTask(best.Task);
 
         string eta = FormatEta(remaining, best.Recipe);
         string text = BuildTaskText(best.Task, best.Recipe, current, max);
-        Texture2D? itemIcon = best.Task.Task.Media ?? best.Recipe.Icon;
+        Texture2D? itemIcon = best.Recipe.Icon ?? best.Task.Task.Media ?? _masteryIcon;
 
         _bar.Show(_footer, _masteryIcon, itemIcon, text, current, max, eta);
         if (_loggedTask != text)
@@ -247,11 +251,19 @@ public sealed class MasteryEtaMod : IMod
         UnbindTask();
         _task = task;
         _progressHandler ??= OnProgress;
-        if (task.ActiveGoal != null)
+        if (task.ActiveGoal is { } goal)
         {
-            task.ActiveGoal.Progressed += _progressHandler;
+            _ctx.Log($"Mastery ETA task state: {task.Task.Id}, active={goal.IsActive}, " +
+                     $"complete={goal.IsComplete}, progress={goal.CurrentProgress:N0}/{goal.MaxProgress:N0}.");
+            if (!goal.IsActive && !goal.IsComplete)
+            {
+                try { goal.SetActive(); _ctx.Log($"Mastery ETA activated inactive task {task.Task.Id}."); }
+                catch { /* old game */ }
+            }
+            goal.Progressed += _progressHandler;
         }
 
+        _progressCount = 0;
         _rate = 0;
         _lastProgress = task.ActiveGoal?.CurrentProgress ?? 0;
         _lastProgressMs = (long)Time.GetTicksMsec();
@@ -290,6 +302,12 @@ public sealed class MasteryEtaMod : IMod
 
         _lastProgress = progress;
         _lastProgressMs = now;
+
+        if (_progressCount < 5)
+        {
+            _progressCount++;
+            _ctx.Log($"Mastery ETA progress: {progress:N0}/{goal.MaxProgress:N0}.");
+        }
     }
 
     string FormatEta(double remaining, ArtisanRecipe recipe)

@@ -132,7 +132,7 @@ internal sealed class MasteryBar
         {
             Rect2 a = anchor.GetGlobalRect();
             x = a.End.X + 18f;
-            y = a.Position.Y - 3f;
+            y = a.Position.Y + 2f;
             width = footerRect.End.X - 104f - x;
             width = Math.Clamp(width, 190f, 360f);
         }
