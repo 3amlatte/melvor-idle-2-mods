@@ -31,17 +31,33 @@ if (Test-Path $optionalPath) {
         Where-Object { $_ -and -not $_.StartsWith('#') })
 }
 
-$projects = @(Get-ChildItem -Path $root -Directory |
+$excludePath = Join-Path $modpackDir 'exclude.txt'
+$excluded = @()
+if (Test-Path $excludePath) {
+    $excluded = @(Get-Content $excludePath |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { $_ -and -not $_.StartsWith('#') })
+}
+
+$allProjects = @(Get-ChildItem -Path $root -Directory |
     Where-Object { Test-Path (Join-Path $_.FullName ($_.Name + '.csproj')) } |
     ForEach-Object { $_.Name } |
     Sort-Object)
 
-if ($projects.Count -eq 0) { throw "No mod projects found under $root." }
+if ($allProjects.Count -eq 0) { throw "No mod projects found under $root." }
 
-$unknownOptional = @($optional | Where-Object { $projects -notcontains $_ })
+$unknownOptional = @($optional | Where-Object { $allProjects -notcontains $_ })
 if ($unknownOptional.Count -gt 0) {
     throw ("Modpack\optional.txt lists unknown projects: " + ($unknownOptional -join ', '))
 }
+
+$unknownExcluded = @($excluded | Where-Object { $allProjects -notcontains $_ })
+if ($unknownExcluded.Count -gt 0) {
+    throw ("Modpack\exclude.txt lists unknown projects: " + ($unknownExcluded -join ', '))
+}
+
+$projects = @($allProjects | Where-Object { $excluded -notcontains $_ })
+if ($projects.Count -eq 0) { throw "Every project is excluded from the modpack." }
 
 $defaultMods = @($projects | Where-Object { $optional -notcontains $_ })
 
@@ -52,7 +68,7 @@ function Get-ModVersion([string] $mod) {
     if ($versionNode) { [string] $versionNode.Version } else { '0.0.0' }
 }
 
-Write-Host ("Packaging {0} mod(s): {1} default, {2} optional ..." -f $projects.Count, $defaultMods.Count, $optional.Count)
+Write-Host ("Packaging {0} mod(s): {1} default, {2} optional, {3} excluded ..." -f $projects.Count, $defaultMods.Count, $optional.Count, $excluded.Count)
 
 $packageArgs = @{ Mods = $projects }
 if ($GameDir) { $packageArgs.GameDir = $GameDir }

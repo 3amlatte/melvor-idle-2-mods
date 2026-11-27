@@ -1,0 +1,3 @@
+# Projects kept out of the published modpack while they are still in development.
+SpeedyMill
+MasteryEta
