@@ -343,12 +343,12 @@ public sealed class MasteryEtaMod : IMod
         {
             CookRecipeGoal c => c.Recipe?.DisplayName.Text
                                 ?? c.Subcategory?.DisplayName.Text
-                                ?? c.Category?.DisplayName.Text
-                                ?? recipe.DisplayName.Text,
+                                ?? (c.Category is MasteryGuildCategory ? "products" : c.Category?.DisplayName.Text)
+                                ?? "products",
             CreateRecipeGoal a => a.Recipe?.DisplayName.Text
                                   ?? a.Subcategory?.DisplayName.Text
-                                  ?? a.Category?.DisplayName.Text
-                                  ?? recipe.DisplayName.Text,
+                                  ?? (a.Category is MasteryGuildCategory ? "items" : a.Category?.DisplayName.Text)
+                                  ?? "items",
             _ => recipe.DisplayName.Text
         };
 
@@ -382,22 +382,23 @@ public sealed class MasteryEtaMod : IMod
 
     static int MatchScore(Goal? goal, ArtisanRecipe recipe)
     {
+        // The task's Category is the Mastery Guild tier (Novice/Easy/...), not the recipe
+        // category, so it is deliberately not compared here. Recipe first, then subcategory,
+        // then any product of the skill.
         if (goal is CookRecipeGoal cook)
         {
             if (recipe is not CookingRecipe cooking) return -1;
             if (cook.Recipe != null) return cook.Recipe == cooking ? 3 : -1;
-            if (cook.Subcategory != null && cooking.Subcategory != cook.Subcategory) return -1;
-            if (cook.Category != null && cooking.Category != cook.Category) return -1;
-            return cook.Subcategory != null || cook.Category != null ? 2 : 1;
+            if (cook.Subcategory != null) return cooking.Subcategory == cook.Subcategory ? 2 : -1;
+            return 1;
         }
 
         if (goal is CreateRecipeGoal create)
         {
             if (recipe is CookingRecipe) return -1;
             if (create.Recipe != null) return create.Recipe == recipe ? 3 : -1;
-            if (create.Subcategory != null && recipe.Subcategory != create.Subcategory) return -1;
-            if (create.Category != null && recipe.Category != create.Category) return -1;
-            return create.Subcategory != null || create.Category != null ? 2 : 1;
+            if (create.Subcategory != null) return recipe.Subcategory == create.Subcategory ? 2 : -1;
+            return 1;
         }
 
         return -1;

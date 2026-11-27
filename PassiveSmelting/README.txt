@@ -1,4 +1,4 @@
-PASSIVE SMELTING 0.1.3
+PASSIVE SMELTING 0.1.4
 for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 The smelting recipe selected on the Smithing page keeps running while your character trains

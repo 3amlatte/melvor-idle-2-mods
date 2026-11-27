@@ -42,6 +42,8 @@ public sealed class PassiveCookingMod : IMod
     string _waitingRecipeId = "";
     int _frame;
 
+    Game? _earlyGame;
+
     ModifierValues? _speedValues;
     string _speedRecipeId = "";
     int _speedPortions;
@@ -52,7 +54,27 @@ public sealed class PassiveCookingMod : IMod
         _section = new PassiveCookingSection(ctx);
         ctx.Tree.NodeAdded += OnNodeAdded;
         ctx.Frame += OnFrame;
+        ctx.Frame += SubscribeSaveLoaded;
         ctx.Log("Loaded.");
+    }
+
+    void SubscribeSaveLoaded()
+    {
+        Game? game = GameAccess.CurrentGame;
+        if (game == null || ReferenceEquals(game, _earlyGame)) return;
+
+        try { if (_earlyGame != null) _earlyGame.SaveLoaded -= OnGameSaveLoaded; } catch { }
+        _earlyGame = game;
+        try { game.SaveLoaded += OnGameSaveLoaded; } catch { }
+    }
+
+    void OnGameSaveLoaded(object? sender, EventArgs e)
+    {
+        // Fires before the game runs load-time offline ticks. Bind and start the passive
+        // action here so those ticks produce cooking output too.
+        _game = null;
+        TryBind();
+        Update();
     }
 
     void OnNodeAdded(Node node)

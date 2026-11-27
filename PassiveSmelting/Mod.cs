@@ -41,6 +41,8 @@ public sealed class PassiveSmeltingMod : IMod
     EventHandler<ValueChangedEventArgs<IRecipeCategory?>>? _categoryChanged;
     int _frame;
 
+    Game? _earlyGame;
+
     ModifierValues? _speedValues;
     string _speedRecipeId = "";
     int _speedBars;
@@ -52,7 +54,27 @@ public sealed class PassiveSmeltingMod : IMod
         _section = new PassiveSmeltingSection(ctx);
         ctx.Tree.NodeAdded += OnNodeAdded;
         ctx.Frame += OnFrame;
+        ctx.Frame += SubscribeSaveLoaded;
         ctx.Log("Loaded.");
+    }
+
+    void SubscribeSaveLoaded()
+    {
+        Game? game = GameAccess.CurrentGame;
+        if (game == null || ReferenceEquals(game, _earlyGame)) return;
+
+        try { if (_earlyGame != null) _earlyGame.SaveLoaded -= OnGameSaveLoaded; } catch { }
+        _earlyGame = game;
+        try { game.SaveLoaded += OnGameSaveLoaded; } catch { }
+    }
+
+    void OnGameSaveLoaded(object? sender, EventArgs e)
+    {
+        // Fires before the game runs load-time offline ticks. Bind and start the passive
+        // action here so those ticks produce smelting output too.
+        _game = null;
+        TryBind();
+        Update();
     }
 
     void OnNodeAdded(Node node)

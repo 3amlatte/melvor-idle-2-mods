@@ -1,4 +1,4 @@
-PASSIVE COOKING 0.1.0
+PASSIVE COOKING 0.1.1
 for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
 
 Runs the cooking recipe selected on the Cooking page as a passive action: its timer keeps
