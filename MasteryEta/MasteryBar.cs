@@ -210,7 +210,7 @@ internal sealed class MasteryBar
 
             var task = new Label
             {
-                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
                 TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
                 VerticalAlignment = VerticalAlignment.Center,
                 MouseFilter = Control.MouseFilterEnum.Ignore
@@ -221,9 +221,9 @@ internal sealed class MasteryBar
 
             var eta = new Label
             {
-                HorizontalAlignment = HorizontalAlignment.Right,
+                HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Center,
-                CustomMinimumSize = new Vector2(60, 0),
+                SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
                 MouseFilter = Control.MouseFilterEnum.Ignore
             };
             eta.AddThemeFontSizeOverride("font_size", 11);

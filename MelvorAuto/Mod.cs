@@ -320,11 +320,12 @@ public sealed class MelvorAutoMod : IMod
         }
     }
 
-    static bool HideWineStrips(Node root)
+    bool HideWineStrips(Node root)
     {
         bool hid = false;
 
-        if (root.Name.ToString() == "AutomationCostContainer" && root is Control container && container.Visible)
+        if (root.Name.ToString().Contains("AutomationCost", StringComparison.OrdinalIgnoreCase) &&
+            root is Control container && container.Visible)
         {
             container.Visible = false;
             hid = true;
@@ -335,7 +336,7 @@ public sealed class MelvorAutoMod : IMod
             string? text = child switch
             {
                 Label label => label.Text,
-                RichTextLabel rich => rich.Text,
+                RichTextLabel rich => rich.Text + " " + rich.GetParsedText(),
                 _ => null
             };
 
@@ -345,11 +346,13 @@ public sealed class MelvorAutoMod : IMod
                 {
                     strip.Visible = false;
                     hid = true;
+                    LogWinePathOnce(strip);
                 }
                 else if (child is Control labelControl && labelControl.Visible)
                 {
                     labelControl.Visible = false;
                     hid = true;
+                    LogWinePathOnce(labelControl);
                 }
                 continue;
             }
@@ -358,6 +361,21 @@ public sealed class MelvorAutoMod : IMod
         }
 
         return hid;
+    }
+
+    static bool s_winePathLogged;
+
+    void LogWinePathOnce(Node node)
+    {
+        if (s_winePathLogged) return;
+        s_winePathLogged = true;
+        List<string> path = new();
+        for (Node? n = node; n != null; n = n.GetParent())
+        {
+            path.Add(n.Name.ToString());
+        }
+        path.Reverse();
+        _ctx.Log("Hid wine strip: " + string.Join("/", path));
     }
 
     static Node? FindByName(Node root, string name)
