@@ -32,6 +32,7 @@ public sealed class MasteryEtaMod : IMod
         public required int Priority;
         public required int Score;
         public required double Remaining;
+        public required double Ratio;
         public ArtisanRecipe? Recipe;
         public string ActionName = "";
         public Texture2D? Icon;
@@ -162,6 +163,18 @@ public sealed class MasteryEtaMod : IMod
                 $"{(c.Passive ? "passive " : "")}{c.Entity.DisplayName.Text}:{c.ActionName} -> " +
                 $"{BuildTaskText(c, c.Task.ActiveGoal!.CurrentProgress, c.Task.ActiveGoal.MaxProgress)} " +
                 $"[{c.Task.Task.Category?.DisplayName.Text ?? "?"}]")));
+
+            foreach (var group in candidates.GroupBy(c => c.Entity))
+            {
+                var progressing = group.Key.MasteryGuild.ActiveTasks.Values
+                    .Where(t => !t.IsComplete && t.ActiveGoal is { CurrentProgress: > 0 })
+                    .OrderByDescending(t => t.ActiveGoal!.CurrentProgress / Math.Max(1, t.ActiveGoal.MaxProgress))
+                    .Take(6)
+                    .Select(t => $"{t.Task.Id} [{t.Task.Category?.DisplayName.Text}] " +
+                                 $"{t.ActiveGoal!.CurrentProgress:N0}/{t.ActiveGoal.MaxProgress:N0}");
+                _ctx.Log($"Mastery ETA progress tasks for {group.Key.DisplayName.Text}: " +
+                         (progressing.Any() ? string.Join(", ", progressing) : "none"));
+            }
         }
 
         _bar.Show(_footer, entries);
@@ -191,7 +204,6 @@ public sealed class MasteryEtaMod : IMod
             var actions = entity.Components.Values.OfType<ActionComponent>().ToList();
             bool started = actions.Any(a => a.IsStarted);
             MasteryGuildComponent guild = mastery.MasteryGuild;
-            MasteryGuildCategory? selectedCategory = guild.SelectedCategory;
 
             Candidate? best = null;
 
@@ -212,11 +224,15 @@ public sealed class MasteryEtaMod : IMod
                     if (task.IsComplete || task.ActiveGoal == null) continue;
                     int score = MatchScore(task.Task.Goal, recipe);
                     if (score < 0) continue;
-                    if (selectedCategory != null && ReferenceEquals(task.Task.Category, selectedCategory)) score += 10;
 
                     double remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress;
+                    double ratio = task.ActiveGoal.MaxProgress > 0
+                        ? task.ActiveGoal.CurrentProgress / task.ActiveGoal.MaxProgress
+                        : 0;
                     if (best == null || score > best.Score ||
-                        (score == best.Score && task.ActiveGoal.MaxProgress < best.Task.ActiveGoal!.MaxProgress))
+                        (score == best.Score && (ratio > best.Ratio + 0.0001 ||
+                         (Math.Abs(ratio - best.Ratio) <= 0.0001 &&
+                          task.ActiveGoal.MaxProgress < best.Task.ActiveGoal!.MaxProgress))))
                     {
                         best = new Candidate
                         {
@@ -225,6 +241,7 @@ public sealed class MasteryEtaMod : IMod
                             Priority = priority,
                             Score = score,
                             Remaining = remaining,
+                            Ratio = ratio,
                             Recipe = recipe,
                             ActionName = recipe.DisplayName.Text,
                             Icon = recipe.Icon ?? task.Task.Media,
@@ -247,11 +264,15 @@ public sealed class MasteryEtaMod : IMod
                     if (!GoalMatchesAction(task.Task.Goal, actionDescription)) continue;
 
                     int score = 3;
-                    if (selectedCategory != null && ReferenceEquals(task.Task.Category, selectedCategory)) score += 10;
 
                     double remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress;
+                    double ratio = task.ActiveGoal.MaxProgress > 0
+                        ? task.ActiveGoal.CurrentProgress / task.ActiveGoal.MaxProgress
+                        : 0;
                     if (best == null || score > best.Score ||
-                        (score == best.Score && task.ActiveGoal.MaxProgress < best.Task.ActiveGoal!.MaxProgress))
+                        (score == best.Score && (ratio > best.Ratio + 0.0001 ||
+                         (Math.Abs(ratio - best.Ratio) <= 0.0001 &&
+                          task.ActiveGoal.MaxProgress < best.Task.ActiveGoal!.MaxProgress))))
                     {
                         best = new Candidate
                         {
@@ -260,6 +281,7 @@ public sealed class MasteryEtaMod : IMod
                             Priority = priority,
                             Score = score,
                             Remaining = remaining,
+                            Ratio = ratio,
                             Recipe = null,
                             ActionName = actionDescription.DisplayName.Text,
                             Icon = actionDescription.Icon ?? task.Task.Media,

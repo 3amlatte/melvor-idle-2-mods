@@ -111,7 +111,7 @@ internal sealed class MasteryBar
         if (anchor != null && footerRect.Size.X >= 200)
         {
             anchorRect = anchor.GetGlobalRect();
-            x = anchorRect.End.X + 18f;
+            x = anchorRect.End.X + 42f;
             y = anchorRect.Position.Y + 1f;
             width = footerRect.End.X - 104f - x;
             width = Math.Clamp(width, 190f, desiredWidth);
