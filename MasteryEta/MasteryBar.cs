@@ -108,7 +108,7 @@ internal sealed class MasteryBar
             // Fixed position relative to the footer's right edge, so changing rates, timers
             // and other footer text never moves the widget.
             width = desiredWidth;
-            x = footerRect.End.X - width - 150f;
+            x = footerRect.End.X - width - (entries.Count <= 1 ? 230f : 120f);
             y = footerRect.End.Y - Height - 4f;
         }
         else
