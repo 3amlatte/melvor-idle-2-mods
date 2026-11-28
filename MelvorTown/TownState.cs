@@ -7,6 +7,17 @@ public sealed record UpgradeDef(
     string Id, string Name, string Description, int PopRequired, int FoodCost,
     string? Requires = null, int Max = 1);
 
+public sealed class MerchantOffer
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public long Price { get; set; }
+    public int Quantity { get; set; }
+    public int Bought { get; set; }
+    public bool TownItem { get; set; }
+}
+
 public sealed class TownState
 {
     public static readonly UpgradeDef[] Upgrades =
@@ -29,6 +40,8 @@ public sealed class TownState
     public bool MerchantHere { get; set; }
     public double MerchantTimer { get; set; } = 120;
     public double MerchantLeft { get; set; }
+    public List<MerchantOffer> Offers { get; set; } = new();
+    public HashSet<string> Perks { get; set; } = new();
     public Dictionary<string, int> Owned { get; set; } = new()
     {
         ["cottage"] = 1,
@@ -45,6 +58,10 @@ public sealed class TownState
     [JsonIgnore] double _starveAcc;
     [JsonIgnore] string _path = "";
 
+    public event Action? MerchantArrived;
+
+    public bool HasPerk(string id) => Perks.Contains(id);
+
     public int Count(string id) => Owned.TryGetValue(id, out int n) ? n : 0;
 
     public bool Has(string id) => Count(id) > 0;
@@ -55,12 +72,16 @@ public sealed class TownState
     public bool HasBalloon => Has("balloon");
 
     public int Capacity =>
-        4 + Count("cottage") * 2 + Count("timber") * 4 + Count("manor") * 8;
+        4 + Count("cottage") * 2 + Count("timber") * 4 + Count("manor") * 8 +
+        (HasPerk("charter") ? 3 : 0);
 
-    public double GrowthInterval => (HasSchool ? 15.0 : 25.0) * (1 - 0.1 * Lessons);
+    public double GrowthInterval =>
+        (HasSchool ? 15.0 : 25.0) * (1 - 0.1 * Lessons) * (HasPerk("banner") ? 0.8 : 1.0);
+
+    public int FarmYield => 4 + (HasPerk("sickle") ? 1 : 0) + (HasPerk("quarrydeed") ? 1 : 0);
 
     public double FoodPerMinute =>
-        Farms * 30.0 - Population * 0.9;
+        Farms * FarmYield * 7.5 - Population * 0.9;
 
     public void Tick(double dt)
     {
@@ -76,7 +97,7 @@ public sealed class TownState
         while (_farmAcc >= 8.0)
         {
             _farmAcc -= 8.0;
-            Food += 4;
+            Food += FarmYield;
         }
 
         // Villagers eat.
@@ -118,8 +139,12 @@ public sealed class TownState
         // Merchant visits.
         if (AlwaysMerchant)
         {
-            MerchantHere = true;
-            MerchantLeft = Math.Max(MerchantLeft, 30);
+            if (!MerchantHere)
+            {
+                MerchantHere = true;
+                MerchantLeft = Math.Max(MerchantLeft, 30);
+                MerchantArrived?.Invoke();
+            }
         }
         else if (MerchantHere)
         {
@@ -128,7 +153,7 @@ public sealed class TownState
             {
                 MerchantHere = false;
                 MerchantLeft = 0;
-                MerchantTimer = HasBalloon ? 90 : 200;
+                MerchantTimer = (HasBalloon ? 90 : 200) * (HasPerk("horseshoe") ? 0.75 : 1.0);
             }
         }
         else
@@ -138,6 +163,7 @@ public sealed class TownState
             {
                 MerchantHere = true;
                 MerchantLeft = 45;
+                MerchantArrived?.Invoke();
             }
         }
     }
@@ -174,6 +200,8 @@ public sealed class TownState
         MerchantHere = false;
         MerchantTimer = 120;
         MerchantLeft = 0;
+        Offers = new List<MerchantOffer>();
+        Perks = new HashSet<string>();
         Owned = new Dictionary<string, int>
         {
             ["cottage"] = 1,
@@ -233,6 +261,8 @@ public sealed class TownState
     void UpgradesSetup()
     {
         Owned ??= new Dictionary<string, int>();
+        Offers ??= new List<MerchantOffer>();
+        Perks ??= new HashSet<string>();
         if (Owned.Count == 0)
         {
             Owned["cottage"] = 1;

@@ -58,6 +58,7 @@ internal sealed class TownPanel : Control
             _hoverName = name;
             Refresh();
         };
+        _state.MerchantArrived += () => MerchantStock.Roll(_state);
         AddChild(_view);
 
         // Top HUD floats over the town instead of framing it.
@@ -227,6 +228,7 @@ internal sealed class TownPanel : Control
     public void Open()
     {
         Visible = true;
+        if (_state.Offers.Count == 0) MerchantStock.Roll(_state);
         ApplyGameFont();
         CloseWindow();
         Refresh();
@@ -349,29 +351,6 @@ internal sealed class TownPanel : Control
         });
     }
 
-    static long GoldAmount()
-    {
-        Game? game = GameAccess.CurrentGame;
-        if (game == null) return 0;
-        BankEntity? bank = game.Entities.GetAllObjects().OfType<BankEntity>().FirstOrDefault();
-        if (bank == null) return 0;
-        return game.Data.TryGetObject<Currency>("MelvorBase:GoldPieces", out Currency? gold) && gold != null
-            ? bank.Wallet.GetQuantity(gold)
-            : 0;
-    }
-
-    static bool SpendGold(long amount)
-    {
-        Game? game = GameAccess.CurrentGame;
-        if (game == null) return false;
-        BankEntity? bank = game.Entities.GetAllObjects().OfType<BankEntity>().FirstOrDefault();
-        if (bank == null) return false;
-        if (!game.Data.TryGetObject<Currency>("MelvorBase:GoldPieces", out Currency? gold) || gold == null) return false;
-        if (bank.Wallet.GetQuantity(gold) < amount) return false;
-        bank.Wallet.RemoveQuantity(gold, amount);
-        return true;
-    }
-
     void OpenMerchant()
     {
         OpenWindow("Travelling Merchant", body =>
@@ -382,34 +361,45 @@ internal sealed class TownPanel : Control
                 if (!_state.MerchantHere)
                 {
                     body.AddChild(Ui.Label($"The merchant is on the road. Back in about {Math.Max(0, _state.MerchantTimer):0}s.", 14));
-                    body.AddChild(Ui.Label("Build a hot air balloon to bring merchants in twice as often.", 13, Ui.Muted));
                     return;
                 }
 
                 body.AddChild(Ui.Label($"The cart leaves in {Math.Max(0, _state.MerchantLeft):0}s.", 14, Ui.Accent));
-                body.AddChild(Ui.Label("A few things the merchant will trade for gold.", 13, Ui.Muted));
+                body.AddChild(Ui.Label("Six items, limited stock. New stock every visit.", 13, Ui.Muted));
 
-                var food = Ui.Button("Buy 50 food - 100 GP", () =>
-                {
-                    if (!SpendGold(100)) return;
-                    _state.Food += 50;
-                    _state.Save();
-                    Render();
-                });
-                food.Disabled = GoldAmount() < 100;
-                body.AddChild(food);
+                if (_state.Offers.Count == 0) MerchantStock.Roll(_state);
 
-                var recruit = Ui.Button("Recruit a villager - 250 GP", () =>
+                foreach (MerchantOffer offer in _state.Offers)
                 {
-                    if (_state.Population >= _state.Capacity || !SpendGold(250)) return;
-                    _state.Population += 1;
-                    _state.Save();
-                    Render();
-                });
-                recruit.Disabled = _state.Population >= _state.Capacity || GoldAmount() < 250;
-                body.AddChild(recruit);
-                if (_state.Population >= _state.Capacity)
-                    body.AddChild(Ui.Label("No room for another villager. Build more housing.", 12, Ui.Muted));
+                    var row = new HBoxContainer();
+                    row.AddThemeConstantOverride("separation", 8);
+
+                    Texture2D? icon = offer.TownItem
+                        ? _art.GetValueOrDefault("tab")
+                        : MerchantStock.IconFor(offer.Id);
+                    row.AddChild(Ui.Icon(icon, 34));
+
+                    var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                    text.AddThemeConstantOverride("separation", 1);
+                    text.AddChild(Ui.Label(offer.Name, 14));
+                    if (offer.Description.Length > 0)
+                        text.AddChild(Ui.Label(offer.Description, 12, Ui.Muted));
+                    int left = offer.Quantity - offer.Bought;
+                    text.AddChild(Ui.Label(left > 0 ? $"{left} left" : "Sold out", 11, left > 0 ? Ui.Muted : Ui.Bad));
+                    row.AddChild(text);
+
+                    long price = MerchantStock.PriceOf(_state, offer);
+                    var buy = Ui.Button($"{price:N0} GP", () =>
+                    {
+                        MerchantStock.Buy(_state, offer, out _);
+                        Render();
+                    });
+                    buy.Disabled = left <= 0 || MerchantStock.GoldAmount() < price;
+                    buy.CustomMinimumSize = new Vector2(110, 0);
+                    row.AddChild(buy);
+
+                    body.AddChild(row);
+                }
             }
             Render();
         });
