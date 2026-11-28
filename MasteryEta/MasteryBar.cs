@@ -52,6 +52,9 @@ internal sealed class MasteryBar
     readonly List<Cell> _cells = new();
     readonly List<Control> _separators = new();
 
+    Control? _dimmer;
+    float _lastDim = -1;
+
     Font? _font;
     int _fontSize = BaseFontSize;
     int _donorSize = BaseFontSize;
@@ -101,6 +104,7 @@ internal sealed class MasteryBar
     public void Show(Control? footer, IReadOnlyList<Entry> entries, string? donorText = null)
     {
         CopyFooterStyle(footer, donorText);
+        ApplyDim();
         Vector2 viewport = _panel.GetViewportRect().Size;
         if (viewport.X < 200 || entries.Count == 0) { Hide(); return; }
 
@@ -305,6 +309,41 @@ internal sealed class MasteryBar
             });
         }
     }
+
+    void ApplyDim()
+    {
+        if (_dimmer == null || !GodotObject.IsInstanceValid(_dimmer))
+        {
+            _dimmer = _panel.GetTree()?.Root?.FindChild("DimTheLightsPanel", true, false) as Control;
+        }
+
+        float alpha = 0;
+        if (_dimmer != null && GodotObject.IsInstanceValid(_dimmer) && _dimmer.IsVisibleInTree())
+        {
+            alpha = _dimmer.SelfModulate.A * _dimmer.Modulate.A;
+            for (Node? n = _dimmer.GetParent(); n != null; n = n.GetParent())
+            {
+                if (n is CanvasItem item) alpha *= item.SelfModulate.A * item.Modulate.A;
+            }
+            alpha = Math.Clamp(alpha, 0f, 1f);
+        }
+
+        // The window dim is a black overlay above the game; mirror it on our cell.
+        float factor = 1f - alpha;
+        _content.Modulate = new Color(Dim.R * factor, Dim.G * factor, Dim.B * factor);
+
+        if (Math.Abs(alpha - _lastDim) > 0.01f)
+        {
+            _lastDim = alpha;
+            // Exposed for the mod log.
+            LastDim = alpha;
+            LastDimFound = _dimmer != null && GodotObject.IsInstanceValid(_dimmer);
+        }
+    }
+
+    public float LastDim { get; private set; } = -1f;
+
+    public bool LastDimFound { get; private set; }
 
     void CopyFooterStyle(Control? footer, string? donorText)
     {
