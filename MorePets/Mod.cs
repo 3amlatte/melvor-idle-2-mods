@@ -760,7 +760,7 @@ public sealed class MorePetsMod : IMod
         label.Modulate = new Color(0.96f, 0.82f, 0.48f);
 
         MarginContainer shift = new();
-        shift.AddThemeConstantOverride("margin_top", 6);
+        shift.AddThemeConstantOverride("margin_top", 14);
         shift.AddChild(label);
         center.AddChild(shift);
         bar.AddChild(center);
