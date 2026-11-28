@@ -556,15 +556,6 @@ internal sealed class TownPanel : Control
                 };
                 body.AddChild(rates);
 
-                var merchant = new CheckButton { Text = "Always show the merchant (placement)", ButtonPressed = _state.AlwaysMerchant };
-                merchant.AddThemeFontSizeOverride("font_size", 14);
-                merchant.Toggled += on =>
-                {
-                    _state.AlwaysMerchant = on;
-                    _state.Save();
-                };
-                body.AddChild(merchant);
-
                 var pause = new CheckButton { Text = "Pause the town", ButtonPressed = _state.Paused };
                 pause.AddThemeFontSizeOverride("font_size", 14);
                 pause.Toggled += on =>
