@@ -97,7 +97,7 @@ internal sealed class MasteryBar
         if (footerRect.Size.X >= 200)
         {
             width = desiredWidth;
-            y = footerRect.End.Y - Height - 4f;
+            y = footerRect.End.Y - Height - 1f;
 
             // Sit just after the item-rate section (the rates end at the orange separator),
             // so growing numbers push the cell right instead of overlapping them.
