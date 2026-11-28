@@ -336,9 +336,16 @@ public sealed class MasteryEtaMod : IMod
 
     Texture2D? ChooseIcon(ActiveMasteryGuildTask task, ArtisanRecipe recipe)
     {
-        // Keep the game's own task picture when it has one; only fill in the category icons
-        // for tasks whose Media is empty/placeholder.
+        // Keep the game's own task picture when it has one.
         if (HasRealMedia(task.Task.Media)) return task.Task.Media;
+
+        // A task for one specific recipe keeps that item's icon.
+        if (task.Task.Goal is CookRecipeGoal cook && cook.Recipe != null)
+            return cook.Recipe.Icon ?? recipe.Icon;
+        if (task.Task.Goal is CreateRecipeGoal create && create.Recipe != null)
+            return create.Recipe.Icon ?? recipe.Icon;
+
+        // Only category/subcategory tasks with no specific item use the generated icons.
         return TaskIcon(task.Task.Goal, recipe) ?? recipe.Icon;
     }
 
