@@ -59,12 +59,18 @@ public sealed class Mod : IMod
         Label? title = bank.FindChild("Title", true, false) as Label;
         LabelSettings? settings = title?.LabelSettings;
 
+        // Match how the neighbouring tab label is actually drawn (settings + tint).
+        Color tint = Colors.White;
+        for (Node? n = title; n != null && n != bank; n = n.GetParent())
+            if (n is CanvasItem item) tint *= item.Modulate * item.SelfModulate;
+        Color labelColor = (settings?.FontColor ?? title?.GetThemeColor("font_color") ?? new Color(0.886f, 0.859f, 0.804f)) * tint;
+
         var button = new Button
         {
             Name = "TownNavigationButton",
             Flat = true,
             FocusMode = Control.FocusModeEnum.None,
-            CustomMinimumSize = new Vector2(56, 36),
+            CustomMinimumSize = new Vector2(80, 64),
             SizeFlagsVertical = bank.SizeFlagsVertical,
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
             TooltipText = "Melvor Town\nGrow a small medieval town with population and food.",
@@ -87,7 +93,7 @@ public sealed class Mod : IMod
         var icon = new TextureRect
         {
             Texture = _tabIcon,
-            CustomMinimumSize = new Vector2(24, 24),
+            CustomMinimumSize = new Vector2(40, 40),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
@@ -101,14 +107,17 @@ public sealed class Mod : IMod
             HorizontalAlignment = HorizontalAlignment.Center,
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
-        if (settings != null) label.LabelSettings = settings;
+        if (settings?.Font != null) label.AddThemeFontOverride("font", settings.Font);
+        if (settings != null && settings.FontSize > 0)
+            label.AddThemeFontSizeOverride("font_size", settings.FontSize);
+        label.AddThemeColorOverride("font_color", labelColor);
         column.AddChild(label);
 
         button.AddChild(column);
         button.Pressed += Toggle;
 
         box.AddChild(button);
-        box.MoveChild(button, bank.GetIndex() + 1);
+        box.MoveChild(button, bank.GetIndex());
         _button = button;
     }
 
