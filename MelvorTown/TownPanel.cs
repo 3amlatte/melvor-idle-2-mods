@@ -10,7 +10,6 @@ internal sealed class TownPanel : Control
 
     readonly Label _popLabel;
     readonly Label _foodLabel;
-    readonly Label _seedLabel;
     readonly Label _rateLabel;
     readonly Label _hintLabel;
     readonly TownView _view;
@@ -39,8 +38,8 @@ internal sealed class TownPanel : Control
 
         foreach (string name in new[]
         {
-            "bar", "house1", "house2", "house3", "farm", "seedstore", "merchant",
-            "trees", "school", "balloon", "tab", "pop", "food", "seed", "ground",
+            "bar", "house1", "house2", "house3", "farm", "merchant",
+            "trees", "school", "balloon", "tab", "pop", "food", "ground",
         })
         {
             _art[name] = Ui.Texture(ctx.Directory, name);
@@ -78,9 +77,6 @@ internal sealed class TownPanel : Control
         _foodLabel = Ui.Label("", 15);
         Stat(header, "food", _foodLabel, "Food",
             () => $"{_state.Food:0} stored, net {(_state.FoodPerMinute >= 0 ? "+" : "")}{_state.FoodPerMinute:0} per minute.\nFarms, groves and merchants add food. Every villager eats over time.");
-        _seedLabel = Ui.Label("", 15);
-        Stat(header, "seed", _seedLabel, "Seeds",
-            () => $"{_state.Seeds:0} in store.\nEach farm uses one seed to grow carrots every 8 seconds. Buy more at the seed store.");
         header.AddChild(Ui.Button("Upgrades", OpenUpgrades));
         _moveButton = Ui.Button("Move", ToggleEdit);
         header.AddChild(_moveButton);
@@ -264,7 +260,6 @@ internal sealed class TownPanel : Control
     {
         _popLabel.Text = $"{_state.Population} / {_state.Capacity}";
         _foodLabel.Text = $"{_state.Food:0}";
-        _seedLabel.Text = $"{_state.Seeds:0}";
         _rateLabel.Text = (_state.FoodPerMinute >= 0 ? "+" : "") + $"{_state.FoodPerMinute:0} food/min";
         _rateLabel.Visible = _state.ShowRates;
 
@@ -305,7 +300,6 @@ internal sealed class TownPanel : Control
             case "house3": OpenHouse("Manor", 8); break;
             case "farm1":
             case "farm2": OpenFarm(); break;
-            case "seedstore": OpenSeedStore(); break;
             case "merchant": OpenMerchant(); break;
             case "trees1":
             case "trees2": OpenGrove(); break;
@@ -331,12 +325,8 @@ internal sealed class TownPanel : Control
             void Render()
             {
                 Clear(body);
-                body.AddChild(Ui.Label($"Farms: {_state.Farms}    Seeds: {_state.Seeds:0}    Food: {_state.Food:0}", 15));
-                body.AddChild(Ui.Label(
-                    _state.Seeds > 0
-                        ? "Each farm turns a seed into carrots every 8 seconds. Chickens add a little food on their own."
-                        : "No seeds left. The chickens still produce a little, but the carrots have stopped.",
-                    13, Ui.Muted));
+                body.AddChild(Ui.Label($"Farms: {_state.Farms}    Food: {_state.Food:0}", 15));
+                body.AddChild(Ui.Label("Each farm grows carrots every 8 seconds. Chickens add a little food on their own.", 13, Ui.Muted));
 
                 var harvest = Ui.Button(
                     _state.HarvestCooldown > 0
@@ -344,52 +334,13 @@ internal sealed class TownPanel : Control
                         : "Harvest now (+4 food per farm)",
                     () =>
                     {
-                        double gain = _state.Farms * 4;
-                        int used = (int)Math.Min(_state.Seeds, _state.Farms);
-                        _state.Seeds -= used;
-                        _state.Food += gain;
+                        _state.Food += _state.Farms * 4;
                         _state.HarvestCooldown = 20;
                         _state.Save();
                         Render();
                     });
-                harvest.Disabled = _state.HarvestCooldown > 0 || _state.Seeds < 1;
+                harvest.Disabled = _state.HarvestCooldown > 0;
                 body.AddChild(harvest);
-            }
-            Render();
-        });
-    }
-
-    void OpenSeedStore()
-    {
-        OpenWindow("Seed Store", body =>
-        {
-            void Render()
-            {
-                Clear(body);
-                body.AddChild(Ui.Label($"Seeds: {_state.Seeds:0}    Food: {_state.Food:0}", 15));
-                body.AddChild(Ui.Label("Seeds keep the farms growing. The store trades food for seed sacks.", 13, Ui.Muted));
-
-                var small = Ui.Button("Buy 10 seeds - 15 food", () =>
-                {
-                    if (_state.Food < 15) return;
-                    _state.Food -= 15;
-                    _state.Seeds += 10;
-                    _state.Save();
-                    Render();
-                });
-                small.Disabled = _state.Food < 15;
-                body.AddChild(small);
-
-                var large = Ui.Button("Buy 30 seeds - 40 food", () =>
-                {
-                    if (_state.Food < 40) return;
-                    _state.Food -= 40;
-                    _state.Seeds += 30;
-                    _state.Save();
-                    Render();
-                });
-                large.Disabled = _state.Food < 40;
-                body.AddChild(large);
             }
             Render();
         });
@@ -411,17 +362,6 @@ internal sealed class TownPanel : Control
 
                 body.AddChild(Ui.Label($"The cart leaves in {Math.Max(0, _state.MerchantLeft):0}s.", 14, Ui.Accent));
                 body.AddChild(Ui.Label("A few things the merchant will trade for food.", 13, Ui.Muted));
-
-                var seeds = Ui.Button("10 seeds - 18 food", () =>
-                {
-                    if (_state.Food < 18) return;
-                    _state.Food -= 18;
-                    _state.Seeds += 10;
-                    _state.Save();
-                    Render();
-                });
-                seeds.Disabled = _state.Food < 18;
-                body.AddChild(seeds);
 
                 var recruit = Ui.Button("Recruit a villager - 35 food", () =>
                 {

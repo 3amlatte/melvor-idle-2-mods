@@ -278,7 +278,6 @@ internal sealed class TownView : Control
         "house2" => "Timber House",
         "house3" => "Manor",
         "school" => "School",
-        "seedstore" => "Seed Store",
         "farm1" or "farm2" => "Farm",
         "trees1" or "trees2" => "Tree Grove",
         "balloon" => "Hot Air Balloon",
@@ -407,7 +406,6 @@ internal sealed class TownView : Control
         if (state.Has("manor")) spots.Add(new("house3", "house3", 0.54f, 0.72f));
 
         if (state.HasSchool) spots.Add(new("school", "school", 0.47f, 0.47f));
-        if (state.HasSeedStore) spots.Add(new("seedstore", "seedstore", 0.62f, 0.57f));
 
         spots.Add(new("farm1", "farm", 0.74f, 0.78f));
         if (state.Farms > 1) spots.Add(new("farm2", "farm", 0.83f, 0.73f));

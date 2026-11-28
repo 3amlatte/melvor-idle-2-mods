@@ -14,7 +14,6 @@ public sealed class TownState
         new("cottage", "Cottage", "+2 population capacity. A thatched cottage joins the town.", 3, 30),
         new("grove", "Tree Grove", "+1 tree plot. Forage food from the grove.", 2, 20),
         new("farm", "New Farm", "+1 farm plot. More carrots and chickens.", 4, 60),
-        new("seedstore", "Seed Store", "Buy seeds with food. Unlocks the seed stall.", 5, 80, "farm"),
         new("timber", "Timber House", "+4 population capacity. A two-storey house.", 8, 150, "cottage"),
         new("school", "School", "Villagers grow faster and lessons can be funded.", 12, 260, "timber"),
         new("manor", "Manor", "+8 population capacity. A stone manor for a growing town.", 16, 400, "school"),
@@ -22,7 +21,6 @@ public sealed class TownState
     };
 
     public double Food { get; set; } = 28;
-    public double Seeds { get; set; } = 12;
     public int Population { get; set; } = 2;
     public int Lessons { get; set; }
     public bool Paused { get; set; }
@@ -55,7 +53,6 @@ public sealed class TownState
     public int Groves => Math.Max(1, Count("grove"));
     public bool HasSchool => Has("school");
     public bool HasBalloon => Has("balloon");
-    public bool HasSeedStore => Has("seedstore");
 
     public int Capacity =>
         4 + Count("cottage") * 2 + Count("timber") * 4 + Count("manor") * 8;
@@ -63,7 +60,7 @@ public sealed class TownState
     public double GrowthInterval => (HasSchool ? 15.0 : 25.0) * (1 - 0.1 * Lessons);
 
     public double FoodPerMinute =>
-        Farms * (Seeds > 0 ? 30.0 : 7.5) - Population * 0.9;
+        Farms * 30.0 - Population * 0.9;
 
     public void Tick(double dt)
     {
@@ -74,20 +71,12 @@ public sealed class TownState
         ForageCooldown = Math.Max(0, ForageCooldown - dt);
         ScoutCooldown = Math.Max(0, ScoutCooldown - dt);
 
-        // Farms: one seed turns into carrots every 8 seconds; chickens add a little anyway.
+        // Farms: carrots every 8 seconds; chickens add a little anyway.
         _farmAcc += dt;
         while (_farmAcc >= 8.0)
         {
             _farmAcc -= 8.0;
-            if (Seeds >= 1)
-            {
-                Seeds -= 1;
-                Food += 4;
-            }
-            else
-            {
-                Food += 1;
-            }
+            Food += 4;
         }
 
         // Villagers eat.
@@ -178,7 +167,6 @@ public sealed class TownState
     public void Reset()
     {
         Food = 28;
-        Seeds = 12;
         Population = 2;
         Lessons = 0;
         Paused = false;
@@ -253,6 +241,5 @@ public sealed class TownState
         }
         Population = Math.Clamp(Population, 1, Math.Max(1, Capacity));
         Food = Math.Max(0, Food);
-        Seeds = Math.Max(0, Seeds);
     }
 }
