@@ -16,7 +16,7 @@ internal static class MerchantStock
     {
         new("sickle", "Golden Sickle", "Farms produce 25% more food.", 750),
         new("charter", "Town Charter", "+3 population capacity.", 900),
-        new("banner", "Festival Banner", "Villagers arrive 20% faster.", 850),
+        new("banner", "Festival Banner", "Population grows 20% faster.", 850),
         new("ledger", "Merchant's Ledger", "10% off everything the merchant sells.", 1100),
         new("horseshoe", "Lucky Horseshoe", "Merchants visit 25% more often.", 650),
         new("quarrydeed", "Quarry Deed", "+1 food from every farm.", 1000),

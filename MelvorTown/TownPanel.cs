@@ -12,6 +12,7 @@ internal sealed class TownPanel : Control
     readonly Dictionary<string, Texture2D?> _art = new();
 
     readonly Label _popLabel;
+    readonly Label _workerLabel;
     readonly Label _foodLabel;
     readonly Label _rateLabel;
     readonly Label _hintLabel;
@@ -46,7 +47,7 @@ internal sealed class TownPanel : Control
         foreach (string name in new[]
         {
             "bar", "house1", "house2", "house3", "farm", "merchant",
-            "trees", "school", "balloon", "tab", "pop", "food", "ground",
+            "trees", "school", "balloon", "tab", "pop", "worker", "food", "ground",
         })
         {
             _art[name] = Ui.Texture(ctx.Directory, name);
@@ -80,11 +81,14 @@ internal sealed class TownPanel : Control
 
         header.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         _popLabel = Ui.Label("", 15);
-        Stat(header, "pop", _popLabel, "Villagers",
-            () => $"{_state.Population} of {_state.Capacity} places filled.\nVillagers arrive while there is spare food and housing. Cottages, timber houses and manors raise the cap.");
+        Stat(header, "pop", _popLabel, "Population",
+            () => $"{_state.Population} of {_state.Capacity} places filled.\nPeople arrive while there is spare food and housing. Cottages, timber houses and manors raise the cap.");
+        _workerLabel = Ui.Label("", 15);
+        Stat(header, "worker", _workerLabel, "Workers",
+            () => $"{_state.Workers} hired.\nWorkers take town jobs; the list of who is doing what is coming later.");
         _foodLabel = Ui.Label("", 15);
         Stat(header, "food", _foodLabel, "Food",
-            () => $"{_state.Food:0} stored, net {(_state.FoodPerMinute >= 0 ? "+" : "")}{_state.FoodPerMinute:0} per minute.\nFarms, groves and merchants add food. Every villager eats over time.");
+            () => $"{_state.Food:0} stored, net {(_state.FoodPerMinute >= 0 ? "+" : "")}{_state.FoodPerMinute:0} per minute.\nFarms, groves and merchants add food. Everyone eats over time.");
         _relicButton = Ui.Button("Relics", ToggleRelics);
         header.AddChild(_relicButton);
         header.AddChild(Ui.Button("Upgrades", OpenUpgrades));
@@ -290,6 +294,7 @@ internal sealed class TownPanel : Control
     void Refresh()
     {
         _popLabel.Text = $"{_state.Population} / {_state.Capacity}";
+        _workerLabel.Text = $"{_state.Workers}";
         _foodLabel.Text = $"{_state.Food:0}";
         _rateLabel.Text = (_state.FoodPerMinute >= 0 ? "+" : "") + $"{_state.FoodPerMinute:0} food/min";
         _rateLabel.Visible = _state.ShowRates;
@@ -387,8 +392,8 @@ internal sealed class TownPanel : Control
         OpenWindow(name, body =>
         {
             body.AddChild(Ui.Label($"+{capacity} population capacity", 15));
-            body.AddChild(Ui.Label($"Villagers: {_state.Population} / {_state.Capacity}", 14, Ui.Text));
-            body.AddChild(Ui.Label("Houses raise the number of villagers the town can support. Food and schools decide how fast it fills.", 13, Ui.Muted));
+            body.AddChild(Ui.Label($"Population: {_state.Population} / {_state.Capacity}", 14, Ui.Text));
+            body.AddChild(Ui.Label("Houses raise the population the town can support. Food and schools decide how fast it fills.", 13, Ui.Muted));
         });
     }
 
@@ -504,7 +509,7 @@ internal sealed class TownPanel : Control
             {
                 Clear(body);
                 body.AddChild(Ui.Label($"Lessons funded: {_state.Lessons} / 3", 15));
-                body.AddChild(Ui.Label($"Villagers arrive {15 * (1 - 0.1 * _state.Lessons):0}% faster than an unschooled town.", 13, Ui.Muted));
+                body.AddChild(Ui.Label($"Population grows {15 * (1 - 0.1 * _state.Lessons):0}% faster than an unschooled town.", 13, Ui.Muted));
 
                 var fund = Ui.Button("Fund a lesson - 80 food", () =>
                 {
@@ -554,7 +559,7 @@ internal sealed class TownPanel : Control
             void Render()
             {
                 Clear(body);
-                body.AddChild(Ui.Label($"Villagers {_state.Population} / {_state.Capacity}    Food {_state.Food:0}", 14, Ui.Muted));
+                body.AddChild(Ui.Label($"Population {_state.Population} / {_state.Capacity}    Food {_state.Food:0}", 14, Ui.Muted));
 
                 foreach (UpgradeDef def in TownState.Upgrades)
                 {

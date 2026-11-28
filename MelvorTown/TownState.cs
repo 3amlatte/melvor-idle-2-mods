@@ -26,13 +26,14 @@ public sealed class TownState
         new("grove", "Tree Grove", "+1 tree plot. Forage food from the grove.", 2, 20),
         new("farm", "New Farm", "+1 farm plot. More carrots and chickens.", 4, 60),
         new("timber", "Timber House", "+4 population capacity. A two-storey house.", 8, 150, "cottage"),
-        new("school", "School", "Villagers grow faster and lessons can be funded.", 12, 260, "timber"),
+        new("school", "School", "Population grows faster and lessons can be funded.", 12, 260, "timber"),
         new("manor", "Manor", "+8 population capacity. A stone manor for a growing town.", 16, 400, "school"),
         new("balloon", "Hot Air Balloon", "Scout the roads; merchants visit twice as often.", 20, 650, "manor"),
     };
 
     public double Food { get; set; } = 28;
     public int Population { get; set; } = 2;
+    public int Workers { get; set; }
     public int Lessons { get; set; }
     public bool Paused { get; set; }
     public bool AlwaysMerchant { get; set; } = true;
@@ -100,7 +101,7 @@ public sealed class TownState
             Food += FarmYield;
         }
 
-        // Villagers eat.
+        // People eat.
         Food -= Population * 0.015 * dt;
 
         // Growth.
@@ -172,7 +173,7 @@ public sealed class TownState
     {
         if (Count(def.Id) >= def.Max) { reason = "Already built."; return false; }
         if (def.Requires != null && !Has(def.Requires)) { reason = "Needs " + NameOf(def.Requires) + "."; return false; }
-        if (Population < def.PopRequired) { reason = $"Needs {def.PopRequired} villagers."; return false; }
+        if (Population < def.PopRequired) { reason = $"Needs {def.PopRequired} population."; return false; }
         if (Food < def.FoodCost) { reason = $"Needs {def.FoodCost} food."; return false; }
         reason = "";
         return true;
@@ -194,6 +195,7 @@ public sealed class TownState
     {
         Food = 28;
         Population = 2;
+        Workers = 0;
         Lessons = 0;
         Paused = false;
         AlwaysMerchant = true;
