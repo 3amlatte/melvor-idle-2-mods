@@ -92,7 +92,7 @@ internal sealed class MasteryBar
         float x, y, width;
         float desiredWidth = (entries.Count <= 1
             ? 300f
-            : Math.Min(520f, 220f + 150f * entries.Count)) * 0.8075f;
+            : Math.Min(520f, 220f + 150f * entries.Count)) * 0.767f;
 
         if (footerRect.Size.X >= 200)
         {
@@ -110,7 +110,7 @@ internal sealed class MasteryBar
 
             if (divider != null)
             {
-                x = divider.GetGlobalRect().End.X + 26f;
+                x = divider.GetGlobalRect().End.X + 20f;
             }
             else if (rate != null)
             {
@@ -278,19 +278,12 @@ internal sealed class MasteryBar
             foreach (Node child in root.GetChildren())
             {
                 if (child is Control control && control.IsVisibleInTree() &&
-                    control.Size.X > 0 && control.Size.X <= 10 && control.Size.Y >= 18)
+                    control.Size.X > 0 && control.Size.X <= 8 && control.Size.Y >= 18)
                 {
-                    Color color = child switch
-                    {
-                        ColorRect rect => rect.Color,
-                        _ => control.Modulate
-                    };
-                    bool orange = color.R > 0.5f && color.G > 0.3f && color.B < 0.4f && color.A > 0.2f;
-                    if (orange || child is VSeparator)
-                    {
-                        float x = control.GetGlobalRect().Position.X;
-                        if (x > bestX) { bestX = x; best = control; }
-                    }
+                    // Any narrow vertical divider; the orange one is the rightmost in the
+                    // footer, and may be a texture rather than a coloured ColorRect.
+                    float x = control.GetGlobalRect().Position.X;
+                    if (x > bestX) { bestX = x; best = control; }
                 }
                 Walk(child);
             }
