@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="icons\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="icons\*.jpg" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="icons\*.webp" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="MelvorModLoader">
       <HintPath>$(GameDir)\data_MelvorModLoader_windows_x86_64\MelvorModLoader.dll</HintPath>
       <Private>false</Private>

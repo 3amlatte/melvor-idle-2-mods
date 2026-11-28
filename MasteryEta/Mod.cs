@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using GamesByMalcs.Melvor2;
@@ -55,6 +56,12 @@ public sealed class MasteryEtaMod : IMod
 
     ModContext _ctx = null!;
     MasteryBar _bar = null!;
+    Texture2D? _iconSandwich;
+    Texture2D? _iconSoup;
+    Texture2D? _iconCake;
+    Texture2D? _iconPancake;
+    Texture2D? _iconPie;
+    Texture2D? _iconSushi;
     TrackerComponentFooterView? _footer;
     Game? _game;
     int _frame;
@@ -72,6 +79,14 @@ public sealed class MasteryEtaMod : IMod
     {
         _ctx = ctx;
         _bar = new MasteryBar(ctx);
+        string iconDir = Path.Combine(ctx.Directory, "icons");
+        _iconSandwich = LoadIcon(iconDir, "sandwich");
+        _iconSoup = LoadIcon(iconDir, "soup");
+        _iconCake = LoadIcon(iconDir, "cake");
+        _iconPancake = LoadIcon(iconDir, "pancake");
+        _iconPie = LoadIcon(iconDir, "pie");
+        _iconSushi = LoadIcon(iconDir, "sushi");
+
         ctx.Frame += OnFrame;
         ctx.Log("Loaded.");
     }
@@ -247,7 +262,7 @@ public sealed class MasteryEtaMod : IMod
                             : 0,
                         Recipe = recipe,
                         ActionName = recipe.DisplayName.Text,
-                        Icon = recipe.Icon ?? task.Task.Media,
+                        Icon = TaskIcon(task.Task.Goal, recipe) ?? task.Task.Media,
                         BaseIntervalMs = interval,
                         Passive = passive,
                         Producing = producing
@@ -315,6 +330,42 @@ public sealed class MasteryEtaMod : IMod
             .ThenBy(c => c.Task.ActiveGoal!.MaxProgress)
             .Take(MaxTasks)
             .ToList();
+    }
+
+    Texture2D? TaskIcon(Goal? goal, ArtisanRecipe recipe)
+    {
+        string key = "";
+        if (goal is CookRecipeGoal cook)
+        {
+            key = (cook.Subcategory?.Id ?? "") + " " + (cook.Subcategory?.DisplayName.Text ?? "");
+            if (key.Trim().Length == 0) key = cook.Recipe?.Subcategory?.Id ?? "";
+        }
+        if (key.Length == 0) key = recipe.Subcategory?.Id ?? "";
+        key = key.ToLowerInvariant();
+
+        if (key.Contains("pancake")) return _iconPancake ?? recipe.Icon;
+        if (key.Contains("sandwich")) return _iconSandwich ?? recipe.Icon;
+        if (key.Contains("sushi")) return _iconSushi ?? recipe.Icon;
+        if (key.Contains("soup")) return _iconSoup ?? recipe.Icon;
+        if (key.Contains("cake")) return _iconCake ?? recipe.Icon;
+        if (key.Contains("pie")) return _iconPie ?? recipe.Icon;
+        return recipe.Icon;
+    }
+
+    static Texture2D? LoadIcon(string directory, string name)
+    {
+        foreach (string extension in new[] { ".png", ".jpg", ".webp" })
+        {
+            string path = Path.Combine(directory, name + extension);
+            if (!File.Exists(path)) continue;
+            try
+            {
+                Image? image = Image.LoadFromFile(path);
+                return image == null ? null : ImageTexture.CreateFromImage(image);
+            }
+            catch { return null; }
+        }
+        return null;
     }
 
     static bool IsRecentlyUpdated(ActiveMasteryGuildTask task) =>
