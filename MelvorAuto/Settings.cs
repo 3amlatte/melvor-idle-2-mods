@@ -13,10 +13,10 @@ public sealed class Settings
     public List<string> ExcludedBones { get; set; } = new();
     public bool AutoOpenItems { get; set; } = true;
     public List<string> ExcludedOpenables { get; set; } = new();
-    public bool AutoHarvest { get; set; } = true;
-    public bool AutoCompost { get; set; } = true;
-    public bool AutoWater { get; set; } = true;
-    public bool AutoPlant { get; set; } = true;
+    /// <summary>Removes the wine cost from Farming automation.</summary>
+    public bool NoWineCost { get; set; } = true;
+    /// <summary>Turns on auto-plant, auto-harvest, auto-water and auto-compost together.</summary>
+    public bool Automations { get; set; } = true;
     public bool AutoMill { get; set; } = true;
     public bool AutoRanchMaintenance { get; set; } = true;
     public bool AutoRanchPets { get; set; } = true;

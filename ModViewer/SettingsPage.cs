@@ -12,7 +12,7 @@ internal static class SettingsPage
 {
     static readonly string[] FarmerKeys =
     {
-        "AutoHarvest", "AutoCompost", "AutoWater", "AutoPlant", "AutoMill"
+        "NoWineCost", "Automations", "AutoMill"
     };
 
     static readonly string[] RanchKeys =
@@ -270,10 +270,8 @@ internal static class SettingsPage
     {
         "AutoBuryBones" => "Auto Burial",
         "AutoOpenItems" => "Auto Opener",
-        "AutoHarvest" => "Auto harvest",
-        "AutoCompost" => "Auto compost",
-        "AutoWater" => "Auto water",
-        "AutoPlant" => "Auto plant",
+        "NoWineCost" => "No wine cost",
+        "Automations" => "Automations",
         "AutoMill" => "Grain mill stocking",
         "AutoRanchMaintenance" => "Repair all enclosures",
         "AutoRanchPets" => "Pet all animals",
@@ -284,10 +282,8 @@ internal static class SettingsPage
     {
         "AutoBuryBones" => "Bury every bone that reaches the bank, except the exclusions below.",
         "AutoOpenItems" => "Open chests and other openables as soon as they arrive.",
-        "AutoHarvest" => "Harvest ripe crops automatically.",
-        "AutoCompost" => "Compost a plot automatically before replanting.",
-        "AutoWater" => "Water crops automatically.",
-        "AutoPlant" => "Replant harvested plots with the selected crop.",
+        "NoWineCost" => "Remove the wine cost from Farming automation.",
+        "Automations" => "Turn on auto-plant, auto-harvest, auto-water and auto-compost for every purchased plot.",
         "AutoMill" => "Stock the grain mill from the bank and start it if stopped.",
         "AutoRanchMaintenance" => "Repair all enclosures after each hourly maintenance tick.",
         "AutoRanchPets" => "Pet animals as soon as they want attention.",

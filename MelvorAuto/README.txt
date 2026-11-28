@@ -1,5 +1,9 @@
-MELVOR AUTO 0.1.9
+MELVOR AUTO 0.2.0
 for Melvor Idle 2 (tested on 0.11.7-alpha), needs Melvor Mod Loader 0.2.0+
+
+WHAT'S NEW IN 0.2.0
+  - Auto Farmer's four per-action toggles are replaced by one "Automations" setting,
+    plus a separate "No wine cost" setting. Nobody wanted one without the other.
 
 WHAT'S NEW IN 0.1.9
   - The Farming page's "Estimated wine consumed per day" strip is hidden, because the
@@ -37,11 +41,16 @@ AUTO OPENER
   (ExcludedOpenables), so a chest type you want to keep is left alone.
 
 AUTO FARMER
-  Makes every Farming automation free: the wine (and any other item/currency) normally charged
-  for auto-plant, auto-harvest, auto-water and auto-compost is reduced to zero. It then switches
-  those automations on for every purchased plot when a character opens, so the game's own
-  automation does the work, including during offline progress. A plot bought during the session
-  is picked up the next time you open the game.
+  Two toggles:
+
+    No wine cost (default on)
+      Removes the wine (and any other item/currency) normally charged for auto-plant,
+      auto-harvest, auto-water and auto-compost.
+
+    Automations (default on)
+      Switches all four automations on for every purchased plot when a character opens, so the
+      game's own automation does the work, including during offline progress. A plot bought
+      during the session is picked up the next time you open the game.
 
   Some recipes and higher-tier plots have their own automation requirements. The mod checks
   them and writes a clear log line for each plot that cannot be automated yet, naming the plot
@@ -74,7 +83,7 @@ SETTINGS
   F3 for the Auto Farmer settings window. Bone/open changes apply while the game runs; the
   farming automation flags are read when a character opens. Defaults:
     AutoBuryBones=true, AutoOpenItems=true,
-    AutoHarvest=true, AutoCompost=true, AutoWater=true, AutoPlant=true,
+    NoWineCost=true, Automations=true,
     AutoMill=true, AutoRanchMaintenance=true, AutoRanchPets=true.
   available.json lists the bones and openable items Mod Viewer shows as icon cards.
 

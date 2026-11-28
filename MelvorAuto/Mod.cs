@@ -198,7 +198,7 @@ public sealed class MelvorAutoMod : IMod
             LogOnce("The Ranching entity was not found; ranch maintenance and petting are off for this character.");
         }
 
-        AddFreeAutomation(game);
+        ApplyFreeAutomation(game);
         ApplyAutomation();
         TryStockMill();
 
@@ -246,6 +246,11 @@ public sealed class MelvorAutoMod : IMod
             _settingsStamp = File.GetLastWriteTimeUtc(_settingsPath);
             RebuildSets();
             _ctx.Log("settings.json reloaded.");
+            if (_game != null)
+            {
+                ApplyFreeAutomation(_game);
+                ApplyAutomation();
+            }
 
             // A toggle may just have been switched on; apply it straight away.
             TryRepairRanch();
@@ -312,6 +317,8 @@ public sealed class MelvorAutoMod : IMod
 
     void HideFreeAutomationCost()
     {
+        if (!_settings.NoWineCost) return;
+
         // Wine is free while Melvor Auto is active, so the game's "Estimated N wine
         // consumed per day" strip is misleading. There can be one strip per Farming view.
         if (HideWineStrips(_ctx.Tree.Root))
@@ -564,18 +571,25 @@ public sealed class MelvorAutoMod : IMod
 
     // ------------------------------------------------------------------ farming automation
 
-    void AddFreeAutomation(Game game)
+    void ApplyFreeAutomation(Game game)
     {
         if (_mods == null) return;
 
         try
         {
-            _mods.AddOrUpdate(FreeSource, FreeValues(game), 1.0);
-            _ctx.Log("Farming automation costs are now free (wine and any other automation cost).");
+            if (_settings.NoWineCost)
+            {
+                _mods.AddOrUpdate(FreeSource, FreeValues(game), 1.0);
+                LogOnce("Farming automation costs are now free (wine and any other automation cost).");
+            }
+            else
+            {
+                _mods.Remove(FreeSource);
+            }
         }
         catch (Exception e)
         {
-            LogOnce("Could not make farming automation free: " + e.Message);
+            LogOnce("Could not change the farming automation cost: " + e.Message);
         }
     }
 
@@ -590,10 +604,11 @@ public sealed class MelvorAutoMod : IMod
             if (!plot.IsPurchased) continue;
             purchased++;
 
-            plot.AutoPlant = _settings.AutoPlant;
-            plot.AutoHarvest = _settings.AutoHarvest;
-            plot.AutoWater = _settings.AutoWater;
-            plot.AutoCompost = _settings.AutoCompost;
+            bool on = _settings.Automations;
+            plot.AutoPlant = on;
+            plot.AutoHarvest = on;
+            plot.AutoWater = on;
+            plot.AutoCompost = on;
 
             ActiveFarmingRecipe? recipe = plot.SelectedRecipe ?? plot.PlantedRecipe;
             if (recipe?.AutomationRequirements is { } requirements && !requirements.AreMet)

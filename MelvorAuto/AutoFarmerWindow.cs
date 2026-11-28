@@ -13,10 +13,8 @@ internal sealed class AutoFarmerWindow
 {
     static readonly (string Key, string Label, string Hint)[] Options =
     {
-        ("AutoHarvest", "Auto harvest", "Harvest ripe crops automatically."),
-        ("AutoCompost", "Auto compost", "Compost a plot automatically before replanting."),
-        ("AutoWater", "Auto water", "Water crops automatically."),
-        ("AutoPlant", "Auto plant", "Replant harvested plots with the selected crop."),
+        ("NoWineCost", "No wine cost", "Remove the wine cost from Farming automation."),
+        ("Automations", "Automations", "Turn on auto-plant, auto-harvest, auto-water and auto-compost for every purchased plot."),
         ("AutoMill", "Grain mill stocking", "Stock the grain mill from the bank and start it if stopped."),
     };
 
@@ -148,10 +146,8 @@ internal sealed class AutoFarmerWindow
 
     static bool Read(Settings settings, string key) => key switch
     {
-        "AutoHarvest" => settings.AutoHarvest,
-        "AutoCompost" => settings.AutoCompost,
-        "AutoWater" => settings.AutoWater,
-        "AutoPlant" => settings.AutoPlant,
+        "NoWineCost" => settings.NoWineCost,
+        "Automations" => settings.Automations,
         "AutoMill" => settings.AutoMill,
         _ => true
     };
@@ -160,10 +156,8 @@ internal sealed class AutoFarmerWindow
     {
         switch (key)
         {
-            case "AutoHarvest": settings.AutoHarvest = value; break;
-            case "AutoCompost": settings.AutoCompost = value; break;
-            case "AutoWater": settings.AutoWater = value; break;
-            case "AutoPlant": settings.AutoPlant = value; break;
+            case "NoWineCost": settings.NoWineCost = value; break;
+            case "Automations": settings.Automations = value; break;
             case "AutoMill": settings.AutoMill = value; break;
         }
     }
