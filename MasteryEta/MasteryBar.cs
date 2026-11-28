@@ -52,7 +52,8 @@ internal sealed class MasteryBar
     readonly List<Cell> _cells = new();
     readonly List<Control> _separators = new();
 
-    Control? _footerRef;
+    float _dimAlpha = -1f;
+    int _dimFrame;
     string _lastDimSource = "";
 
     Font? _font;
@@ -103,7 +104,6 @@ internal sealed class MasteryBar
 
     public void Show(Control? footer, IReadOnlyList<Entry> entries, string? donorText = null)
     {
-        _footerRef = footer;
         CopyFooterStyle(footer, donorText);
         ApplyDim();
         Vector2 viewport = _panel.GetViewportRect().Size;
@@ -313,37 +313,110 @@ internal sealed class MasteryBar
 
     void ApplyDim()
     {
-        Color tint = Colors.White;
-        string info = "footer tint 1";
+        string info;
+        if (++_dimFrame % 10 == 0 || _dimAlpha < 0) _dimAlpha = ScanDim(out info);
+        else info = _lastDimSource;
 
-        if (_footerRef != null && GodotObject.IsInstanceValid(_footerRef))
-        {
-            var parts = new List<string>();
-            for (Node? n = _footerRef; n != null; n = n.GetParent())
-            {
-                if (n is CanvasItem item)
-                {
-                    Color modulate = item.Modulate * item.SelfModulate;
-                    tint *= modulate;
-                    if (modulate != Colors.White) parts.Add($"{n.Name}#{modulate.ToHtml(true)}");
-                }
-                if (n is Window) break;
-            }
-            if (parts.Count > 0) info = string.Join(" ", parts);
-        }
-
-        // The game dims the footer's container when a window is open; follow the
-        // same tint so the cell darkens with the rest of the bar.
-        _content.Modulate = new Color(
-            Dim.R * tint.R, Dim.G * tint.G, Dim.B * tint.B, Dim.A * tint.A);
+        float factor = 1f - Math.Clamp(_dimAlpha, 0f, 1f);
+        _content.Modulate = new Color(Dim.R * factor, Dim.G * factor, Dim.B * factor, Dim.A);
 
         if (info != _lastDimSource)
         {
             _lastDimSource = info;
             DimInfo = info;
-            LastDim = tint.A;
-            LastDimFound = true;
+            LastDim = _dimAlpha;
+            LastDimFound = _dimAlpha > 0.02f;
         }
+    }
+
+    float ScanDim(out string source)
+    {
+        Node root = _panel.GetTree()!.Root;
+        Control? blur = FindControl(root, "blur");
+
+        if (blur != null && blur.IsVisibleInTree())
+        {
+            float dim = 0.72f;
+            string detail = $"size {blur.Size:0}x{blur.Size:0}";
+            if (blur is Panel panel && panel.GetThemeStylebox("panel") is StyleBoxFlat flat &&
+                flat.BgColor.A > 0.05f && flat.BgColor.A < 0.95f)
+            {
+                dim = flat.BgColor.A;
+                detail += $" style {flat.BgColor.ToHtml(true)}";
+            }
+            detail += $" sm {blur.SelfModulate.A:0.00} m {blur.Modulate.A:0.00}";
+            source = $"blur {blur.Name} ({blur.GetType().Name}) {detail}";
+            return dim;
+        }
+
+        // Fallback: a dark full-screen overlay, ignoring the always-on background dim.
+        Vector2 viewport = _panel.GetViewportRect().Size;
+        float best = 0f;
+        string bestInfo = "none";
+        var dump = new List<string>();
+
+        void Walk(Node node)
+        {
+            foreach (Node child in node.GetChildren())
+            {
+                if (child is Control control && control.IsVisibleInTree() &&
+                    control.Name.ToString().Contains("DimLights", StringComparison.OrdinalIgnoreCase) == false &&
+                    control.Size.X >= viewport.X * 0.85f && control.Size.Y >= viewport.Y * 0.85f)
+                {
+                    if (dump.Count < 4)
+                    {
+                        string extra = control is Panel p && p.GetThemeStylebox("panel") is StyleBoxFlat f
+                            ? f.BgColor.ToHtml(true)
+                            : control is ColorRect cr ? cr.Color.ToHtml(true) : "-";
+                        dump.Add($"{control.Name}:{control.GetType().Name}:{extra}:sm{control.SelfModulate.A:0.00}:m{control.Modulate.A:0.00}");
+                    }
+
+                    float alpha = 0f;
+                    if (control is ColorRect rect)
+                    {
+                        Color c = rect.Color;
+                        if (Math.Max(c.R, Math.Max(c.G, c.B)) < 0.3f) alpha = c.A;
+                    }
+                    else if (control is Panel panel && panel.GetThemeStylebox("panel") is StyleBoxFlat flat)
+                    {
+                        Color c = flat.BgColor;
+                        if (Math.Max(c.R, Math.Max(c.G, c.B)) < 0.3f) alpha = c.A;
+                    }
+
+                    if (alpha > 0.02f)
+                    {
+                        float modulate = 1f;
+                        for (Node? n = control; n != null; n = n.GetParent())
+                            if (n is CanvasItem item) modulate *= item.SelfModulate.A * item.Modulate.A;
+                        alpha = Math.Clamp(alpha * modulate, 0f, 1f);
+                        if (alpha > 0.02f && alpha < 0.95f && alpha > best)
+                        {
+                            best = alpha;
+                            bestInfo = $"{control.Name} ({control.GetType().Name}) dim {alpha:0.00}";
+                        }
+                    }
+                }
+
+                Walk(child);
+            }
+        }
+
+        Walk(root);
+        source = best > 0.02f ? bestInfo : "none [" + string.Join(", ", dump) + "]";
+        return best;
+    }
+
+    static Control? FindControl(Node node, string fragment)
+    {
+        foreach (Node child in node.GetChildren())
+        {
+            if (child is Control control &&
+                control.Name.ToString().Contains(fragment, StringComparison.OrdinalIgnoreCase))
+                return control;
+            Control? found = FindControl(child, fragment);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     public float LastDim { get; private set; } = -1f;
