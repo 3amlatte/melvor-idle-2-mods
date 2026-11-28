@@ -273,6 +273,7 @@ internal sealed class TownPanel : Control
             _view.Rebuild();
         }
 
+        _moveButton.Text = _view.Editing ? "Done" : "Move";
         _hintLabel.Text = _view.Editing
             ? "Drag buildings to move - scroll to resize. Click Done when finished."
             : _state.MerchantHere
@@ -282,6 +283,7 @@ internal sealed class TownPanel : Control
 
     void ToggleEdit()
     {
+        MelvorModLoader.Log.Write("[MelvorTown] Move pressed, was " + _view.Editing);
         _view.SetEditing(!_view.Editing);
         _moveButton.Text = _view.Editing ? "Done" : "Move";
         Refresh();

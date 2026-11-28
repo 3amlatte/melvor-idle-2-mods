@@ -37,6 +37,7 @@ internal sealed class TownView : Control
 
         MouseFilter = MouseFilterEnum.Ignore;
         ClipContents = true;
+        SetProcessInput(true);
 
         _ground = new TextureRect
         {
@@ -58,6 +59,7 @@ internal sealed class TownView : Control
 
     public void SetEditing(bool editing)
     {
+        MelvorModLoader.Log.Write("[MelvorTown] editing " + editing);
         Editing = editing;
         MouseFilter = editing ? MouseFilterEnum.Stop : MouseFilterEnum.Ignore;
         foreach (TextureRect node in _nodes.Values)
@@ -125,10 +127,21 @@ internal sealed class TownView : Control
         if (what == NotificationResized) Layout();
     }
 
-    public override void _GuiInput(InputEvent ev)
+    public override void _Input(InputEvent ev)
     {
+        if (!IsInsideTree()) return;
+
+        if (ev is InputEventKey { Pressed: true, Echo: false } key && key.Keycode == Key.F8)
+        {
+            SetEditing(!Editing);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
         if (!Editing) return;
+
         Vector2 mouse = GetLocalMousePosition();
+        if (!new Rect2(Vector2.Zero, Size).HasPoint(mouse)) return;
 
         if (ev is InputEventMouseButton button)
         {
@@ -136,13 +149,19 @@ internal sealed class TownView : Control
             {
                 if (button.Pressed)
                 {
-                    _dragNode = NodeAt(mouse);
-                    if (_dragNode != null) _dragOffset = mouse - _dragNode.Position;
+                    TextureRect? node = NodeAt(mouse);
+                    if (node != null)
+                    {
+                        _dragNode = node;
+                        _dragOffset = mouse - node.Position;
+                        GetViewport().SetInputAsHandled();
+                    }
                 }
                 else if (_dragNode != null)
                 {
                     _dragNode = null;
                     SaveLayout();
+                    GetViewport().SetInputAsHandled();
                 }
             }
             else if (button.Pressed && (button.ButtonIndex == MouseButton.WheelUp || button.ButtonIndex == MouseButton.WheelDown))
@@ -156,6 +175,7 @@ internal sealed class TownView : Control
                     Apply(node, key);
                     _dirty = true;
                     SaveLayout();
+                    GetViewport().SetInputAsHandled();
                 }
             }
         }
@@ -165,6 +185,7 @@ internal sealed class TownView : Control
             Clamp(_dragNode);
             Remember(_dragNode);
             _dirty = true;
+            GetViewport().SetInputAsHandled();
         }
     }
 
