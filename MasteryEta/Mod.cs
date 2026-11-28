@@ -37,6 +37,7 @@ public sealed class MasteryEtaMod : IMod
         public ArtisanRecipe? Recipe;
         public string ActionName = "";
         public Texture2D? Icon;
+        public string IconSource = "";
         public int BaseIntervalMs;
         public bool Passive;
         public bool Producing;
@@ -64,6 +65,7 @@ public sealed class MasteryEtaMod : IMod
     Texture2D? _iconPancake;
     Texture2D? _iconPie;
     Texture2D? _iconSushi;
+    Texture2D? _missingArtwork;
     TrackerComponentFooterView? _footer;
     Game? _game;
     int _frame;
@@ -88,6 +90,8 @@ public sealed class MasteryEtaMod : IMod
         _iconPancake = LoadIcon(iconDir, "pancake");
         _iconPie = LoadIcon(iconDir, "pie");
         _iconSushi = LoadIcon(iconDir, "sushi");
+        try { _missingArtwork = GD.Load<Texture2D>("res://Assets/Icons/missing_artwork.png"); }
+        catch { _missingArtwork = null; }
 
         ctx.Frame += OnFrame;
         ctx.Log("Loaded.");
@@ -180,7 +184,7 @@ public sealed class MasteryEtaMod : IMod
             _ctx.Log("Mastery ETA tasks: " + string.Join(" | ", candidates.Select(c =>
                 $"{(c.Passive ? "passive " : "")}{c.Entity.DisplayName.Text}:{c.ActionName} -> " +
                 $"{BuildTaskText(c, c.Task.ActiveGoal!.CurrentProgress, c.Task.ActiveGoal.MaxProgress)} " +
-                $"[{c.Task.Task.Category?.DisplayName.Text ?? "?"}]")));
+                $"[{c.Task.Task.Category?.DisplayName.Text ?? "?"}] [icon:{c.IconSource}]")));
 
             foreach (var group in candidates.GroupBy(c => c.Entity))
             {
@@ -252,6 +256,8 @@ public sealed class MasteryEtaMod : IMod
                     int score = MatchScore(task.Task.Goal, recipe);
                     if (score < 0) continue;
 
+                    Texture2D? icon = ChooseIcon(task, recipe, out string iconSource);
+
                     Add(new Candidate
                     {
                         Task = task,
@@ -264,7 +270,8 @@ public sealed class MasteryEtaMod : IMod
                             : 0,
                         Recipe = recipe,
                         ActionName = recipe.DisplayName.Text,
-                        Icon = ChooseIcon(task, recipe),
+                        Icon = icon,
+                        IconSource = iconSource,
                         BaseIntervalMs = interval,
                         Passive = passive,
                         Producing = producing
@@ -282,6 +289,8 @@ public sealed class MasteryEtaMod : IMod
                     if (task.IsComplete || task.ActiveGoal == null) continue;
                     if (!GoalMatchesAction(task.Task.Goal, actionDescription)) continue;
 
+                    Texture2D? icon = ChooseIcon(task, null, out string iconSource);
+
                     Add(new Candidate
                     {
                         Task = task,
@@ -294,7 +303,8 @@ public sealed class MasteryEtaMod : IMod
                             : 0,
                         Recipe = null,
                         ActionName = actionDescription.DisplayName.Text,
-                        Icon = actionDescription.Icon ?? task.Task.Media,
+                        Icon = icon,
+                        IconSource = iconSource,
                         BaseIntervalMs = 0,
                         Producing = false
                     });
@@ -334,37 +344,61 @@ public sealed class MasteryEtaMod : IMod
             .ToList();
     }
 
-    Texture2D? ChooseIcon(ActiveMasteryGuildTask task, ArtisanRecipe recipe)
+    Texture2D? ChooseIcon(ActiveMasteryGuildTask task, ArtisanRecipe? recipe, out string source)
     {
-        // A task for one specific recipe always uses that item's icon, even if the task data
-        // carries a generic category picture.
+        // A task for one specific recipe always uses that item's icon.
         if (task.Task.Goal is CookRecipeGoal cook && cook.Recipe != null)
-            return cook.Recipe.Icon ?? recipe.Icon;
+        {
+            source = "goal-recipe";
+            return cook.Recipe.Icon ?? recipe?.Icon;
+        }
         if (task.Task.Goal is CreateRecipeGoal create && create.Recipe != null)
-            return create.Recipe.Icon ?? recipe.Icon;
+        {
+            source = "goal-recipe";
+            return create.Recipe.Icon ?? recipe?.Icon;
+        }
 
         // Keep the game's own task picture when it has one.
-        if (HasRealMedia(task.Task.Media)) return task.Task.Media;
+        if (HasRealMedia(task.Task.Media))
+        {
+            source = "media";
+            return task.Task.Media;
+        }
 
-        // Only category/subcategory tasks with no specific item use the generated icons.
-        return TaskIcon(task.Task.Goal, recipe) ?? recipe.Icon;
+        // No picture on the task: a category icon if we have one, else the item icon.
+        Texture2D? generated = TaskIcon(task.Task.Goal, recipe);
+        if (generated != null)
+        {
+            source = "generated";
+            return generated;
+        }
+
+        source = "recipe";
+        return recipe?.Icon ?? task.Task.Media;
     }
 
-    static bool HasRealMedia(Texture2D? media)
+    bool HasRealMedia(Texture2D? media)
     {
         if (media == null || media is PlaceholderTexture2D) return false;
+
+        // The game hands out this exact shared texture when a task has no picture.
+        if (_missingArtwork != null && ReferenceEquals(media, _missingArtwork)) return false;
         string path = media.ResourcePath ?? "";
-        if (path.Length == 0 || path.Contains("missing_artwork", StringComparison.OrdinalIgnoreCase))
-            return false;
+        if (path.Contains("missing_artwork", StringComparison.OrdinalIgnoreCase)) return false;
+
         try
         {
             Vector2 size = media.GetSize();
             return size.X > 4 && size.Y > 4;
         }
-        catch { return false; }
+        catch
+        {
+            // If we cannot tell, keep the game's own picture rather than replacing it.
+            return true;
+        }
     }
 
-    Texture2D? TaskIcon(Goal? goal, ArtisanRecipe recipe)
+    Texture2D? TaskIcon(Goal? goal, ArtisanRecipe? recipe)
     {
         string key = "";
         if (goal is CookRecipeGoal cook)
@@ -372,7 +406,7 @@ public sealed class MasteryEtaMod : IMod
             key = (cook.Subcategory?.Id ?? "") + " " + (cook.Subcategory?.DisplayName.Text ?? "");
             if (key.Trim().Length == 0) key = cook.Recipe?.Subcategory?.Id ?? "";
         }
-        if (key.Length == 0) key = recipe.Subcategory?.Id ?? "";
+        if (key.Length == 0) key = recipe?.Subcategory?.Id ?? "";
         key = key.ToLowerInvariant();
 
         if (key.Contains("pancake")) return _iconPancake;
