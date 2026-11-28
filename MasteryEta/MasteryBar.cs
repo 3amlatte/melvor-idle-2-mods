@@ -110,7 +110,7 @@ internal sealed class MasteryBar
 
             if (divider != null)
             {
-                x = divider.GetGlobalRect().End.X + 20f;
+                x = divider.GetGlobalRect().End.X + 18f;
             }
             else if (rate != null)
             {
