@@ -262,7 +262,7 @@ public sealed class MasteryEtaMod : IMod
                             : 0,
                         Recipe = recipe,
                         ActionName = recipe.DisplayName.Text,
-                        Icon = TaskIcon(task.Task.Goal, recipe) ?? task.Task.Media,
+                        Icon = ChooseIcon(task, recipe),
                         BaseIntervalMs = interval,
                         Passive = passive,
                         Producing = producing
@@ -332,6 +332,25 @@ public sealed class MasteryEtaMod : IMod
             .ToList();
     }
 
+    Texture2D? ChooseIcon(ActiveMasteryGuildTask task, ArtisanRecipe recipe)
+    {
+        // Keep the game's own task picture when it has one; only fill in the category icons
+        // for tasks whose Media is empty/placeholder.
+        if (HasRealMedia(task.Task.Media)) return task.Task.Media;
+        return TaskIcon(task.Task.Goal, recipe) ?? recipe.Icon;
+    }
+
+    static bool HasRealMedia(Texture2D? media)
+    {
+        if (media == null || media is PlaceholderTexture2D) return false;
+        try
+        {
+            Vector2 size = media.GetSize();
+            return size.X > 4 && size.Y > 4;
+        }
+        catch { return false; }
+    }
+
     Texture2D? TaskIcon(Goal? goal, ArtisanRecipe recipe)
     {
         string key = "";
@@ -343,13 +362,13 @@ public sealed class MasteryEtaMod : IMod
         if (key.Length == 0) key = recipe.Subcategory?.Id ?? "";
         key = key.ToLowerInvariant();
 
-        if (key.Contains("pancake")) return _iconPancake ?? recipe.Icon;
-        if (key.Contains("sandwich")) return _iconSandwich ?? recipe.Icon;
-        if (key.Contains("sushi")) return _iconSushi ?? recipe.Icon;
-        if (key.Contains("soup")) return _iconSoup ?? recipe.Icon;
-        if (key.Contains("cake")) return _iconCake ?? recipe.Icon;
-        if (key.Contains("pie")) return _iconPie ?? recipe.Icon;
-        return recipe.Icon;
+        if (key.Contains("pancake")) return _iconPancake;
+        if (key.Contains("sandwich")) return _iconSandwich;
+        if (key.Contains("sushi")) return _iconSushi;
+        if (key.Contains("soup")) return _iconSoup;
+        if (key.Contains("cake")) return _iconCake;
+        if (key.Contains("pie")) return _iconPie;
+        return null;
     }
 
     static Texture2D? LoadIcon(string directory, string name)
