@@ -387,7 +387,6 @@ internal sealed class TownPanel : Control
                 }
 
                 body.AddChild(Ui.Label($"The cart leaves in {Math.Max(0, _state.MerchantLeft):0}s.", 14, Ui.Accent));
-                body.AddChild(Ui.Label($"Gold: {GoldAmount():N0} GP", 14, Ui.Text));
                 body.AddChild(Ui.Label("A few things the merchant will trade for gold.", 13, Ui.Muted));
 
                 var food = Ui.Button("Buy 50 food - 100 GP", () =>
