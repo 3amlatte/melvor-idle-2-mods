@@ -131,7 +131,7 @@ internal sealed class TownView : Control
     {
         if (!IsInsideTree()) return;
 
-        if (ev is InputEventKey { Pressed: true, Echo: false } key && key.Keycode == Key.F8)
+        if (ev is InputEventKey { Pressed: true, Echo: false } f8 && f8.Keycode == Key.F8)
         {
             SetEditing(!Editing);
             GetViewport().SetInputAsHandled();
