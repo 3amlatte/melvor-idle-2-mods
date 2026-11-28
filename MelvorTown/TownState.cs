@@ -26,6 +26,7 @@ public sealed class TownState
     public int Population { get; set; } = 2;
     public int Lessons { get; set; }
     public bool Paused { get; set; }
+    public bool AlwaysMerchant { get; set; } = true;
     public bool ShowRates { get; set; } = true;
     public bool MerchantHere { get; set; }
     public double MerchantTimer { get; set; } = 120;
@@ -126,7 +127,12 @@ public sealed class TownState
         }
 
         // Merchant visits.
-        if (MerchantHere)
+        if (AlwaysMerchant)
+        {
+            MerchantHere = true;
+            MerchantLeft = Math.Max(MerchantLeft, 30);
+        }
+        else if (MerchantHere)
         {
             MerchantLeft -= dt;
             if (MerchantLeft <= 0)
@@ -176,6 +182,7 @@ public sealed class TownState
         Population = 2;
         Lessons = 0;
         Paused = false;
+        AlwaysMerchant = true;
         MerchantHere = false;
         MerchantTimer = 120;
         MerchantLeft = 0;

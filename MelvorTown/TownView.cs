@@ -135,7 +135,7 @@ internal sealed class TownView : Control
         if (state.Groves > 1) spots.Add(new("trees2", "trees", 0.90f, 0.58f));
 
         if (state.HasBalloon) spots.Add(new("balloon", "balloon", 0.79f, 0.23f));
-        if (state.MerchantHere) spots.Add(new("merchant", "merchant", 0.14f, 0.43f));
+        if (state.MerchantHere || state.AlwaysMerchant) spots.Add(new("merchant", "merchant", 0.14f, 0.43f));
 
         return spots;
     }
