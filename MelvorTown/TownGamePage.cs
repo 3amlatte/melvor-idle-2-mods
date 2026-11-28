@@ -21,10 +21,10 @@ internal sealed class TownGamePage : GamePage
 
     readonly TownActivePage _active;
 
-    public TownGamePage(TownPanel panel, Texture2D? icon)
+    public TownGamePage(TownPanel panel, Texture2D? icon, Texture2D? ground)
         : base(TownNamespace, "Town")
     {
-        _active = new TownActivePage(panel, icon);
+        _active = new TownActivePage(panel, icon, ground);
     }
 
     public override ActiveGamePage GetActivePage() => _active;
@@ -34,11 +34,13 @@ internal sealed class TownActivePage : ActiveGamePage
 {
     readonly TownPanel _panel;
     readonly Texture2D? _icon;
+    readonly Texture2D? _ground;
 
-    public TownActivePage(TownPanel panel, Texture2D? icon)
+    public TownActivePage(TownPanel panel, Texture2D? icon, Texture2D? ground)
     {
         _panel = panel;
         _icon = icon;
+        _ground = ground;
     }
 
     public override bool HasStatistics => false;
@@ -76,9 +78,15 @@ internal sealed class TownActivePage : ActiveGamePage
 
     protected override void CleanupHeader(GameHeader header) { }
 
-    protected override void SetBackground(GameView gameView) { }
+    protected override void SetBackground(GameView gameView)
+    {
+        if (_ground != null) gameView.Background.RequestStaticBackground(_ground);
+    }
 
-    protected override void CleanupBackground(GameView gameView) { }
+    protected override void CleanupBackground(GameView gameView)
+    {
+        gameView.Background.RequestEmptyBackground();
+    }
 
     protected override void SetWidgets(WidgetsView widgets) { }
 

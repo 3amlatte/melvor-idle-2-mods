@@ -22,7 +22,7 @@ public sealed class Mod : IMod
         _state = TownState.Load(ctx.Directory);
         _tabIcon = Ui.Texture(ctx.Directory, "tab");
         _panel = new TownPanel(ctx, _state);
-        _townPage = new TownGamePage(_panel, _tabIcon);
+        _townPage = new TownGamePage(_panel, _tabIcon, _panel.Ground);
 
         ctx.AddWindow("Melvor Town", OpenTownPage);
         ctx.Frame += OnFrame;
@@ -61,13 +61,28 @@ public sealed class Mod : IMod
         if (_button != null && GodotObject.IsInstanceValid(_button) && _button.IsInsideTree())
             return;
 
-        // Clone the Shop/Bank tab's visual tree so size, font and colour match exactly.
+        // Match the Shop/Bank tab: same size, icon size and exact label style.
         Control? shop = root.FindChild("ShopNavigationButton", true, false) as Control;
         Control? donor = shop != null && shop.GetParent() == box ? shop : bank;
-        Control? template = donor.GetChildren().OfType<Control>().FirstOrDefault(c => c.GetChildCount() > 0);
+        string donorName = donor == shop ? "Shop" : "Bank";
 
         Vector2 tabSize = donor.Size;
         if (tabSize.X < 20 || tabSize.Y < 20) tabSize = new Vector2(80, 56);
+
+        Label? nameLabel = null;
+        foreach (Label candidate in AllLabels(donor))
+        {
+            if (candidate.Text.Trim().Equals(donorName, StringComparison.OrdinalIgnoreCase))
+            {
+                nameLabel = candidate;
+                break;
+            }
+        }
+
+        Vector2 iconSize = new(40, 40);
+        TextureRect? donorIcon = LargestTexture(donor);
+        if (donorIcon != null && donorIcon.Size.X > 8)
+            iconSize = donorIcon.Size;
 
         var button = new Button
         {
@@ -86,61 +101,51 @@ public sealed class Mod : IMod
         button.AddThemeStyleboxOverride("hover", hover);
         button.AddThemeStyleboxOverride("pressed", hover);
 
-        if (template != null)
+        var column = new VBoxContainer
         {
-            var visual = (Control)template.Duplicate();
-            button.AddChild(visual);
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            Alignment = BoxContainer.AlignmentMode.Center,
+        };
+        column.AddThemeConstantOverride("separation", 0);
+        column.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
-            TextureRect? icon = LargestTexture(visual);
-            if (icon != null) icon.Texture = _tabIcon;
+        var icon = new TextureRect
+        {
+            Texture = _tabIcon,
+            CustomMinimumSize = iconSize,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        column.AddChild(icon);
 
-            string donorName = donor == shop ? "Shop" : "Bank";
-            bool named = false;
-            foreach (Label label in AllLabels(visual))
-            {
-                if (!named && label.Text.Trim().Equals(donorName, StringComparison.OrdinalIgnoreCase))
-                {
-                    label.Text = "Town";
-                    named = true;
-                }
-                else if (!named && label.Text.Trim().Length > 0)
-                {
-                    label.Text = "Town";
-                    named = true;
-                }
-                else
-                {
-                    label.Visible = false;
-                }
-            }
+        var label = new Label
+        {
+            Text = "Town",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        if (nameLabel?.LabelSettings != null)
+        {
+            label.LabelSettings = nameLabel.LabelSettings;
+            label.Text = "Town";
         }
         else
         {
-            var column = new VBoxContainer
+            if (nameLabel != null)
             {
-                MouseFilter = Control.MouseFilterEnum.Ignore,
-                Alignment = BoxContainer.AlignmentMode.Center,
-            };
-            column.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-            column.AddChild(new TextureRect
+                label.AddThemeFontSizeOverride("font_size", nameLabel.GetThemeFontSize("font_size"));
+                label.AddThemeColorOverride("font_color", nameLabel.GetThemeColor("font_color"));
+            }
+            else
             {
-                Texture = _tabIcon,
-                CustomMinimumSize = new Vector2(40, 40),
-                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-                SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
-                MouseFilter = Control.MouseFilterEnum.Ignore,
-            });
-            var label = new Label
-            {
-                Text = "Town",
-                HorizontalAlignment = HorizontalAlignment.Center,
-                MouseFilter = Control.MouseFilterEnum.Ignore,
-            };
-            label.AddThemeFontSizeOverride("font_size", 16);
-            column.AddChild(label);
-            button.AddChild(column);
+                label.AddThemeFontSizeOverride("font_size", 16);
+            }
         }
+        column.AddChild(label);
+
+        button.AddChild(column);
 
         button.Pressed += OpenTownPage;
         box.AddChild(button);

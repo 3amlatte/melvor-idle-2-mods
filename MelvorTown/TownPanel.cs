@@ -23,6 +23,8 @@ internal sealed class TownPanel : Control
     double _refresh;
     double _save;
 
+    public Texture2D? Ground => _art.GetValueOrDefault("ground");
+
     public TownPanel(ModContext ctx, TownState state)
     {
         _state = state;
@@ -41,6 +43,7 @@ internal sealed class TownPanel : Control
         _view = new TownView(_art, _art.GetValueOrDefault("ground"));
         _view.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _view.SetState(_state);
+        _view.SetGroundVisible(false);
         _view.Clicked += OpenBuilding;
         AddChild(_view);
 
@@ -58,15 +61,12 @@ internal sealed class TownPanel : Control
         top.AddChild(header);
 
         header.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        header.AddChild(Ui.Icon(_art.GetValueOrDefault("pop"), 20));
         _popLabel = Ui.Label("", 15);
-        header.AddChild(_popLabel);
-        header.AddChild(Ui.Icon(_art.GetValueOrDefault("food"), 20));
+        Stat(header, "pop", _popLabel, "Villagers: how many live in town, and how many the houses can support. They arrive while there is food and room.");
         _foodLabel = Ui.Label("", 15);
-        header.AddChild(_foodLabel);
-        header.AddChild(Ui.Icon(_art.GetValueOrDefault("seed"), 18));
+        Stat(header, "food", _foodLabel, "Food: produced by farms, groves and merchants, and eaten by every villager.");
         _seedLabel = Ui.Label("", 15);
-        header.AddChild(_seedLabel);
+        Stat(header, "seed", _seedLabel, "Seeds: each farm uses a seed to grow carrots. Buy more at the seed store.");
         header.AddChild(Ui.Button("Upgrades", OpenUpgrades));
 
         var cog = new CogButton();
@@ -111,6 +111,18 @@ internal sealed class TownPanel : Control
         _popupCenter.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _popupHost.AddChild(_popupCenter);
 
+    }
+
+    void Stat(HBoxContainer row, string art, Label label, string tooltip)
+    {
+        var icon = Ui.Icon(_art.GetValueOrDefault(art), 20);
+        icon.MouseFilter = MouseFilterEnum.Pass;
+        icon.TooltipText = tooltip;
+        row.AddChild(icon);
+
+        label.MouseFilter = MouseFilterEnum.Pass;
+        label.TooltipText = tooltip;
+        row.AddChild(label);
     }
 
     static StyleBoxFlat HudBox()

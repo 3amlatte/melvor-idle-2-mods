@@ -29,6 +29,8 @@ internal sealed class TownView : Control
         AddChild(_ground);
     }
 
+    public void SetGroundVisible(bool visible) => _ground.Visible = visible;
+
     public void SetState(TownState state)
     {
         _state = state;
