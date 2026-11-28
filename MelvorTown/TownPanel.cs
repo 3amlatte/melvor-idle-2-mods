@@ -14,6 +14,7 @@ internal sealed class TownPanel : Control
     readonly Label _rateLabel;
     readonly Label _hintLabel;
     readonly TownView _view;
+    readonly Button _moveButton;
 
     readonly PanelContainer _statTip;
     readonly Label _statTitle;
@@ -44,7 +45,7 @@ internal sealed class TownPanel : Control
             _art[name] = Ui.Texture(ctx.Directory, name);
         }
         // The town fills the whole page, like the Quests page does.
-        _view = new TownView(_art, _art.GetValueOrDefault("ground"));
+        _view = new TownView(_art, _art.GetValueOrDefault("ground"), ctx.Directory);
         _view.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _view.SetState(_state);
         _view.SetGroundVisible(false);
@@ -75,6 +76,8 @@ internal sealed class TownPanel : Control
         Stat(header, "seed", _seedLabel, "Seeds",
             () => $"{_state.Seeds:0} in store.\nEach farm uses one seed to grow carrots every 8 seconds. Buy more at the seed store.");
         header.AddChild(Ui.Button("Upgrades", OpenUpgrades));
+        _moveButton = Ui.Button("Move", ToggleEdit);
+        header.AddChild(_moveButton);
 
         var cog = new CogButton();
         cog.CustomMinimumSize = new Vector2(34, 34);
@@ -270,9 +273,18 @@ internal sealed class TownPanel : Control
             _view.Rebuild();
         }
 
-        _hintLabel.Text = _state.MerchantHere
-            ? "A travelling merchant is in town."
-            : "Click a building to open it. The town grows as you build.";
+        _hintLabel.Text = _view.Editing
+            ? "Drag buildings to move - scroll to resize. Click Done when finished."
+            : _state.MerchantHere
+                ? "A travelling merchant is in town."
+                : "Click a building to open it. The town grows as you build.";
+    }
+
+    void ToggleEdit()
+    {
+        _view.SetEditing(!_view.Editing);
+        _moveButton.Text = _view.Editing ? "Done" : "Move";
+        Refresh();
     }
 
     void OpenBuilding(string key)
