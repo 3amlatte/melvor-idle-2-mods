@@ -830,11 +830,11 @@ public sealed class MorePetsMod : IMod
         MarginContainer margin = new();
         margin.AddThemeConstantOverride("margin_left", 10);
         margin.AddThemeConstantOverride("margin_right", 10);
-        margin.AddThemeConstantOverride("margin_top", 8);
-        margin.AddThemeConstantOverride("margin_bottom", 10);
+        margin.AddThemeConstantOverride("margin_top", 7);
+        margin.AddThemeConstantOverride("margin_bottom", 7);
 
         VBoxContainer column = new();
-        column.AddThemeConstantOverride("separation", 6);
+        column.AddThemeConstantOverride("separation", 5);
 
         HBoxContainer header = new();
         header.AddThemeConstantOverride("separation", 6);
@@ -928,8 +928,8 @@ public sealed class MorePetsMod : IMod
         MarginContainer margin = new();
         margin.AddThemeConstantOverride("margin_left", 10);
         margin.AddThemeConstantOverride("margin_right", 10);
-        margin.AddThemeConstantOverride("margin_top", 6);
-        margin.AddThemeConstantOverride("margin_bottom", 0);
+        margin.AddThemeConstantOverride("margin_top", 3);
+        margin.AddThemeConstantOverride("margin_bottom", 3);
 
         HBoxContainer header = new();
         header.AddThemeConstantOverride("separation", 6);
@@ -1115,7 +1115,7 @@ public sealed class MorePetsMod : IMod
         TextureButton button = new()
         {
             TextureNormal = pet.Icon ?? MissingIcon,
-            CustomMinimumSize = new Vector2(96, 96),
+            CustomMinimumSize = new Vector2(84, 84),
             IgnoreTextureSize = true,
             StretchMode = TextureButton.StretchModeEnum.Scale,
             Modulate = count > 0 ? Colors.White : new Color(0.22f, 0.22f, 0.22f),
