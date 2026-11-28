@@ -3,7 +3,7 @@ using MelvorModLoader;
 
 namespace MelvorTown;
 
-internal sealed class TownPage : CanvasLayer
+internal sealed class TownPanel : Control
 {
     readonly TownState _state;
     readonly Dictionary<string, Texture2D?> _art = new();
@@ -24,11 +24,11 @@ internal sealed class TownPage : CanvasLayer
     double _refresh;
     double _save;
 
-    public TownPage(ModContext ctx, TownState state)
+    public TownPanel(ModContext ctx, TownState state)
     {
         _state = state;
-        Layer = 110;
-        Visible = false;
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        MouseFilter = MouseFilterEnum.Stop;
 
         foreach (string name in new[]
         {
@@ -44,21 +44,11 @@ internal sealed class TownPage : CanvasLayer
         root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(root);
 
-        var dim = new ColorRect
-        {
-            Color = new Color(0, 0, 0, 0.62f),
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        dim.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        dim.OffsetTop = 70;
-        root.AddChild(dim);
-
         var margin = new MarginContainer
         {
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
         margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        margin.OffsetTop = 70;
         margin.AddThemeConstantOverride("margin_left", 28);
         margin.AddThemeConstantOverride("margin_right", 28);
         margin.AddThemeConstantOverride("margin_top", 22);
@@ -84,8 +74,6 @@ internal sealed class TownPage : CanvasLayer
         header.AddThemeConstantOverride("separation", 10);
         column.AddChild(header);
 
-        var title = Ui.Label("Melvor Town", 24, Ui.Accent);
-        header.AddChild(title);
         header.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
 
         header.AddChild(Ui.Icon(_art.GetValueOrDefault("pop"), 20));
@@ -108,10 +96,7 @@ internal sealed class TownPage : CanvasLayer
         cog.Pressed += OpenSettings;
         header.AddChild(cog);
 
-        var close = Ui.Button("X", Close, 14);
-        close.CustomMinimumSize = new Vector2(34, 34);
-        close.TooltipText = "Close (Esc)";
-        header.AddChild(close);
+
 
         _view = new TownView(_art, _art.GetValueOrDefault("ground"))
         {
@@ -150,13 +135,13 @@ internal sealed class TownPage : CanvasLayer
         _popupCenter.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         _popupHost.AddChild(_popupCenter);
 
-        ApplyGameFont(root);
     }
 
-    static void ApplyGameFont(Control root)
+    void ApplyGameFont()
     {
+        if (!IsInsideTree()) return;
         Label? donor = null;
-        Control? bank = root.GetTree()?.Root?.FindChild("BankNavigationButton", true, false) as Control;
+        Control? bank = GetTree().Root.FindChild("BankNavigationButton", true, false) as Control;
         if (bank != null) donor = bank.FindChild("Title", true, false) as Label;
         Font? font = donor?.LabelSettings?.Font;
         if (font == null) return;
@@ -165,7 +150,7 @@ internal sealed class TownPage : CanvasLayer
         theme.SetFont("font", "Label", font);
         theme.SetFont("font", "Button", font);
         theme.SetFont("font", "CheckButton", font);
-        root.Theme = theme;
+        Theme = theme;
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -173,20 +158,18 @@ internal sealed class TownPage : CanvasLayer
         if (!Visible) return;
         if (!@event.IsActionPressed("ui_cancel")) return;
 
-        if (_popupHost.Visible) CloseWindow();
-        else Close();
-        GetViewport().SetInputAsHandled();
-    }
-
-    public void Toggle()
-    {
-        if (Visible) Close();
-        else Open();
+        if (_popupHost.Visible)
+        {
+            CloseWindow();
+            GetViewport().SetInputAsHandled();
+        }
     }
 
     public void Open()
     {
         Visible = true;
+        ApplyGameFont();
+        CloseWindow();
         Refresh();
         _view.Rebuild();
     }

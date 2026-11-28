@@ -1,3 +1,4 @@
+using GamesByMalcs.Melvor2.GameMenus;
 using Godot;
 using MelvorModLoader;
 
@@ -7,22 +8,23 @@ public sealed class Mod : IMod
 {
     ModContext _ctx = null!;
     TownState _state = null!;
-    TownPage _page = null!;
+    TownPanel _panel = null!;
+    TownGamePage _townPage = null!;
     Texture2D? _tabIcon;
     Button? _button;
+    bool _tabActive;
     long _lastMs;
     int _frame;
-    readonly HashSet<ulong> _hookedTabs = new();
 
     public void OnLoad(ModContext ctx)
     {
         _ctx = ctx;
         _state = TownState.Load(ctx.Directory);
         _tabIcon = Ui.Texture(ctx.Directory, "tab");
-        _page = new TownPage(ctx, _state);
-        ctx.Tree.Root.AddChild(_page);
+        _panel = new TownPanel(ctx, _state);
+        _townPage = new TownGamePage(_panel, _tabIcon);
 
-        ctx.AddWindow("Melvor Town", Toggle);
+        ctx.AddWindow("Melvor Town", OpenTownPage);
         ctx.Frame += OnFrame;
         _lastMs = (long)Time.GetTicksMsec();
         ctx.Log("Loaded.");
@@ -35,12 +37,18 @@ public sealed class Mod : IMod
         _lastMs = now;
         _state.Tick(dt);
 
-        if (++_frame % 30 == 0) PlaceButton();
+        if (++_frame % 30 == 0)
+        {
+            PlaceButton();
+            UpdateTabState();
+        }
     }
 
-    void Toggle()
+    void OpenTownPage()
     {
-        _page.Toggle();
+        GameView? view = GameAccess.FindGameView();
+        if (view == null) return;
+        view.SetCurrentPage(_townPage);
     }
 
     void PlaceButton()
@@ -49,8 +57,6 @@ public sealed class Mod : IMod
         Control? bank = root.FindChild("BankNavigationButton", true, false) as Control;
         if (bank?.GetParent() is not BoxContainer box)
             return;
-
-        HookTabs(box);
 
         if (_button != null && GodotObject.IsInstanceValid(_button) && _button.IsInsideTree())
             return;
@@ -114,22 +120,31 @@ public sealed class Mod : IMod
         column.AddChild(label);
 
         button.AddChild(column);
-        button.Pressed += Toggle;
+        button.Pressed += OpenTownPage;
 
         box.AddChild(button);
         box.MoveChild(button, bank.GetIndex());
         _button = button;
+        _tabActive = false;
     }
 
-    void HookTabs(BoxContainer box)
+    void UpdateTabState()
     {
-        foreach (Node child in box.GetChildren())
-        {
-            if (child is not Button tab || tab == _button) continue;
-            if (!_hookedTabs.Add(tab.GetInstanceId())) continue;
+        bool active = _panel.GetParent() != null;
+        if (active == _tabActive) return;
+        _tabActive = active;
 
-            // Switching to any other tab closes the town page.
-            tab.Pressed += () => _page.Close();
+        if (_button == null || !GodotObject.IsInstanceValid(_button)) return;
+
+        if (active)
+        {
+            var style = new StyleBoxFlat { BgColor = new Color(1, 1, 1, 0.09f) };
+            style.SetCornerRadiusAll(4);
+            _button.AddThemeStyleboxOverride("normal", style);
+        }
+        else
+        {
+            _button.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
         }
     }
 }
