@@ -759,7 +759,10 @@ public sealed class MorePetsMod : IMod
         label.AddThemeFontSizeOverride("font_size", 15);
         label.Modulate = new Color(0.96f, 0.82f, 0.48f);
 
-        center.AddChild(label);
+        MarginContainer shift = new();
+        shift.AddThemeConstantOverride("margin_top", 6);
+        shift.AddChild(label);
+        center.AddChild(shift);
         bar.AddChild(center);
         return bar;
     }
@@ -925,8 +928,8 @@ public sealed class MorePetsMod : IMod
         MarginContainer margin = new();
         margin.AddThemeConstantOverride("margin_left", 10);
         margin.AddThemeConstantOverride("margin_right", 10);
-        margin.AddThemeConstantOverride("margin_top", 3);
-        margin.AddThemeConstantOverride("margin_bottom", 3);
+        margin.AddThemeConstantOverride("margin_top", 6);
+        margin.AddThemeConstantOverride("margin_bottom", 0);
 
         HBoxContainer header = new();
         header.AddThemeConstantOverride("separation", 6);
