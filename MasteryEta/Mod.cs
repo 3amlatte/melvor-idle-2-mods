@@ -332,6 +332,13 @@ public sealed class MasteryEtaMod : IMod
                     .First());
             }
 
+            // Tiers of the same mastery share a LinkedTask chain; show only the
+            // closest tier so one achievement never fills two cells.
+            active = active
+                .GroupBy(c => RootTask(c.Task.Task))
+                .Select(g => g.First())
+                .ToList();
+
             // Up to two simultaneous masteries for one skill.
             found.AddRange(active.Take(2));
         }
@@ -433,6 +440,15 @@ public sealed class MasteryEtaMod : IMod
             catch { return null; }
         }
         return null;
+    }
+
+    static MasteryGuildTask RootTask(MasteryGuildTask task)
+    {
+        var seen = new HashSet<MasteryGuildTask>();
+        MasteryGuildTask current = task;
+        while (current.LinkedTask != null && seen.Add(current))
+            current = current.LinkedTask;
+        return current;
     }
 
     static bool IsRecentlyUpdated(ActiveMasteryGuildTask task) =>
