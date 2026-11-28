@@ -52,10 +52,7 @@ internal sealed class MasteryBar
     readonly List<Cell> _cells = new();
     readonly List<Control> _separators = new();
 
-    float _dimAlpha = -1f;
-    int _dimFrame;
-    string _dimSource = "";
-    float _lastDim = -1;
+    Control? _footerRef;
     string _lastDimSource = "";
 
     Font? _font;
@@ -106,6 +103,7 @@ internal sealed class MasteryBar
 
     public void Show(Control? footer, IReadOnlyList<Entry> entries, string? donorText = null)
     {
+        _footerRef = footer;
         CopyFooterStyle(footer, donorText);
         ApplyDim();
         Vector2 viewport = _panel.GetViewportRect().Size;
@@ -315,83 +313,37 @@ internal sealed class MasteryBar
 
     void ApplyDim()
     {
-        if (++_dimFrame % 10 == 0 || _dimAlpha < 0)
+        Color tint = Colors.White;
+        string info = "footer tint 1";
+
+        if (_footerRef != null && GodotObject.IsInstanceValid(_footerRef))
         {
-            _dimAlpha = ScanDim(out string source);
-            _dimSource = source;
-        }
-
-        float factor = 1f - Math.Clamp(_dimAlpha, 0f, 1f);
-        _content.Modulate = new Color(Dim.R * factor, Dim.G * factor, Dim.B * factor);
-
-        if (Math.Abs(_dimAlpha - _lastDim) > 0.01f || _dimSource != _lastDimSource)
-        {
-            _lastDim = _dimAlpha;
-            _lastDimSource = _dimSource;
-            LastDim = _dimAlpha;
-            LastDimFound = _dimSource.Length > 0 && !_dimSource.StartsWith("none");
-            DimInfo = _dimSource;
-        }
-    }
-
-    float ScanDim(out string source)
-    {
-        Vector2 viewport = _panel.GetViewportRect().Size;
-        float best = 0f;
-        string bestInfo = "none";
-        var dump = new List<string>();
-
-        void Walk(Node node)
-        {
-            foreach (Node child in node.GetChildren())
+            var parts = new List<string>();
+            for (Node? n = _footerRef; n != null; n = n.GetParent())
             {
-                if (child is Control control && control.IsVisibleInTree() &&
-                    control.Size.X >= viewport.X * 0.85f && control.Size.Y >= viewport.Y * 0.85f)
+                if (n is CanvasItem item)
                 {
-                    if (dump.Count < 4)
-                    {
-                        string extra = control is Panel p && p.GetThemeStylebox("panel") is StyleBoxFlat f
-                            ? f.BgColor.ToHtml(true)
-                            : control is ColorRect cr ? cr.Color.ToHtml(true) : "-";
-                        dump.Add($"{control.Name}:{control.GetType().Name}:{extra}:sm{control.SelfModulate.A:0.00}:m{control.Modulate.A:0.00}");
-                    }
-
-                    float alpha = 0f;
-                    string kind = "";
-                    if (control is ColorRect rect)
-                    {
-                        Color c = rect.Color;
-                        if (Math.Max(c.R, Math.Max(c.G, c.B)) < 0.3f) { alpha = c.A; kind = $"ColorRect {c.ToHtml(true)}"; }
-                    }
-                    else if (control is Panel panel && panel.GetThemeStylebox("panel") is StyleBoxFlat flat)
-                    {
-                        Color c = flat.BgColor;
-                        if (Math.Max(c.R, Math.Max(c.G, c.B)) < 0.3f) { alpha = c.A; kind = $"Panel {c.ToHtml(true)}"; }
-                    }
-
-                    if (alpha > 0.02f)
-                    {
-                        float modulate = 1f;
-                        for (Node? n = control; n != null; n = n.GetParent())
-                            if (n is CanvasItem item) modulate *= item.SelfModulate.A * item.Modulate.A;
-                        alpha = Math.Clamp(alpha * modulate, 0f, 1f);
-
-                        // Fully opaque layers are backgrounds, not dimmers.
-                        if (alpha > 0.02f && alpha < 0.95f && alpha > best)
-                        {
-                            best = alpha;
-                            bestInfo = $"{control.Name} ({control.GetType().Name}) {kind} dim {alpha:0.00}";
-                        }
-                    }
+                    Color modulate = item.Modulate * item.SelfModulate;
+                    tint *= modulate;
+                    if (modulate != Colors.White) parts.Add($"{n.Name}#{modulate.ToHtml(true)}");
                 }
-
-                Walk(child);
+                if (n is Window) break;
             }
+            if (parts.Count > 0) info = string.Join(" ", parts);
         }
 
-        Walk(_panel.GetTree()?.Root!);
-        source = best > 0.02f ? bestInfo : "none [" + string.Join(", ", dump) + "]";
-        return best;
+        // The game dims the footer's container when a window is open; follow the
+        // same tint so the cell darkens with the rest of the bar.
+        _content.Modulate = new Color(
+            Dim.R * tint.R, Dim.G * tint.G, Dim.B * tint.B, Dim.A * tint.A);
+
+        if (info != _lastDimSource)
+        {
+            _lastDimSource = info;
+            DimInfo = info;
+            LastDim = tint.A;
+            LastDimFound = true;
+        }
     }
 
     public float LastDim { get; private set; } = -1f;
@@ -434,10 +386,9 @@ internal sealed class MasteryBar
 
         // The rendered colour also includes the node's modulate chain.
         Color tint = Colors.White;
-        for (Node? n = donor; n != null; n = n.GetParent())
+        for (Node? n = donor; n != null && n != footer; n = n.GetParent())
         {
             if (n is CanvasItem item) tint *= item.Modulate * item.SelfModulate;
-            if (n == footer) break;
         }
         _fontColor *= tint;
 
