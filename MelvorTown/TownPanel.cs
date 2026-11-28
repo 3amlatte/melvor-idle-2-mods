@@ -1,3 +1,6 @@
+using GamesByMalcs.Melvor2;
+using GamesByMalcs.Melvor2.Data.Currencies;
+using GamesByMalcs.Melvor2.Entities.Bank;
 using Godot;
 using MelvorModLoader;
 
@@ -346,6 +349,29 @@ internal sealed class TownPanel : Control
         });
     }
 
+    static long GoldAmount()
+    {
+        Game? game = GameAccess.CurrentGame;
+        if (game == null) return 0;
+        BankEntity? bank = game.Entities.GetAllObjects().OfType<BankEntity>().FirstOrDefault();
+        if (bank == null) return 0;
+        return game.Data.TryGetObject<Currency>("MelvorBase:GoldPieces", out Currency? gold) && gold != null
+            ? bank.Wallet.GetQuantity(gold)
+            : 0;
+    }
+
+    static bool SpendGold(long amount)
+    {
+        Game? game = GameAccess.CurrentGame;
+        if (game == null) return false;
+        BankEntity? bank = game.Entities.GetAllObjects().OfType<BankEntity>().FirstOrDefault();
+        if (bank == null) return false;
+        if (!game.Data.TryGetObject<Currency>("MelvorBase:GoldPieces", out Currency? gold) || gold == null) return false;
+        if (bank.Wallet.GetQuantity(gold) < amount) return false;
+        bank.Wallet.RemoveQuantity(gold, amount);
+        return true;
+    }
+
     void OpenMerchant()
     {
         OpenWindow("Travelling Merchant", body =>
@@ -361,17 +387,27 @@ internal sealed class TownPanel : Control
                 }
 
                 body.AddChild(Ui.Label($"The cart leaves in {Math.Max(0, _state.MerchantLeft):0}s.", 14, Ui.Accent));
-                body.AddChild(Ui.Label("A few things the merchant will trade for food.", 13, Ui.Muted));
+                body.AddChild(Ui.Label($"Gold: {GoldAmount():N0} GP", 14, Ui.Text));
+                body.AddChild(Ui.Label("A few things the merchant will trade for gold.", 13, Ui.Muted));
 
-                var recruit = Ui.Button("Recruit a villager - 35 food", () =>
+                var food = Ui.Button("Buy 50 food - 100 GP", () =>
                 {
-                    if (_state.Food < 35 || _state.Population >= _state.Capacity) return;
-                    _state.Food -= 35;
+                    if (!SpendGold(100)) return;
+                    _state.Food += 50;
+                    _state.Save();
+                    Render();
+                });
+                food.Disabled = GoldAmount() < 100;
+                body.AddChild(food);
+
+                var recruit = Ui.Button("Recruit a villager - 250 GP", () =>
+                {
+                    if (_state.Population >= _state.Capacity || !SpendGold(250)) return;
                     _state.Population += 1;
                     _state.Save();
                     Render();
                 });
-                recruit.Disabled = _state.Food < 35 || _state.Population >= _state.Capacity;
+                recruit.Disabled = _state.Population >= _state.Capacity || GoldAmount() < 250;
                 body.AddChild(recruit);
                 if (_state.Population >= _state.Capacity)
                     body.AddChild(Ui.Label("No room for another villager. Build more housing.", 12, Ui.Muted));
