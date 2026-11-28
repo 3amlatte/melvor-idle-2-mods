@@ -13,6 +13,8 @@ public sealed class Mod : IMod
     Texture2D? _tabIcon;
     Button? _button;
     bool _tabActive;
+    StyleBox? _tabNormalBox;
+    StyleBox? _tabSelectedBox;
     long _lastMs;
     int _frame;
 
@@ -87,19 +89,28 @@ public sealed class Mod : IMod
         var button = new Button
         {
             Name = "TownNavigationButton",
-            Flat = true,
+            Flat = false,
             FocusMode = Control.FocusModeEnum.None,
-            CustomMinimumSize = tabSize,
+            CustomMinimumSize = new Vector2(72, 0),
             SizeFlagsVertical = bank.SizeFlagsVertical,
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
             TooltipText = "Melvor Town\nGrow a small medieval town with population and food.",
         };
-        var hover = new StyleBoxFlat { BgColor = new Color(1, 1, 1, 0.07f) };
-        hover.SetCornerRadiusAll(4);
-        button.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
-        button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
-        button.AddThemeStyleboxOverride("hover", hover);
-        button.AddThemeStyleboxOverride("pressed", hover);
+        // Copy the real tab backgrounds so the tab reads like Bank/Shop.
+        StyleBox? normalBox = donor.GetThemeStylebox("normal");
+        StyleBox? hoverBox = donor.GetThemeStylebox("hover");
+        StyleBox? pressedBox = donor.GetThemeStylebox("pressed");
+        StyleBox? hoverPressedBox = donor.GetThemeStylebox("hover_pressed");
+        StyleBox? focusBox = donor.GetThemeStylebox("focus");
+
+        _tabNormalBox = normalBox;
+        _tabSelectedBox = pressedBox ?? normalBox;
+
+        if (normalBox != null) button.AddThemeStyleboxOverride("normal", normalBox);
+        if (hoverBox != null) button.AddThemeStyleboxOverride("hover", hoverBox);
+        if (pressedBox != null) button.AddThemeStyleboxOverride("pressed", pressedBox);
+        if (hoverPressedBox != null) button.AddThemeStyleboxOverride("hover_pressed", hoverPressedBox);
+        button.AddThemeStyleboxOverride("focus", focusBox ?? new StyleBoxEmpty());
 
         var column = new VBoxContainer
         {
@@ -189,15 +200,7 @@ public sealed class Mod : IMod
 
         if (_button == null || !GodotObject.IsInstanceValid(_button)) return;
 
-        if (active)
-        {
-            var style = new StyleBoxFlat { BgColor = new Color(1, 1, 1, 0.09f) };
-            style.SetCornerRadiusAll(4);
-            _button.AddThemeStyleboxOverride("normal", style);
-        }
-        else
-        {
-            _button.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
-        }
+        StyleBox? style = active ? _tabSelectedBox : _tabNormalBox;
+        _button.AddThemeStyleboxOverride("normal", style ?? new StyleBoxEmpty());
     }
 }
