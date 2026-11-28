@@ -334,19 +334,19 @@ internal sealed class MasteryBar
         Node root = _panel.GetTree()!.Root;
         Control? blur = FindControl(root, "blur");
 
-        if (blur != null && blur.IsVisibleInTree())
+        if (blur != null)
         {
-            float dim = 0.72f;
-            string detail = $"size {blur.Size:0}x{blur.Size:0}";
-            if (blur is Panel panel && panel.GetThemeStylebox("panel") is StyleBoxFlat flat &&
-                flat.BgColor.A > 0.05f && flat.BgColor.A < 0.95f)
+            // BlurPanel is shown for normal skill pages and hidden when a full-page
+            // menu (Dungeons, Combat Areas, ...) is open. A hidden blur panel means
+            // the window dim is active.
+            if (!blur.IsVisibleInTree())
             {
-                dim = flat.BgColor.A;
-                detail += $" style {flat.BgColor.ToHtml(true)}";
+                source = $"blur {blur.Name} hidden -> window dim 0.72";
+                return 0.72f;
             }
-            detail += $" sm {blur.SelfModulate.A:0.00} m {blur.Modulate.A:0.00}";
-            source = $"blur {blur.Name} ({blur.GetType().Name}) {detail}";
-            return dim;
+
+            source = $"blur {blur.Name} visible -> no dim";
+            return 0f;
         }
 
         // Fallback: a dark full-screen overlay, ignoring the always-on background dim.
