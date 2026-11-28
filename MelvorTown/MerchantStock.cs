@@ -1,7 +1,5 @@
 using GamesByMalcs.Melvor2;
-using GamesByMalcs.Melvor2.Components.Inventories;
 using GamesByMalcs.Melvor2.Data.Currencies;
-using GamesByMalcs.Melvor2.Data.Items;
 using GamesByMalcs.Melvor2.Entities.Bank;
 using Godot;
 using MelvorModLoader;
@@ -12,7 +10,9 @@ internal static class MerchantStock
 {
     internal sealed record TownItem(string Id, string Name, string Description, long Price);
 
-    static readonly TownItem[] TownItems =
+    internal sealed record PlaceholderItem(string Id, string Name, string Description, long Price);
+
+    internal static readonly TownItem[] TownItems =
     {
         new("sickle", "Golden Sickle", "Farms produce 25% more food.", 750),
         new("charter", "Town Charter", "+3 population capacity.", 900),
@@ -20,6 +20,20 @@ internal static class MerchantStock
         new("ledger", "Merchant's Ledger", "10% off everything the merchant sells.", 1100),
         new("horseshoe", "Lucky Horseshoe", "Merchants visit 25% more often.", 650),
         new("quarrydeed", "Quarry Deed", "+1 food from every farm.", 1000),
+    };
+
+    // Placeholder regular stock until the item database exists. Buying these only
+    // records the sale; the real items will be wired up later.
+    static readonly PlaceholderItem[] PlaceholderItems =
+    {
+        new("iron-ore", "Iron Ore", "Placeholder stock - item database coming later.", 45),
+        new("oak-logs", "Oak Logs", "Placeholder stock - item database coming later.", 30),
+        new("coal", "Coal", "Placeholder stock - item database coming later.", 60),
+        new("healing-potion", "Healing Potion", "Placeholder stock - item database coming later.", 120),
+        new("leather", "Leather", "Placeholder stock - item database coming later.", 80),
+        new("silver-bar", "Silver Bar", "Placeholder stock - item database coming later.", 200),
+        new("carrot-seeds", "Carrot Seeds", "Placeholder stock - item database coming later.", 25),
+        new("linen", "Linen", "Placeholder stock - item database coming later.", 70),
     };
 
     static Game? CurrentGame => GameAccess.CurrentGame;
@@ -54,19 +68,8 @@ internal static class MerchantStock
     public static long PriceOf(TownState state, MerchantOffer offer) =>
         state.HasPerk("ledger") ? (long)Math.Ceiling(offer.Price * 0.9) : offer.Price;
 
-    public static Texture2D? IconFor(string id) => FindItem(id)?.Icon;
-
-    static Item? FindItem(string id)
-    {
-        Game? game = CurrentGame;
-        return game != null && game.Data.TryGetObject<Item>(id, out Item? item) ? item : null;
-    }
-
     public static void Roll(TownState state)
     {
-        Game? game = CurrentGame;
-        if (game == null) return;
-
         var offers = new List<MerchantOffer>();
 
         foreach (TownItem town in TownItems
@@ -85,24 +88,16 @@ internal static class MerchantStock
             });
         }
 
-        List<Item> pool = game.Data.GetDataRegistryOutput<Item>().GetAllObjects()
-            .Where(i => i != Item.Placeholder && i.SellsFor.Quantity > 0 &&
-                        !string.IsNullOrWhiteSpace(i.Id) && i.DisplayName.ToString().Length > 0)
-            .OrderBy(_ => Random.Shared.Next())
-            .Take(12)
-            .ToList();
-
-        foreach (Item item in pool)
+        foreach (PlaceholderItem item in PlaceholderItems.OrderBy(_ => Random.Shared.Next()))
         {
             if (offers.Count >= 6) break;
             int quantity = Random.Shared.Next(1, 5);
-            long price = (long)(item.SellsFor.Quantity * quantity * 2.5);
             offers.Add(new MerchantOffer
             {
                 Id = item.Id,
-                Name = item.DisplayName.ToString(),
-                Description = "",
-                Price = Math.Clamp(price, 25, 4000),
+                Name = item.Name,
+                Description = item.Description,
+                Price = item.Price * quantity,
                 Quantity = quantity,
             });
         }
@@ -116,31 +111,20 @@ internal static class MerchantStock
         if (offer.Bought >= offer.Quantity) { message = "Sold out."; return false; }
 
         long price = PriceOf(state, offer);
-        if (GoldAmount() < price) { message = "Not enough gold."; return false; }
-
-        Item? item = offer.TownItem ? null : FindItem(offer.Id);
-        BankEntity? bank = Bank();
-
-        if (!offer.TownItem && (item == null || bank == null))
-        {
-            message = "That item is no longer available.";
-            return false;
-        }
-
         if (!SpendGold(price)) { message = "Not enough gold."; return false; }
 
         if (offer.TownItem)
         {
             state.Perks.Add(offer.Id);
+            message = "Relic acquired.";
         }
         else
         {
-            bank!.Inventory.AddQuantity(item!, 1, AddItemFlags.Found);
+            message = "Placeholder purchase recorded. Item wiring comes with the database.";
         }
 
         offer.Bought += 1;
         state.Save();
-        message = "Bought.";
         return true;
     }
 }

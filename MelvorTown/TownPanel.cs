@@ -22,6 +22,10 @@ internal sealed class TownPanel : Control
     readonly Label _statTitle;
     readonly Label _statBody;
 
+    readonly Button _relicButton;
+    readonly PanelContainer _relicPanel;
+    readonly VBoxContainer _relicList;
+
     readonly Control _popupHost;
     readonly CenterContainer _popupCenter;
     PanelContainer? _popupPanel;
@@ -81,6 +85,8 @@ internal sealed class TownPanel : Control
         _foodLabel = Ui.Label("", 15);
         Stat(header, "food", _foodLabel, "Food",
             () => $"{_state.Food:0} stored, net {(_state.FoodPerMinute >= 0 ? "+" : "")}{_state.FoodPerMinute:0} per minute.\nFarms, groves and merchants add food. Every villager eats over time.");
+        _relicButton = Ui.Button("Relics", ToggleRelics);
+        header.AddChild(_relicButton);
         header.AddChild(Ui.Button("Upgrades", OpenUpgrades));
         _moveButton = Ui.Button("Move", ToggleEdit);
         header.AddChild(_moveButton);
@@ -136,6 +142,25 @@ internal sealed class TownPanel : Control
         _statBody.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _statBody.CustomMinimumSize = new Vector2(280, 0);
         tipColumn.AddChild(_statBody);
+
+        _relicPanel = new PanelContainer { Visible = false, MouseFilter = MouseFilterEnum.Stop };
+        var relicStyle = new StyleBoxFlat
+        {
+            BgColor = new Color(0.10f, 0.09f, 0.07f, 0.97f),
+            BorderColor = new Color(0.24f, 0.21f, 0.16f),
+        };
+        relicStyle.SetBorderWidthAll(1);
+        relicStyle.SetCornerRadiusAll(4);
+        relicStyle.ContentMarginLeft = 10;
+        relicStyle.ContentMarginRight = 10;
+        relicStyle.ContentMarginTop = 8;
+        relicStyle.ContentMarginBottom = 8;
+        _relicPanel.AddThemeStyleboxOverride("panel", relicStyle);
+        AddChild(_relicPanel);
+
+        _relicList = new VBoxContainer();
+        _relicList.AddThemeConstantOverride("separation", 6);
+        _relicPanel.AddChild(_relicList);
 
         _popupHost = new Control { Visible = false, MouseFilter = MouseFilterEnum.Stop };
         _popupHost.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -239,6 +264,7 @@ internal sealed class TownPanel : Control
     {
         Visible = false;
         _statTip.Visible = false;
+        _relicPanel.Visible = false;
         CloseWindow();
         _state.Save();
     }
@@ -286,6 +312,49 @@ internal sealed class TownPanel : Control
             : _state.MerchantHere
                 ? "A travelling merchant is in town."
                 : "Click a building to open it. The town grows as you build.";
+    }
+
+    void ToggleRelics()
+    {
+        if (_relicPanel.Visible)
+        {
+            _relicPanel.Visible = false;
+            return;
+        }
+
+        FillRelics();
+        _relicPanel.Visible = true;
+        _relicPanel.ResetSize();
+        Vector2 origin = _relicButton.GlobalPosition - GlobalPosition;
+        _relicPanel.Position = new Vector2(
+            Math.Clamp(origin.X - 240f, 8f, Math.Max(8f, Size.X - 420f)),
+            origin.Y + _relicButton.Size.Y + 6f);
+    }
+
+    void FillRelics()
+    {
+        Clear(_relicList);
+        _relicList.AddChild(Ui.Label("Relics", 15, Ui.Accent));
+
+        foreach (MerchantStock.TownItem relic in MerchantStock.TownItems)
+        {
+            bool owned = _state.HasPerk(relic.Id);
+            var row = new HBoxContainer();
+            row.AddThemeConstantOverride("separation", 10);
+
+            var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            text.AddThemeConstantOverride("separation", 1);
+            text.AddChild(Ui.Label(relic.Name, 13, owned ? Ui.Good : Ui.Text));
+
+            var desc = Ui.Label(relic.Description, 11, Ui.Muted);
+            desc.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            desc.CustomMinimumSize = new Vector2(260, 0);
+            text.AddChild(desc);
+            row.AddChild(text);
+
+            row.AddChild(Ui.Label(owned ? "Owned" : "-", 12, owned ? Ui.Good : Ui.Muted));
+            _relicList.AddChild(row);
+        }
     }
 
     void ToggleEdit()
@@ -374,10 +443,7 @@ internal sealed class TownPanel : Control
                     var row = new HBoxContainer();
                     row.AddThemeConstantOverride("separation", 8);
 
-                    Texture2D? icon = offer.TownItem
-                        ? _art.GetValueOrDefault("tab")
-                        : MerchantStock.IconFor(offer.Id);
-                    row.AddChild(Ui.Icon(icon, 34));
+                    row.AddChild(Ui.Icon(_art.GetValueOrDefault("tab"), 34));
 
                     var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
                     text.AddThemeConstantOverride("separation", 1);
@@ -586,6 +652,7 @@ internal sealed class TownPanel : Control
     void OpenWindow(string title, Action<VBoxContainer> build)
     {
         CloseWindow();
+        _relicPanel.Visible = false;
         _popupHost.Visible = true;
 
         _popupPanel = new PanelContainer
