@@ -15,6 +15,10 @@ internal sealed class TownPanel : Control
     readonly Label _hintLabel;
     readonly TownView _view;
 
+    readonly PanelContainer _statTip;
+    readonly Label _statTitle;
+    readonly Label _statBody;
+
     readonly Control _popupHost;
     readonly CenterContainer _popupCenter;
     PanelContainer? _popupPanel;
@@ -62,11 +66,14 @@ internal sealed class TownPanel : Control
 
         header.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         _popLabel = Ui.Label("", 15);
-        Stat(header, "pop", _popLabel, "Villagers: how many live in town, and how many the houses can support. They arrive while there is food and room.");
+        Stat(header, "pop", _popLabel, "Villagers",
+            () => $"{_state.Population} of {_state.Capacity} places filled.\nVillagers arrive while there is spare food and housing. Cottages, timber houses and manors raise the cap.");
         _foodLabel = Ui.Label("", 15);
-        Stat(header, "food", _foodLabel, "Food: produced by farms, groves and merchants, and eaten by every villager.");
+        Stat(header, "food", _foodLabel, "Food",
+            () => $"{_state.Food:0} stored, net {(_state.FoodPerMinute >= 0 ? "+" : "")}{_state.FoodPerMinute:0} per minute.\nFarms, groves and merchants add food. Every villager eats over time.");
         _seedLabel = Ui.Label("", 15);
-        Stat(header, "seed", _seedLabel, "Seeds: each farm uses a seed to grow carrots. Buy more at the seed store.");
+        Stat(header, "seed", _seedLabel, "Seeds",
+            () => $"{_state.Seeds:0} in store.\nEach farm uses one seed to grow carrots every 8 seconds. Buy more at the seed store.");
         header.AddChild(Ui.Button("Upgrades", OpenUpgrades));
 
         var cog = new CogButton();
@@ -94,6 +101,33 @@ internal sealed class TownPanel : Control
         _rateLabel = Ui.Label("", 12, Ui.Muted);
         footer.AddChild(_rateLabel);
 
+        _statTip = new PanelContainer { Visible = false, MouseFilter = MouseFilterEnum.Ignore };
+        var tipStyle = new StyleBoxFlat
+        {
+            BgColor = new Color(0.10f, 0.09f, 0.07f, 0.97f),
+            BorderColor = new Color(0.24f, 0.21f, 0.16f),
+        };
+        tipStyle.SetBorderWidthAll(1);
+        tipStyle.SetCornerRadiusAll(4);
+        tipStyle.ContentMarginLeft = 10;
+        tipStyle.ContentMarginRight = 10;
+        tipStyle.ContentMarginTop = 8;
+        tipStyle.ContentMarginBottom = 8;
+        _statTip.AddThemeStyleboxOverride("panel", tipStyle);
+        AddChild(_statTip);
+
+        var tipColumn = new VBoxContainer();
+        tipColumn.AddThemeConstantOverride("separation", 3);
+        _statTip.AddChild(tipColumn);
+
+        _statTitle = Ui.Label("", 14, Ui.Accent);
+        tipColumn.AddChild(_statTitle);
+
+        _statBody = Ui.Label("", 12, Ui.Text);
+        _statBody.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _statBody.CustomMinimumSize = new Vector2(280, 0);
+        tipColumn.AddChild(_statBody);
+
         _popupHost = new Control { Visible = false, MouseFilter = MouseFilterEnum.Stop };
         _popupHost.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         AddChild(_popupHost);
@@ -113,16 +147,34 @@ internal sealed class TownPanel : Control
 
     }
 
-    void Stat(HBoxContainer row, string art, Label label, string tooltip)
+    void Stat(HBoxContainer row, string art, Label label, string title, Func<string> body)
     {
-        var icon = Ui.Icon(_art.GetValueOrDefault(art), 20);
-        icon.MouseFilter = MouseFilterEnum.Pass;
-        icon.TooltipText = tooltip;
-        row.AddChild(icon);
+        var group = new HBoxContainer { MouseFilter = MouseFilterEnum.Stop };
+        group.AddThemeConstantOverride("separation", 4);
 
-        label.MouseFilter = MouseFilterEnum.Pass;
-        label.TooltipText = tooltip;
-        row.AddChild(label);
+        var icon = Ui.Icon(_art.GetValueOrDefault(art), 20);
+        icon.MouseFilter = MouseFilterEnum.Ignore;
+        group.AddChild(icon);
+
+        label.MouseFilter = MouseFilterEnum.Ignore;
+        group.AddChild(label);
+
+        group.MouseEntered += () => ShowStatTip(group, title, body());
+        group.MouseExited += () => _statTip.Visible = false;
+
+        row.AddChild(group);
+    }
+
+    void ShowStatTip(Control owner, string title, string body)
+    {
+        _statTitle.Text = title;
+        _statBody.Text = body;
+        _statTip.Visible = true;
+        _statTip.ResetSize();
+
+        Vector2 origin = owner.GlobalPosition - GlobalPosition;
+        float x = Math.Clamp(origin.X, 8f, Math.Max(8f, Size.X - 320f));
+        _statTip.Position = new Vector2(x, origin.Y + owner.Size.Y + 6f);
     }
 
     static StyleBoxFlat HudBox()
@@ -176,6 +228,7 @@ internal sealed class TownPanel : Control
     public void Close()
     {
         Visible = false;
+        _statTip.Visible = false;
         CloseWindow();
         _state.Save();
     }
