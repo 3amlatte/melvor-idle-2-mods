@@ -17,7 +17,8 @@ internal sealed class MasteryBar
     static readonly Color Text = new(0.92f, 0.92f, 0.94f);
     static readonly Color Track = new(0.18f, 0.19f, 0.24f);
 
-    const float Height = 30f;
+    const float BaseHeight = 30f;
+    const int BaseFontSize = 11;
     const int MaxCells = 4;
     const float SingleRightMargin = 590f;
     const float MultiRightMargin = 300f;
@@ -25,6 +26,7 @@ internal sealed class MasteryBar
     sealed class Cell
     {
         public required VBoxContainer Root;
+        public required HBoxContainer Row;
         public required TextureRect Icon;
         public required Label Task;
         public required Label Eta;
@@ -47,6 +49,14 @@ internal sealed class MasteryBar
     readonly HBoxContainer _content;
     readonly List<Cell> _cells = new();
     readonly List<Control> _separators = new();
+
+    Font? _font;
+    int _fontSize = BaseFontSize;
+    int _donorSize = BaseFontSize;
+    Color _fontColor = Text;
+    float _height = BaseHeight;
+
+    float Scale => _fontSize / (float)BaseFontSize;
 
     public MasteryBar(ModContext ctx)
     {
@@ -80,8 +90,9 @@ internal sealed class MasteryBar
 
     public string LastPlacement { get; private set; } = "";
 
-    public void Show(Control? footer, IReadOnlyList<Entry> entries)
+    public void Show(Control? footer, IReadOnlyList<Entry> entries, string? donorText = null)
     {
+        CopyFooterStyle(footer, donorText);
         Vector2 viewport = _panel.GetViewportRect().Size;
         if (viewport.X < 200 || entries.Count == 0) { Hide(); return; }
 
@@ -92,12 +103,12 @@ internal sealed class MasteryBar
         float x, y, width;
         float desiredWidth = (entries.Count <= 1
             ? 300f
-            : Math.Min(520f, 220f + 150f * entries.Count)) * 0.767f;
+            : Math.Min(520f, 220f + 150f * entries.Count)) * 0.767f * Scale;
 
         if (footerRect.Size.X >= 200)
         {
             width = desiredWidth;
-            y = footerRect.End.Y - Height + 4f;
+            y = footerRect.End.Y - _height + 4f;
 
             // Sit just after the item-rate section (the rates end at the orange separator),
             // so growing numbers push the cell right instead of overlapping them.
@@ -111,6 +122,8 @@ internal sealed class MasteryBar
             if (divider != null)
             {
                 x = divider.GetGlobalRect().End.X + 14f;
+                // Never let the cell slide back over the orange divider; trim instead.
+                width = Math.Min(width, Math.Max(120f, viewport.X - x - 8f));
             }
             else if (rate != null)
             {
@@ -139,11 +152,11 @@ internal sealed class MasteryBar
         {
             width = Math.Min(desiredWidth, viewport.X - 32f);
             x = (viewport.X - width) / 2f;
-            y = viewport.Y - Height - 150f;
+            y = viewport.Y - _height - 150f;
         }
 
         x = Math.Clamp(x, 8f, Math.Max(8f, viewport.X - width - 8f));
-        y = Math.Clamp(y, 8f, Math.Max(8f, viewport.Y - Height - 8f));
+        y = Math.Clamp(y, 8f, Math.Max(8f, viewport.Y - _height - 8f));
 
         EnsureCells(entries.Count);
 
@@ -152,13 +165,25 @@ internal sealed class MasteryBar
             bool used = i < entries.Count;
             _cells[i].Root.Visible = used;
             if (i > 0) _separators[i - 1].Visible = used;
-            if (used) _cells[i].Set(entries[i]);
+            if (used)
+            {
+                Cell cell = _cells[i];
+                cell.Set(entries[i]);
+                StyleLabel(cell.Task);
+                StyleLabel(cell.Eta);
+                cell.Task.CustomMinimumSize = new Vector2(130f * Scale, 0);
+                cell.Eta.CustomMinimumSize = new Vector2(55f * Scale, 0);
+                float iconSize = Math.Clamp(16f * Scale, 16f, 22f);
+                cell.Icon.CustomMinimumSize = new Vector2(iconSize, iconSize);
+                cell.Progress.CustomMinimumSize = new Vector2(0, Math.Clamp(3f * Scale, 3f, 5f));
+                cell.Row.AddThemeConstantOverride("separation", Mathf.RoundToInt(5f * Scale));
+            }
         }
 
         _panel.Position = new Vector2(x, y);
-        _panel.Size = new Vector2(width, Height);
+        _panel.Size = new Vector2(width, _height);
 
-        LastPlacement = $"footer {footerRect.Position:0}/{footerRect.Size:0} -> panel {x:0},{y:0} {width:0}x{Height:0}, {entries.Count} task(s)";
+        LastPlacement = $"footer {footerRect.Position:0}/{footerRect.Size:0} -> panel {x:0},{y:0} {width:0}x{_height:0}, {entries.Count} task(s), font {_fontSize} (donor {_donorSize})";
 
         _layer.Visible = true;
     }
@@ -223,8 +248,7 @@ internal sealed class MasteryBar
                 VerticalAlignment = VerticalAlignment.Center,
                 MouseFilter = Control.MouseFilterEnum.Ignore
             };
-            task.AddThemeFontSizeOverride("font_size", 11);
-            task.AddThemeColorOverride("font_color", Text);
+            StyleLabel(task);
             row.AddChild(task);
 
             var eta = new Label
@@ -235,8 +259,7 @@ internal sealed class MasteryBar
                 CustomMinimumSize = new Vector2(55, 0),
                 MouseFilter = Control.MouseFilterEnum.Ignore
             };
-            eta.AddThemeFontSizeOverride("font_size", 11);
-            eta.AddThemeColorOverride("font_color", Accent);
+            StyleLabel(eta);
             row.AddChild(eta);
 
             var progress = new ProgressBar
@@ -260,12 +283,87 @@ internal sealed class MasteryBar
             _cells.Add(new Cell
             {
                 Root = root,
+                Row = row,
                 Icon = icon,
                 Task = task,
                 Eta = eta,
                 Progress = progress
             });
         }
+    }
+
+    void CopyFooterStyle(Control? footer, string? donorText)
+    {
+        Label? donor = footer != null && GodotObject.IsInstanceValid(footer)
+            ? FindDonorLabel(footer, donorText)
+            : null;
+
+        if (donor == null)
+        {
+            _font = null;
+            _fontSize = BaseFontSize;
+            _donorSize = BaseFontSize;
+            _fontColor = Text;
+            _height = BaseHeight;
+            return;
+        }
+
+        _font = donor.GetThemeFont("font");
+        int size = donor.GetThemeFontSize("font_size");
+        if (size <= 0) size = BaseFontSize;
+        _donorSize = size;
+
+        // Match the footer text, but keep the cell inside the space next to the divider.
+        _fontSize = Math.Clamp(size, BaseFontSize, 15);
+        _fontColor = donor.GetThemeColor("font_color");
+        _height = Math.Max(BaseHeight, _fontSize * 1.2f + 10f);
+    }
+
+    void StyleLabel(Label label)
+    {
+        if (_font != null) label.AddThemeFontOverride("font", _font);
+        label.AddThemeFontSizeOverride("font_size", _fontSize);
+        label.AddThemeColorOverride("font_color", _fontColor);
+    }
+
+    static Label? FindDonorLabel(Node node, string? text)
+    {
+        Label? named = null;
+        Label? exact = null;
+        Label? widest = null;
+        float widestWidth = 0;
+
+        void Walk(Node root)
+        {
+            foreach (Node child in root.GetChildren())
+            {
+                if (child is Label label && label.IsVisibleInTree() && label.Text.Length > 2)
+                {
+                    string name = label.Name.ToString();
+                    string value = label.Text.Trim();
+
+                    if (name.Contains("CurrentAction", StringComparison.OrdinalIgnoreCase))
+                        named ??= label;
+
+                    if (text != null && value.Equals(text, StringComparison.OrdinalIgnoreCase))
+                        exact ??= label;
+
+                    bool numeric = value.All(c => char.IsDigit(c) || char.IsPunctuation(c) || char.IsWhiteSpace(c));
+                    bool rate = value.Contains("/hr", StringComparison.OrdinalIgnoreCase) ||
+                                value.Contains("Show all", StringComparison.OrdinalIgnoreCase);
+                    if (!numeric && !rate && label.Size.X > widestWidth)
+                    {
+                        widestWidth = label.Size.X;
+                        widest = label;
+                    }
+                }
+
+                Walk(child);
+            }
+        }
+
+        Walk(node);
+        return named ?? exact ?? widest;
     }
 
     static Control? FindOrangeDivider(Node node)

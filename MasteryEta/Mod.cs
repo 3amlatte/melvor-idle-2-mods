@@ -199,7 +199,7 @@ public sealed class MasteryEtaMod : IMod
             }
         }
 
-        _bar.Show(_footer, entries);
+        _bar.Show(_footer, entries, candidates.Count > 0 ? candidates[0].ActionName : null);
 
         if (_loggedPlacement != _bar.LastPlacement)
         {
