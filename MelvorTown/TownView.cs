@@ -24,10 +24,13 @@ internal sealed class TownView : Control
     TownState? _state;
 
     TextureRect? _dragNode;
+    TextureRect? _resizeNode;
     Vector2 _dragOffset;
     bool _dirty;
+    string? _hoverName;
 
     public Action<string>? Clicked;
+    public event Action<string?>? Hovered;
     public bool Editing { get; private set; }
 
     public TownView(Dictionary<string, Texture2D?> art, Texture2D? ground, string directory)
@@ -57,6 +60,12 @@ internal sealed class TownView : Control
         };
         _editOverlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _editOverlay.GuiInput += OnEditInput;
+        _editOverlay.Draw += DrawHandles;
+        _editOverlay.MouseExited += () =>
+        {
+            _hoverName = null;
+            Hovered?.Invoke(null);
+        };
         AddChild(_editOverlay);
     }
 
@@ -78,6 +87,7 @@ internal sealed class TownView : Control
         _editOverlay.Visible = editing;
         _editOverlay.MouseFilter = editing ? MouseFilterEnum.Stop : MouseFilterEnum.Ignore;
         if (editing) MoveChild(_editOverlay, GetChildCount() - 1);
+        _editOverlay.QueueRedraw();
 
         if (!editing) SaveLayout();
     }
@@ -122,6 +132,7 @@ internal sealed class TownView : Control
             }
 
             node.Texture = _art.GetValueOrDefault(spot.Art);
+            node.TooltipText = NameOf(spot.Key);
             node.SetMeta("x", spot.X);
             node.SetMeta("y", spot.Y);
         }
@@ -134,6 +145,7 @@ internal sealed class TownView : Control
         }
 
         if (Editing) MoveChild(_editOverlay, GetChildCount() - 1);
+        _editOverlay.QueueRedraw();
         Layout();
     }
 
@@ -163,14 +175,23 @@ internal sealed class TownView : Control
             {
                 if (button.Pressed)
                 {
-                    _dragNode = NodeAt(mouse);
-                    MelvorModLoader.Log.Write($"[MelvorTown] drag start {(_dragNode != null)} at {mouse.X:0},{mouse.Y:0}");
-                    if (_dragNode != null) _dragOffset = mouse - _dragNode.Position;
+                    TextureRect? handle = HandleAt(mouse);
+                    if (handle != null)
+                    {
+                        _resizeNode = handle;
+                        MelvorModLoader.Log.Write($"[MelvorTown] resize start {KeyOf(handle)}");
+                    }
+                    else
+                    {
+                        _dragNode = NodeAt(mouse);
+                        if (_dragNode != null) _dragOffset = mouse - _dragNode.Position;
+                    }
                 }
-                else if (_dragNode != null)
+                else
                 {
+                    if (_dragNode != null || _resizeNode != null) SaveLayout();
                     _dragNode = null;
-                    SaveLayout();
+                    _resizeNode = null;
                 }
             }
             else if (button.Pressed && (button.ButtonIndex == MouseButton.WheelUp || button.ButtonIndex == MouseButton.WheelDown))
@@ -182,19 +203,88 @@ internal sealed class TownView : Control
                     float factor = button.ButtonIndex == MouseButton.WheelUp ? 1.08f : 0.92f;
                     placement.Scale = Math.Clamp(placement.Scale * factor, 0.35f, 3f);
                     Apply(node, nodeKey);
+                    Remember(node);
                     _dirty = true;
+                    _editOverlay.QueueRedraw();
                     SaveLayout();
                 }
             }
         }
-        else if (ev is InputEventMouseMotion && _dragNode != null)
+        else if (ev is InputEventMouseMotion motion)
         {
-            _dragNode.Position = mouse - _dragOffset;
-            Clamp(_dragNode);
-            Remember(_dragNode);
-            _dirty = true;
+            if (_resizeNode != null && KeyOf(_resizeNode) is { } resizeKey)
+            {
+                float baseSide = Math.Min(150f, Size.Y * 0.36f);
+                Vector2 anchor = _resizeNode.Position + new Vector2(_resizeNode.Size.X / 2f, _resizeNode.Size.Y);
+                float side = Math.Max(Math.Abs(mouse.X - anchor.X) * 2f, Math.Abs(mouse.Y - anchor.Y) * 1.5f);
+                side = Math.Clamp(side, 48f, 700f);
+
+                Placement placement = PlacementFor(resizeKey);
+                placement.Scale = side / baseSide;
+                Apply(_resizeNode, resizeKey);
+                Remember(_resizeNode);
+                _dirty = true;
+                _editOverlay.QueueRedraw();
+            }
+            else if (_dragNode != null)
+            {
+                _dragNode.Position = mouse - _dragOffset;
+                Clamp(_dragNode);
+                Remember(_dragNode);
+                _dirty = true;
+                _editOverlay.QueueRedraw();
+            }
+            else
+            {
+                string? name = NodeAt(mouse) is { } hovered && KeyOf(hovered) is { } hoverKey ? NameOf(hoverKey) : null;
+                if (name != _hoverName)
+                {
+                    _hoverName = name;
+                    Hovered?.Invoke(name);
+                }
+            }
         }
     }
+
+    TextureRect? HandleAt(Vector2 point)
+    {
+        foreach (TextureRect node in _nodes.Values)
+        {
+            if (!GodotObject.IsInstanceValid(node)) continue;
+            var handle = new Rect2(node.Position + node.Size - new Vector2(16, 16), new Vector2(16, 16));
+            if (handle.HasPoint(point)) return node;
+        }
+        return null;
+    }
+
+    void DrawHandles()
+    {
+        if (!Editing) return;
+        var gold = new Color(0.93f, 0.75f, 0.35f);
+        var dark = new Color(0.10f, 0.09f, 0.07f);
+        foreach (TextureRect node in _nodes.Values)
+        {
+            if (!GodotObject.IsInstanceValid(node)) continue;
+            var rect = new Rect2(node.Position + node.Size - new Vector2(14, 14), new Vector2(14, 14));
+            _editOverlay.DrawRect(rect, gold, true);
+            _editOverlay.DrawRect(rect, dark, false, 2f);
+        }
+    }
+
+    public static string NameOf(string key) => key switch
+    {
+        "bar" => "Tavern",
+        "house1" => "Cottage",
+        "house2" => "Timber House",
+        "house3" => "Manor",
+        "school" => "School",
+        "seedstore" => "Seed Store",
+        "farm1" or "farm2" => "Farm",
+        "trees1" or "trees2" => "Tree Grove",
+        "balloon" => "Hot Air Balloon",
+        "merchant" => "Travelling Merchant",
+        _ => key,
+    };
 
     void Layout()
     {

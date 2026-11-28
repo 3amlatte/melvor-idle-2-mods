@@ -25,6 +25,7 @@ internal sealed class TownPanel : Control
     PanelContainer? _popupPanel;
 
     string _signature = "";
+    string? _hoverName;
     double _refresh;
     double _save;
 
@@ -50,6 +51,11 @@ internal sealed class TownPanel : Control
         _view.SetState(_state);
         _view.SetGroundVisible(false);
         _view.Clicked += OpenBuilding;
+        _view.Hovered += name =>
+        {
+            _hoverName = name;
+            Refresh();
+        };
         AddChild(_view);
 
         // Top HUD floats over the town instead of framing it.
@@ -275,7 +281,8 @@ internal sealed class TownPanel : Control
 
         _moveButton.Text = _view.Editing ? "Done" : "Move";
         _hintLabel.Text = _view.Editing
-            ? "Drag buildings to move - scroll to resize. Click Done when finished."
+            ? (_hoverName is { Length: > 0 } ? _hoverName + " - " : "") +
+              "drag to move - gold handle or scroll to resize"
             : _state.MerchantHere
                 ? "A travelling merchant is in town."
                 : "Click a building to open it. The town grows as you build.";
