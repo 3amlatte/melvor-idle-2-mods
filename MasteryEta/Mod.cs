@@ -205,6 +205,7 @@ public sealed class MasteryEtaMod : IMod
         {
             _loggedPlacement = _bar.LastPlacement;
             _ctx.Log($"Mastery ETA placement: {_loggedPlacement}.");
+            if (_bar.DonorInfo.Length > 0) _ctx.Log($"Mastery ETA style: {_bar.DonorInfo}.");
         }
 
         _loggedReason = "";

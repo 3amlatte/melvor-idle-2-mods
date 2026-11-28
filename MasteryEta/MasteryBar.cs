@@ -90,6 +90,8 @@ internal sealed class MasteryBar
 
     public string LastPlacement { get; private set; } = "";
 
+    public string DonorInfo { get; private set; } = "";
+
     public void Show(Control? footer, IReadOnlyList<Entry> entries, string? donorText = null)
     {
         CopyFooterStyle(footer, donorText);
@@ -189,7 +191,7 @@ internal sealed class MasteryBar
         _panel.Position = new Vector2(x, y);
         _panel.Size = new Vector2(width, _height);
 
-        LastPlacement = $"footer {footerRect.Position:0}/{footerRect.Size:0} -> panel {x:0},{y:0} {width:0}x{_height:0}, {entries.Count} task(s), font {_fontSize} (donor {_donorSize})";
+        LastPlacement = $"footer {footerRect.Position:0}/{footerRect.Size:0} -> panel {x:0},{y:0} {width:0}x{_height:0}, {entries.Count} task(s), font {_fontSize} (donor {_donorSize}, {DonorInfo})";
 
         _layer.Visible = true;
     }
@@ -314,15 +316,44 @@ internal sealed class MasteryBar
             return;
         }
 
-        _font = donor.GetThemeFont("font");
-        int size = donor.GetThemeFontSize("font_size");
-        if (size <= 0) size = BaseFontSize;
-        _donorSize = size;
+        // The game styles most footer labels with a LabelSettings resource, which wins
+        // over the theme font/colour. Copy that first, then fall back to the theme.
+        LabelSettings? settings = donor.LabelSettings;
+        if (settings != null)
+        {
+            _font = settings.Font ?? donor.GetThemeFont("font");
+            _fontSize = settings.FontSize > 0 ? settings.FontSize : donor.GetThemeFontSize("font_size");
+            _fontColor = settings.FontColor;
+        }
+        else
+        {
+            _font = donor.GetThemeFont("font");
+            _fontSize = donor.GetThemeFontSize("font_size");
+            _fontColor = donor.GetThemeColor("font_color");
+        }
+
+        // The rendered colour also includes the node's modulate chain.
+        Color tint = Colors.White;
+        for (Node? n = donor; n != null; n = n.GetParent())
+        {
+            if (n is CanvasItem item) tint *= item.Modulate * item.SelfModulate;
+            if (n == footer) break;
+        }
+        _fontColor *= tint;
+
+        // The bar's label colour is a warm cream; if the donor resolved to the theme's
+        // plain white, use the bar cream so the cell still blends in.
+        if (_fontColor.R > 0.97f && _fontColor.G > 0.97f && _fontColor.B > 0.97f)
+            _fontColor = new Color(0.886f, 0.859f, 0.804f);
+
+        if (_fontSize <= 0) _fontSize = BaseFontSize;
+        _donorSize = _fontSize;
 
         // Match the footer text, but keep the cell inside the space next to the divider.
-        _fontSize = Math.Clamp(size, BaseFontSize, 13);
-        _fontColor = donor.GetThemeColor("font_color");
+        _fontSize = Math.Clamp(_fontSize, BaseFontSize, 13);
         _height = Math.Max(BaseHeight, _fontSize * 1.2f + 10f);
+
+        DonorInfo = $"{donor.Name} '{donor.Text.Trim()}' {(settings != null ? "settings" : "theme")} {_fontColor.ToHtml(false)}";
     }
 
     void StyleLabel(Label label, Color color)
