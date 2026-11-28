@@ -34,6 +34,7 @@ public sealed class TownState
     public double Food { get; set; } = 28;
     public int Population { get; set; } = 2;
     public int Workers { get; set; }
+    public int TownHallLevel { get; set; } = 1;
     public int Lessons { get; set; }
     public bool Paused { get; set; }
     public bool AlwaysMerchant { get; set; } = true;
@@ -63,10 +64,22 @@ public sealed class TownState
 
     public bool HasPerk(string id) => Perks.Contains(id);
 
-    public int Tier =>
+    public int RequirementTier =>
         Population >= 20 && Has("manor") && HasBalloon ? 4 :
         Population >= 12 && Has("timber") && HasSchool ? 3 :
         Population >= 6 && Has("cottage") && Has("farm") ? 2 : 1;
+
+    public int Tier => Math.Min(TownHallLevel, RequirementTier);
+
+    public int TownHallCost => TownHallLevel switch
+    {
+        1 => 500,
+        2 => 2000,
+        3 => 6000,
+        _ => 0,
+    };
+
+    public bool CanUpgradeTownHall => TownHallLevel < 4 && RequirementTier > TownHallLevel;
 
     public string TierName => Tier switch
     {
@@ -76,11 +89,17 @@ public sealed class TownState
         _ => "Camp",
     };
 
-    public string TierRequirement => Tier switch
+    public string TierRequirement => TownHallLevel switch
     {
-        1 => "Next tier: population 6, cottage and farm.",
-        2 => "Next tier: population 12, timber house and school.",
-        3 => "Next tier: population 20, manor and hot air balloon.",
+        1 => RequirementTier >= 2
+            ? "Upgrade the Town Hall to level 2 (500 GP) to unlock tier 2."
+            : "Next tier: population 6, cottage and farm.",
+        2 => RequirementTier >= 3
+            ? "Upgrade the Town Hall to level 3 (2,000 GP) to unlock tier 3."
+            : "Next tier: population 12, timber house and school.",
+        3 => RequirementTier >= 4
+            ? "Upgrade the Town Hall to level 4 (6,000 GP) to unlock tier 4."
+            : "Next tier: population 20, manor and hot air balloon.",
         _ => "The town is fully grown.",
     };
 
@@ -219,6 +238,7 @@ public sealed class TownState
         Food = 28;
         Population = 2;
         Workers = 0;
+        TownHallLevel = 1;
         Lessons = 0;
         Paused = false;
         AlwaysMerchant = true;
@@ -294,6 +314,7 @@ public sealed class TownState
             Owned["farm"] = 1;
             Owned["grove"] = 1;
         }
+        TownHallLevel = Math.Clamp(TownHallLevel, 1, 4);
         Population = Math.Clamp(Population, 1, Math.Max(1, Capacity));
         Food = Math.Max(0, Food);
     }

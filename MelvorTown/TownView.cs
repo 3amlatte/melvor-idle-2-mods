@@ -400,7 +400,7 @@ internal sealed class TownView : Control
         var spots = new List<Spot>
         {
             new("bar", "bar" + state.Tier, 0.18f, 0.73f, false),
-            new("townhall", "townhall" + state.Tier, 0.50f, 0.30f),
+            new("townhall", "townhall" + state.TownHallLevel, 0.50f, 0.30f),
         };
 
         if (state.Has("cottage")) spots.Add(new("house1", "house1", 0.30f, 0.74f));

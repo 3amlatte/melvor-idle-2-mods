@@ -61,7 +61,7 @@ internal static class MerchantStock
         return bank == null || gold == null ? 0 : bank.Wallet.GetQuantity(gold);
     }
 
-    static bool SpendGold(long amount)
+    public static bool Spend(long amount)
     {
         BankEntity? bank = Bank();
         Currency? gold = Gold();
@@ -118,7 +118,7 @@ internal static class MerchantStock
         if (offer.Bought >= offer.Quantity) { message = "Sold out."; return false; }
 
         long price = PriceOf(state, offer);
-        if (!SpendGold(price)) { message = "Not enough gold."; return false; }
+        if (!Spend(price)) { message = "Not enough gold."; return false; }
 
         if (offer.TownItem)
         {

@@ -421,7 +421,7 @@ internal sealed class TownPanel : Control
         _buildingsList.AddChild(Ui.Label("Buildings", 15, Ui.Accent));
 
         BuildingRow("Tavern", $"Tier {_state.Tier}", true);
-        BuildingRow("Town Hall", $"Tier {_state.Tier}", true);
+        BuildingRow("Town Hall", $"Level {_state.TownHallLevel}", true);
         BuildingRow("Cottage", _state.Has("cottage") ? "Tier 1" : "Not built", _state.Has("cottage"));
         BuildingRow("Timber House", _state.Has("timber") ? "Tier 1" : "Not built", _state.Has("timber"));
         BuildingRow("Manor", _state.Has("manor") ? "Tier 1" : "Not built", _state.Has("manor"));
@@ -565,18 +565,56 @@ internal sealed class TownPanel : Control
     {
         OpenWindow("Town Hall", body =>
         {
-            Clear(body);
-            body.AddChild(Ui.Label($"Tier {_state.Tier} - {_state.TierName}", 18, Ui.Accent));
-            body.AddChild(Ui.Label($"Population: {_state.Population} / {_state.Capacity}", 14));
-            body.AddChild(Ui.Label(_state.TierRequirement, 13, Ui.Muted));
-            body.AddChild(Ui.Label("Buildings", 14, Ui.Accent));
-
-            foreach (UpgradeDef def in TownState.Upgrades)
+            void Render()
             {
-                if (!_state.Has(def.Id)) continue;
-                body.AddChild(Ui.Label($"{def.Name} x{_state.Count(def.Id)}", 13, Ui.Text));
+                Clear(body);
+                body.AddChild(Ui.Label($"Town Hall - Level {_state.TownHallLevel}", 18, Ui.Accent));
+                body.AddChild(Ui.Label($"Town tier: {_state.Tier} - {_state.TierName}", 14));
+                body.AddChild(Ui.Label($"Population: {_state.Population} / {_state.Capacity}", 14));
+                body.AddChild(Ui.Label(NextTownHallText(), 13, Ui.Muted));
+
+                if (_state.TownHallLevel < 4)
+                {
+                    int cost = _state.TownHallCost;
+                    var upgrade = Ui.Button(
+                        $"Upgrade to level {_state.TownHallLevel + 1} - {cost:N0} GP",
+                        () =>
+                        {
+                            if (!_state.CanUpgradeTownHall || !MerchantStock.Spend(cost)) return;
+                            _state.TownHallLevel += 1;
+                            _state.Save();
+                            Render();
+                        });
+                    upgrade.Disabled = !_state.CanUpgradeTownHall || MerchantStock.GoldAmount() < cost;
+                    body.AddChild(upgrade);
+                }
+
+                body.AddChild(Ui.Label("Buildings", 14, Ui.Accent));
+                foreach (UpgradeDef def in TownState.Upgrades)
+                {
+                    if (!_state.Has(def.Id)) continue;
+                    body.AddChild(Ui.Label($"{def.Name} x{_state.Count(def.Id)}", 13, Ui.Text));
+                }
             }
+            Render();
         });
+    }
+
+    string NextTownHallText()
+    {
+        if (_state.TownHallLevel >= 4) return "The town hall is fully upgraded.";
+
+        string requirement = _state.TownHallLevel switch
+        {
+            1 => "population 6, cottage and farm",
+            2 => "population 12, timber house and school",
+            3 => "population 20, manor and hot air balloon",
+            _ => "",
+        };
+
+        return _state.RequirementTier > _state.TownHallLevel
+            ? $"Ready to upgrade. The next tier also requires {requirement}."
+            : $"Next tier requires {requirement}.";
     }
 
     void OpenGrove()
