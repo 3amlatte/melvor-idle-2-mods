@@ -175,8 +175,8 @@ internal sealed class MasteryBar
             {
                 Cell cell = _cells[i];
                 cell.Set(entries[i]);
-                StyleLabel(cell.Task);
-                StyleLabel(cell.Eta);
+                StyleLabel(cell.Task, _fontColor);
+                StyleLabel(cell.Eta, Accent);
                 cell.Task.CustomMinimumSize = new Vector2(130f * Scale, 0);
                 cell.Eta.CustomMinimumSize = new Vector2(55f * Scale, 0);
                 float iconSize = Math.Clamp(16f * Scale, 16f, 22f);
@@ -254,7 +254,7 @@ internal sealed class MasteryBar
                 VerticalAlignment = VerticalAlignment.Center,
                 MouseFilter = Control.MouseFilterEnum.Ignore
             };
-            StyleLabel(task);
+            StyleLabel(task, _fontColor);
             row.AddChild(task);
 
             var eta = new Label
@@ -265,7 +265,7 @@ internal sealed class MasteryBar
                 CustomMinimumSize = new Vector2(55, 0),
                 MouseFilter = Control.MouseFilterEnum.Ignore
             };
-            StyleLabel(eta);
+            StyleLabel(eta, Accent);
             row.AddChild(eta);
 
             var progress = new ProgressBar
@@ -325,11 +325,11 @@ internal sealed class MasteryBar
         _height = Math.Max(BaseHeight, _fontSize * 1.2f + 10f);
     }
 
-    void StyleLabel(Label label)
+    void StyleLabel(Label label, Color color)
     {
         if (_font != null) label.AddThemeFontOverride("font", _font);
         label.AddThemeFontSizeOverride("font_size", _fontSize);
-        label.AddThemeColorOverride("font_color", _fontColor);
+        label.AddThemeColorOverride("font_color", color);
     }
 
     static Label? FindDonorLabel(Node node, string? text)
