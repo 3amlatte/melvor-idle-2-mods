@@ -92,7 +92,7 @@ internal sealed class MasteryBar
         float x, y, width;
         float desiredWidth = (entries.Count <= 1
             ? 300f
-            : Math.Min(520f, 220f + 150f * entries.Count)) * 0.85f;
+            : Math.Min(520f, 220f + 150f * entries.Count)) * 0.8075f;
 
         if (footerRect.Size.X >= 200)
         {
@@ -218,7 +218,7 @@ internal sealed class MasteryBar
             var task = new Label
             {
                 SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
-                CustomMinimumSize = new Vector2(140, 0),
+                CustomMinimumSize = new Vector2(130, 0),
                 TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
                 VerticalAlignment = VerticalAlignment.Center,
                 MouseFilter = Control.MouseFilterEnum.Ignore
