@@ -274,6 +274,7 @@ internal sealed class TownView : Control
     public static string NameOf(string key) => key switch
     {
         "bar" => "Tavern",
+        "townhall" => "Town Hall",
         "house1" => "Cottage",
         "house2" => "Timber House",
         "house3" => "Manor",
@@ -398,14 +399,15 @@ internal sealed class TownView : Control
     {
         var spots = new List<Spot>
         {
-            new("bar", "bar", 0.18f, 0.73f, false),
+            new("bar", "bar" + state.Tier, 0.18f, 0.73f, false),
+            new("townhall", "townhall" + state.Tier, 0.50f, 0.30f),
         };
 
         if (state.Has("cottage")) spots.Add(new("house1", "house1", 0.30f, 0.74f));
         if (state.Has("timber")) spots.Add(new("house2", "house2", 0.42f, 0.73f));
         if (state.Has("manor")) spots.Add(new("house3", "house3", 0.54f, 0.72f));
 
-        if (state.HasSchool) spots.Add(new("school", "school", 0.47f, 0.47f));
+        if (state.HasSchool) spots.Add(new("school", "school", 0.38f, 0.47f));
 
         spots.Add(new("farm1", "farm", 0.74f, 0.78f));
         if (state.Farms > 1) spots.Add(new("farm2", "farm", 0.83f, 0.73f));

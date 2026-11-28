@@ -11,6 +11,7 @@ internal sealed class TownPanel : Control
     readonly TownState _state;
     readonly Dictionary<string, Texture2D?> _art = new();
 
+    readonly Label _tierLabel;
     readonly Label _popLabel;
     readonly Label _workerLabel;
     readonly Label _foodLabel;
@@ -46,7 +47,9 @@ internal sealed class TownPanel : Control
 
         foreach (string name in new[]
         {
-            "bar", "house1", "house2", "house3", "farm", "merchant",
+            "bar1", "bar2", "bar3", "bar4",
+            "townhall1", "townhall2", "townhall3", "townhall4",
+            "house1", "house2", "house3", "farm", "merchant",
             "trees", "school", "balloon", "tab", "pop", "worker", "food", "ground",
         })
         {
@@ -80,6 +83,9 @@ internal sealed class TownPanel : Control
         top.AddChild(header);
 
         header.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        _tierLabel = Ui.Label("", 15, Ui.Accent);
+        Stat(header, "tab", _tierLabel, "Town tier",
+            () => $"Tier {_state.Tier} - {_state.TierName}.\n{_state.TierRequirement}");
         _popLabel = Ui.Label("", 15);
         Stat(header, "pop", _popLabel, "Population",
             () => $"{_state.Population} of {_state.Capacity} places filled.\nPeople arrive while there is spare food and housing. Cottages, timber houses and manors raise the cap.");
@@ -293,6 +299,7 @@ internal sealed class TownPanel : Control
 
     void Refresh()
     {
+        _tierLabel.Text = $"Tier {_state.Tier}";
         _popLabel.Text = $"{_state.Population} / {_state.Capacity}";
         _workerLabel.Text = $"{_state.Workers}";
         _foodLabel.Text = $"{_state.Food:0}";
@@ -302,7 +309,7 @@ internal sealed class TownPanel : Control
         string signature = string.Join(",",
             _state.Owned.Where(p => p.Value > 0).Select(p => p.Key),
             _state.MerchantHere ? "merchant" : "",
-            _state.Farms, _state.Groves);
+            _state.Farms, _state.Groves, _state.Tier);
 
         if (signature != _signature)
         {
@@ -382,6 +389,7 @@ internal sealed class TownPanel : Control
             case "merchant": OpenMerchant(); break;
             case "trees1":
             case "trees2": OpenGrove(); break;
+            case "townhall": OpenTownHall(); break;
             case "school": OpenSchool(); break;
             case "balloon": OpenBalloon(); break;
         }
@@ -473,6 +481,24 @@ internal sealed class TownPanel : Control
                 }
             }
             Render();
+        });
+    }
+
+    void OpenTownHall()
+    {
+        OpenWindow("Town Hall", body =>
+        {
+            Clear(body);
+            body.AddChild(Ui.Label($"Tier {_state.Tier} - {_state.TierName}", 18, Ui.Accent));
+            body.AddChild(Ui.Label($"Population: {_state.Population} / {_state.Capacity}", 14));
+            body.AddChild(Ui.Label(_state.TierRequirement, 13, Ui.Muted));
+            body.AddChild(Ui.Label("Buildings", 14, Ui.Accent));
+
+            foreach (UpgradeDef def in TownState.Upgrades)
+            {
+                if (!_state.Has(def.Id)) continue;
+                body.AddChild(Ui.Label($"{def.Name} x{_state.Count(def.Id)}", 13, Ui.Text));
+            }
         });
     }
 

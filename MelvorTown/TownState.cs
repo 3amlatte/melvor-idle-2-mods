@@ -63,6 +63,29 @@ public sealed class TownState
 
     public bool HasPerk(string id) => Perks.Contains(id);
 
+    public int Tier =>
+        Population >= 20 && Has("manor") && HasBalloon ? 4 :
+        Population >= 12 && Has("timber") && HasSchool ? 3 :
+        Population >= 6 && Has("cottage") && Has("farm") ? 2 : 1;
+
+    public string TierName => Tier switch
+    {
+        2 => "Village",
+        3 => "Town",
+        4 => "Borough",
+        _ => "Camp",
+    };
+
+    public string TierRequirement => Tier switch
+    {
+        1 => "Next tier: population 6, cottage and farm.",
+        2 => "Next tier: population 12, timber house and school.",
+        3 => "Next tier: population 20, manor and hot air balloon.",
+        _ => "The town is fully grown.",
+    };
+
+    public int MerchantSlots => 6 + (Tier - 1) * 2;
+
     public int Count(string id) => Owned.TryGetValue(id, out int n) ? n : 0;
 
     public bool Has(string id) => Count(id) > 0;

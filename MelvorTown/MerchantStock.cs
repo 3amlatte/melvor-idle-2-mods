@@ -34,6 +34,11 @@ internal static class MerchantStock
         new("silver-bar", "Silver Bar", "Placeholder stock - item database coming later.", 200),
         new("carrot-seeds", "Carrot Seeds", "Placeholder stock - item database coming later.", 25),
         new("linen", "Linen", "Placeholder stock - item database coming later.", 70),
+        new("copper-ore", "Copper Ore", "Placeholder stock - item database coming later.", 35),
+        new("iron-bar", "Iron Bar", "Placeholder stock - item database coming later.", 180),
+        new("maple-logs", "Maple Logs", "Placeholder stock - item database coming later.", 90),
+        new("ruby", "Ruby", "Placeholder stock - item database coming later.", 260),
+        new("bread", "Bread", "Placeholder stock - item database coming later.", 40),
     };
 
     static Game? CurrentGame => GameAccess.CurrentGame;
@@ -88,9 +93,11 @@ internal static class MerchantStock
             });
         }
 
+        int target = state.MerchantSlots;
+
         foreach (PlaceholderItem item in PlaceholderItems.OrderBy(_ => Random.Shared.Next()))
         {
-            if (offers.Count >= 6) break;
+            if (offers.Count >= target) break;
             int quantity = Random.Shared.Next(1, 5);
             offers.Add(new MerchantOffer
             {
@@ -102,7 +109,7 @@ internal static class MerchantStock
             });
         }
 
-        state.Offers = offers.Take(6).ToList();
+        state.Offers = offers.Take(target).ToList();
         state.Save();
     }
 
