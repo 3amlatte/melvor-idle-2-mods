@@ -343,6 +343,9 @@ public sealed class MasteryEtaMod : IMod
     static bool HasRealMedia(Texture2D? media)
     {
         if (media == null || media is PlaceholderTexture2D) return false;
+        string path = media.ResourcePath ?? "";
+        if (path.Length == 0 || path.Contains("missing_artwork", StringComparison.OrdinalIgnoreCase))
+            return false;
         try
         {
             Vector2 size = media.GetSize();
