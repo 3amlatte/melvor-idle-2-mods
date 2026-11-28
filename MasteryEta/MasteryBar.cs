@@ -19,6 +19,8 @@ internal sealed class MasteryBar
 
     const float BaseHeight = 30f;
     const int BaseFontSize = 11;
+    // The game's footer is slightly muted; dim the cell so it does not stand out.
+    static readonly Color Dim = new(0.92f, 0.92f, 0.92f);
     const int MaxCells = 4;
     const float SingleRightMargin = 590f;
     const float MultiRightMargin = 300f;
@@ -69,7 +71,11 @@ internal sealed class MasteryBar
         _panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         _layer.AddChild(_panel);
 
-        _content = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        _content = new HBoxContainer
+        {
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            Modulate = Dim
+        };
         _content.AddThemeConstantOverride("separation", 8);
         _panel.AddChild(_content);
 
