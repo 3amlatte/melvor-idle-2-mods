@@ -12,6 +12,7 @@ using GamesByMalcs.Melvor2.Data;
 using GamesByMalcs.Melvor2.Data.Recipes;
 using GamesByMalcs.Melvor2.Entities;
 using GamesByMalcs.Melvor2.Entities.Cooking;
+using GamesByMalcs.Melvor2.Entities.Fishing;
 using GamesByMalcs.Melvor2.GameMenus;
 using GamesByMalcs.Melvor2.Goals;
 using Godot;
@@ -65,6 +66,7 @@ public sealed class MasteryEtaMod : IMod
     Texture2D? _iconPancake;
     Texture2D? _iconPie;
     Texture2D? _iconSushi;
+    Texture2D? _iconFish;
     Texture2D? _missingArtwork;
     TrackerComponentFooterView? _footer;
     Game? _game;
@@ -90,6 +92,7 @@ public sealed class MasteryEtaMod : IMod
         _iconPancake = LoadIcon(iconDir, "pancake");
         _iconPie = LoadIcon(iconDir, "pie");
         _iconSushi = LoadIcon(iconDir, "sushi");
+        _iconFish = LoadIcon(iconDir, "fish");
         try { _missingArtwork = GD.Load<Texture2D>("res://Assets/Icons/missing_artwork.png"); }
         catch { _missingArtwork = null; }
 
@@ -367,6 +370,19 @@ public sealed class MasteryEtaMod : IMod
             return create.Recipe.Icon ?? recipe?.Icon;
         }
 
+        // Fishing tasks ("catch a fish in ...") have no picture of their own.
+        if (task.Task.Goal is FishRecipeGoal)
+        {
+            if (HasRealMedia(task.Task.Media))
+            {
+                source = "media";
+                return task.Task.Media;
+            }
+
+            source = "generated-fish";
+            return _iconFish ?? task.Task.Media;
+        }
+
         // Keep the game's own task picture when it has one.
         if (HasRealMedia(task.Task.Media))
         {
@@ -380,6 +396,12 @@ public sealed class MasteryEtaMod : IMod
         {
             source = "generated";
             return generated;
+        }
+
+        if (_iconFish != null && task.Task.Id.Contains("fish", StringComparison.OrdinalIgnoreCase))
+        {
+            source = "generated-fish";
+            return _iconFish;
         }
 
         source = "recipe";
