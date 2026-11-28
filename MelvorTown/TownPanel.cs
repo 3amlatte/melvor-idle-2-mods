@@ -28,6 +28,10 @@ internal sealed class TownPanel : Control
     readonly PanelContainer _relicPanel;
     readonly VBoxContainer _relicList;
 
+    readonly Button _buildingsButton;
+    readonly PanelContainer _buildingsPanel;
+    readonly VBoxContainer _buildingsList;
+
     readonly Control _popupHost;
     readonly CenterContainer _popupCenter;
     PanelContainer? _popupPanel;
@@ -97,6 +101,8 @@ internal sealed class TownPanel : Control
             () => $"{_state.Food:0} stored, net {(_state.FoodPerMinute >= 0 ? "+" : "")}{_state.FoodPerMinute:0} per minute.\nFarms, groves and merchants add food. Everyone eats over time.");
         _relicButton = Ui.Button("Relics", ToggleRelics);
         header.AddChild(_relicButton);
+        _buildingsButton = Ui.Button("Buildings", ToggleBuildings);
+        header.AddChild(_buildingsButton);
         header.AddChild(Ui.Button("Upgrades", OpenUpgrades));
         _moveButton = Ui.Button("Move", ToggleEdit);
         header.AddChild(_moveButton);
@@ -171,6 +177,25 @@ internal sealed class TownPanel : Control
         _relicList = new VBoxContainer();
         _relicList.AddThemeConstantOverride("separation", 6);
         _relicPanel.AddChild(_relicList);
+
+        _buildingsPanel = new PanelContainer { Visible = false, MouseFilter = MouseFilterEnum.Stop };
+        var buildingStyle = new StyleBoxFlat
+        {
+            BgColor = new Color(0.10f, 0.09f, 0.07f, 0.97f),
+            BorderColor = new Color(0.24f, 0.21f, 0.16f),
+        };
+        buildingStyle.SetBorderWidthAll(1);
+        buildingStyle.SetCornerRadiusAll(4);
+        buildingStyle.ContentMarginLeft = 10;
+        buildingStyle.ContentMarginRight = 10;
+        buildingStyle.ContentMarginTop = 8;
+        buildingStyle.ContentMarginBottom = 8;
+        _buildingsPanel.AddThemeStyleboxOverride("panel", buildingStyle);
+        AddChild(_buildingsPanel);
+
+        _buildingsList = new VBoxContainer();
+        _buildingsList.AddThemeConstantOverride("separation", 5);
+        _buildingsPanel.AddChild(_buildingsList);
 
         _popupHost = new Control { Visible = false, MouseFilter = MouseFilterEnum.Stop };
         _popupHost.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -275,6 +300,7 @@ internal sealed class TownPanel : Control
         Visible = false;
         _statTip.Visible = false;
         _relicPanel.Visible = false;
+        _buildingsPanel.Visible = false;
         CloseWindow();
         _state.Save();
     }
@@ -334,6 +360,8 @@ internal sealed class TownPanel : Control
             return;
         }
 
+        _buildingsPanel.Visible = false;
+
         FillRelics();
         _relicPanel.Visible = true;
         _relicPanel.ResetSize();
@@ -367,6 +395,55 @@ internal sealed class TownPanel : Control
             row.AddChild(Ui.Label(owned ? "Owned" : "-", 12, owned ? Ui.Good : Ui.Muted));
             _relicList.AddChild(row);
         }
+    }
+
+    void ToggleBuildings()
+    {
+        if (_buildingsPanel.Visible)
+        {
+            _buildingsPanel.Visible = false;
+            return;
+        }
+
+        _relicPanel.Visible = false;
+        FillBuildings();
+        _buildingsPanel.Visible = true;
+        _buildingsPanel.ResetSize();
+        Vector2 origin = _buildingsButton.GlobalPosition - GlobalPosition;
+        _buildingsPanel.Position = new Vector2(
+            Math.Clamp(origin.X - 240f, 8f, Math.Max(8f, Size.X - 420f)),
+            origin.Y + _buildingsButton.Size.Y + 6f);
+    }
+
+    void FillBuildings()
+    {
+        Clear(_buildingsList);
+        _buildingsList.AddChild(Ui.Label("Buildings", 15, Ui.Accent));
+
+        BuildingRow("Tavern", $"Tier {_state.Tier}", true);
+        BuildingRow("Town Hall", $"Tier {_state.Tier}", true);
+        BuildingRow("Cottage", _state.Has("cottage") ? "Tier 1" : "Not built", _state.Has("cottage"));
+        BuildingRow("Timber House", _state.Has("timber") ? "Tier 1" : "Not built", _state.Has("timber"));
+        BuildingRow("Manor", _state.Has("manor") ? "Tier 1" : "Not built", _state.Has("manor"));
+        BuildingRow("Farm", $"{_state.Farms} plot(s)", true);
+        BuildingRow("Tree Grove", $"{_state.Groves} plot(s)", true);
+        BuildingRow("School", _state.HasSchool ? "Built" : "Not built", _state.HasSchool);
+        BuildingRow("Hot Air Balloon", _state.HasBalloon ? "Built" : "Not built", _state.HasBalloon);
+        BuildingRow("Travelling Merchant", _state.MerchantHere ? "In town" : "On the road", _state.MerchantHere);
+    }
+
+    void BuildingRow(string name, string value, bool active)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 12);
+
+        var label = Ui.Label(name, 13, Ui.Text);
+        label.CustomMinimumSize = new Vector2(160, 0);
+        row.AddChild(label);
+        row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        row.AddChild(Ui.Label(value, 12, active ? Ui.Good : Ui.Muted));
+
+        _buildingsList.AddChild(row);
     }
 
     void ToggleEdit()
@@ -684,6 +761,7 @@ internal sealed class TownPanel : Control
     {
         CloseWindow();
         _relicPanel.Visible = false;
+        _buildingsPanel.Visible = false;
         _popupHost.Visible = true;
 
         _popupPanel = new PanelContainer
