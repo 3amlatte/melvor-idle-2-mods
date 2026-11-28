@@ -12,6 +12,7 @@ public sealed class Mod : IMod
     Button? _button;
     long _lastMs;
     int _frame;
+    readonly HashSet<ulong> _hookedTabs = new();
 
     public void OnLoad(ModContext ctx)
     {
@@ -44,12 +45,14 @@ public sealed class Mod : IMod
 
     void PlaceButton()
     {
-        if (_button != null && GodotObject.IsInstanceValid(_button) && _button.IsInsideTree())
-            return;
-
         Node root = _ctx.Tree.Root;
         Control? bank = root.FindChild("BankNavigationButton", true, false) as Control;
         if (bank?.GetParent() is not BoxContainer box)
+            return;
+
+        HookTabs(box);
+
+        if (_button != null && GodotObject.IsInstanceValid(_button) && _button.IsInsideTree())
             return;
 
         // Reuse the header label style so the tab matches its neighbours.
@@ -107,5 +110,17 @@ public sealed class Mod : IMod
         box.AddChild(button);
         box.MoveChild(button, bank.GetIndex() + 1);
         _button = button;
+    }
+
+    void HookTabs(BoxContainer box)
+    {
+        foreach (Node child in box.GetChildren())
+        {
+            if (child is not Button tab || tab == _button) continue;
+            if (!_hookedTabs.Add(tab.GetInstanceId())) continue;
+
+            // Switching to any other tab closes the town page.
+            tab.Pressed += () => _page.Close();
+        }
     }
 }

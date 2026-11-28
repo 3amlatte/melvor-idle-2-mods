@@ -44,20 +44,21 @@ internal sealed class TownPage : CanvasLayer
         root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(root);
 
-        var dim = new ColorRect { Color = new Color(0, 0, 0, 0.62f) };
-        dim.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        dim.GuiInput += ev =>
+        var dim = new ColorRect
         {
-            if (ev is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
-                Close();
+            Color = new Color(0, 0, 0, 0.62f),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
         };
+        dim.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        dim.OffsetTop = 70;
         root.AddChild(dim);
 
         var margin = new MarginContainer
         {
-            MouseFilter = Control.MouseFilterEnum.Stop,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
         };
         margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        margin.OffsetTop = 70;
         margin.AddThemeConstantOverride("margin_left", 28);
         margin.AddThemeConstantOverride("margin_right", 28);
         margin.AddThemeConstantOverride("margin_top", 22);
@@ -106,6 +107,11 @@ internal sealed class TownPage : CanvasLayer
         cog.TooltipText = "Town settings";
         cog.Pressed += OpenSettings;
         header.AddChild(cog);
+
+        var close = Ui.Button("X", Close, 14);
+        close.CustomMinimumSize = new Vector2(34, 34);
+        close.TooltipText = "Close (Esc)";
+        header.AddChild(close);
 
         _view = new TownView(_art, _art.GetValueOrDefault("ground"))
         {
