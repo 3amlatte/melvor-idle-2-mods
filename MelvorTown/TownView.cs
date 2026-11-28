@@ -164,6 +164,7 @@ internal sealed class TownView : Control
                 if (button.Pressed)
                 {
                     _dragNode = NodeAt(mouse);
+                    MelvorModLoader.Log.Write($"[MelvorTown] drag start {(_dragNode != null)} at {mouse.X:0},{mouse.Y:0}");
                     if (_dragNode != null) _dragOffset = mouse - _dragNode.Position;
                 }
                 else if (_dragNode != null)
