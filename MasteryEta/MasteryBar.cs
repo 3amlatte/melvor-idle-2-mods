@@ -339,6 +339,7 @@ internal sealed class MasteryBar
         Vector2 viewport = _panel.GetViewportRect().Size;
         float best = 0f;
         string bestInfo = "none";
+        var dump = new List<string>();
 
         void Walk(Node node)
         {
@@ -347,6 +348,14 @@ internal sealed class MasteryBar
                 if (child is Control control && control.IsVisibleInTree() &&
                     control.Size.X >= viewport.X * 0.85f && control.Size.Y >= viewport.Y * 0.85f)
                 {
+                    if (dump.Count < 4)
+                    {
+                        string extra = control is Panel p && p.GetThemeStylebox("panel") is StyleBoxFlat f
+                            ? f.BgColor.ToHtml(true)
+                            : control is ColorRect cr ? cr.Color.ToHtml(true) : "-";
+                        dump.Add($"{control.Name}:{control.GetType().Name}:{extra}:sm{control.SelfModulate.A:0.00}:m{control.Modulate.A:0.00}");
+                    }
+
                     float alpha = 0f;
                     string kind = "";
                     if (control is ColorRect rect)
@@ -381,7 +390,7 @@ internal sealed class MasteryBar
         }
 
         Walk(_panel.GetTree()?.Root!);
-        source = best > 0.02f ? bestInfo : "none";
+        source = best > 0.02f ? bestInfo : "none [" + string.Join(", ", dump) + "]";
         return best;
     }
 
