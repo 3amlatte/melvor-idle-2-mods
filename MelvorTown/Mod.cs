@@ -12,9 +12,7 @@ public sealed class Mod : IMod
     TownGamePage _townPage = null!;
     Texture2D? _tabIcon;
     Button? _button;
-    bool _tabActive;
     StyleBox? _tabNormalBox;
-    StyleBox? _tabSelectedBox;
     long _lastMs;
     int _frame;
 
@@ -39,11 +37,7 @@ public sealed class Mod : IMod
         _lastMs = now;
         _state.Tick(dt);
 
-        if (++_frame % 30 == 0)
-        {
-            PlaceButton();
-            UpdateTabState();
-        }
+        if (++_frame % 30 == 0) PlaceButton();
     }
 
     void OpenTownPage()
@@ -104,7 +98,6 @@ public sealed class Mod : IMod
         StyleBox? focusBox = donor.GetThemeStylebox("focus");
 
         _tabNormalBox = normalBox;
-        _tabSelectedBox = pressedBox ?? normalBox;
 
         if (normalBox != null) button.AddThemeStyleboxOverride("normal", normalBox);
         if (hoverBox != null) button.AddThemeStyleboxOverride("hover", hoverBox);
@@ -162,7 +155,6 @@ public sealed class Mod : IMod
         box.AddChild(button);
         box.MoveChild(button, bank.GetIndex());
         _button = button;
-        _tabActive = false;
     }
 
     static TextureRect? LargestTexture(Node node)
@@ -192,15 +184,5 @@ public sealed class Mod : IMod
                 yield return inner;
     }
 
-    void UpdateTabState()
-    {
-        bool active = _panel.GetParent() != null;
-        if (active == _tabActive) return;
-        _tabActive = active;
 
-        if (_button == null || !GodotObject.IsInstanceValid(_button)) return;
-
-        StyleBox? style = active ? _tabSelectedBox : _tabNormalBox;
-        _button.AddThemeStyleboxOverride("normal", style ?? new StyleBoxEmpty());
-    }
 }
