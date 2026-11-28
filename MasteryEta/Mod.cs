@@ -206,7 +206,7 @@ public sealed class MasteryEtaMod : IMod
             _loggedPlacement = _bar.LastPlacement;
             _ctx.Log($"Mastery ETA placement: {_loggedPlacement}.");
             if (_bar.DonorInfo.Length > 0) _ctx.Log($"Mastery ETA style: {_bar.DonorInfo}.");
-            if (_bar.LastDim >= 0f) _ctx.Log($"Mastery ETA dim: overlay {(_bar.LastDimFound ? "found" : "not found")}, alpha {_bar.LastDim:0.00}.");
+            if (_bar.LastDim >= 0f) _ctx.Log($"Mastery ETA dim: {_bar.DimInfo}.");
         }
 
         _loggedReason = "";

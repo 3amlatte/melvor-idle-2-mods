@@ -52,8 +52,11 @@ internal sealed class MasteryBar
     readonly List<Cell> _cells = new();
     readonly List<Control> _separators = new();
 
-    Control? _dimmer;
+    float _dimAlpha = -1f;
+    int _dimFrame;
+    string _dimSource = "";
     float _lastDim = -1;
+    string _lastDimSource = "";
 
     Font? _font;
     int _fontSize = BaseFontSize;
@@ -312,38 +315,81 @@ internal sealed class MasteryBar
 
     void ApplyDim()
     {
-        if (_dimmer == null || !GodotObject.IsInstanceValid(_dimmer))
+        if (++_dimFrame % 10 == 0 || _dimAlpha < 0)
         {
-            _dimmer = _panel.GetTree()?.Root?.FindChild("DimTheLightsPanel", true, false) as Control;
+            _dimAlpha = ScanDim(out string source);
+            _dimSource = source;
         }
 
-        float alpha = 0;
-        if (_dimmer != null && GodotObject.IsInstanceValid(_dimmer) && _dimmer.IsVisibleInTree())
-        {
-            alpha = _dimmer.SelfModulate.A * _dimmer.Modulate.A;
-            for (Node? n = _dimmer.GetParent(); n != null; n = n.GetParent())
-            {
-                if (n is CanvasItem item) alpha *= item.SelfModulate.A * item.Modulate.A;
-            }
-            alpha = Math.Clamp(alpha, 0f, 1f);
-        }
-
-        // The window dim is a black overlay above the game; mirror it on our cell.
-        float factor = 1f - alpha;
+        float factor = 1f - Math.Clamp(_dimAlpha, 0f, 1f);
         _content.Modulate = new Color(Dim.R * factor, Dim.G * factor, Dim.B * factor);
 
-        if (Math.Abs(alpha - _lastDim) > 0.01f)
+        if (Math.Abs(_dimAlpha - _lastDim) > 0.01f || _dimSource != _lastDimSource)
         {
-            _lastDim = alpha;
-            // Exposed for the mod log.
-            LastDim = alpha;
-            LastDimFound = _dimmer != null && GodotObject.IsInstanceValid(_dimmer);
+            _lastDim = _dimAlpha;
+            _lastDimSource = _dimSource;
+            LastDim = _dimAlpha;
+            LastDimFound = _dimSource.Length > 0 && !_dimSource.StartsWith("none");
+            DimInfo = _dimSource;
         }
+    }
+
+    float ScanDim(out string source)
+    {
+        Vector2 viewport = _panel.GetViewportRect().Size;
+        float best = 0f;
+        string bestInfo = "none";
+
+        void Walk(Node node)
+        {
+            foreach (Node child in node.GetChildren())
+            {
+                if (child is Control control && control.IsVisibleInTree() &&
+                    control.Size.X >= viewport.X * 0.85f && control.Size.Y >= viewport.Y * 0.85f)
+                {
+                    float alpha = 0f;
+                    string kind = "";
+                    if (control is ColorRect rect)
+                    {
+                        Color c = rect.Color;
+                        if (Math.Max(c.R, Math.Max(c.G, c.B)) < 0.3f) { alpha = c.A; kind = $"ColorRect {c.ToHtml(true)}"; }
+                    }
+                    else if (control is Panel panel && panel.GetThemeStylebox("panel") is StyleBoxFlat flat)
+                    {
+                        Color c = flat.BgColor;
+                        if (Math.Max(c.R, Math.Max(c.G, c.B)) < 0.3f) { alpha = c.A; kind = $"Panel {c.ToHtml(true)}"; }
+                    }
+
+                    if (alpha > 0.02f)
+                    {
+                        float modulate = 1f;
+                        for (Node? n = control; n != null; n = n.GetParent())
+                            if (n is CanvasItem item) modulate *= item.SelfModulate.A * item.Modulate.A;
+                        alpha = Math.Clamp(alpha * modulate, 0f, 1f);
+
+                        // Fully opaque layers are backgrounds, not dimmers.
+                        if (alpha > 0.02f && alpha < 0.95f && alpha > best)
+                        {
+                            best = alpha;
+                            bestInfo = $"{control.Name} ({control.GetType().Name}) {kind} dim {alpha:0.00}";
+                        }
+                    }
+                }
+
+                Walk(child);
+            }
+        }
+
+        Walk(_panel.GetTree()?.Root!);
+        source = best > 0.02f ? bestInfo : "none";
+        return best;
     }
 
     public float LastDim { get; private set; } = -1f;
 
     public bool LastDimFound { get; private set; }
+
+    public string DimInfo { get; private set; } = "";
 
     void CopyFooterStyle(Control? footer, string? donorText)
     {
