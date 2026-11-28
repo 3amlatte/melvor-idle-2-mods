@@ -47,6 +47,12 @@ its own folder; delete the mod's folder to uninstall it.
 Mod authors can group their mods automatically with a `group.txt` file; see
 [GROUPING.md](GROUPING.md).
 
+## Releases
+
+Every mod update publishes a Windows package and a matching macOS package on Nexus and
+GitHub. Mod Viewer is the exception: macOS builds include it in the launcher, so it does not
+need a separate macOS download.
+
 ## Offline behaviour
 
 Production and automation mods must hook `Game.SaveLoaded` so they are active before the

@@ -101,11 +101,18 @@ internal sealed class MasteryBar
 
             // Sit just after the item-rate section (the rates end at the orange separator),
             // so growing numbers push the cell right instead of overlapping them.
+            Control? divider = footer != null && GodotObject.IsInstanceValid(footer)
+                ? FindOrangeDivider(footer)
+                : null;
             Control? rate = footer != null && GodotObject.IsInstanceValid(footer)
                 ? FindRightmostRate(footer)
                 : null;
 
-            if (rate != null)
+            if (divider != null)
+            {
+                x = divider.GetGlobalRect().End.X + 14f;
+            }
+            else if (rate != null)
             {
                 Rect2 rr = rate.GetGlobalRect();
                 x = rr.End.X + 48f;
@@ -259,6 +266,38 @@ internal sealed class MasteryBar
                 Progress = progress
             });
         }
+    }
+
+    static Control? FindOrangeDivider(Node node)
+    {
+        Control? best = null;
+        float bestX = float.MinValue;
+
+        void Walk(Node root)
+        {
+            foreach (Node child in root.GetChildren())
+            {
+                if (child is Control control && control.IsVisibleInTree() &&
+                    control.Size.X > 0 && control.Size.X <= 10 && control.Size.Y >= 18)
+                {
+                    Color color = child switch
+                    {
+                        ColorRect rect => rect.Color,
+                        _ => control.Modulate
+                    };
+                    bool orange = color.R > 0.5f && color.G > 0.3f && color.B < 0.4f && color.A > 0.2f;
+                    if (orange || child is VSeparator)
+                    {
+                        float x = control.GetGlobalRect().Position.X;
+                        if (x > bestX) { bestX = x; best = control; }
+                    }
+                }
+                Walk(child);
+            }
+        }
+
+        Walk(node);
+        return best;
     }
 
     static Control? FindRightmostRate(Node node)
