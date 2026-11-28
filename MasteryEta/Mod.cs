@@ -191,7 +191,17 @@ public sealed class MasteryEtaMod : IMod
 
     List<Candidate> FindCandidates(Game game, TrackerComponent? footerTracker)
     {
-        var found = new List<Candidate>();
+        var byTask = new Dictionary<ActiveMasteryGuildTask, Candidate>();
+
+        void Add(Candidate candidate)
+        {
+            if (!byTask.TryGetValue(candidate.Task, out Candidate? existing) ||
+                candidate.Priority > existing.Priority ||
+                (candidate.Priority == existing.Priority && candidate.Score > existing.Score))
+            {
+                byTask[candidate.Task] = candidate;
+            }
+        }
 
         foreach (GameEntity entity in game.Entities.GetAllObjects())
         {
@@ -204,11 +214,7 @@ public sealed class MasteryEtaMod : IMod
 
             var actions = entity.Components.Values.OfType<ActionComponent>().ToList();
             bool started = actions.Any(a => a.IsStarted);
-            MasteryGuildComponent guild = mastery.MasteryGuild;
 
-            Candidate? best = null;
-
-            // Recipe actions (Cooking and artisan skills).
             foreach (ActionComponent action in actions)
             {
                 ArtisanRecipe? recipe = CurrentRecipe(action);
@@ -219,6 +225,7 @@ public sealed class MasteryEtaMod : IMod
                 bool passive = producing && !action.IsStarted;
                 if (!producing && !action.IsStarted) continue;
                 if (producing && !action.IsStarted && !ActionTimerRunning(action)) continue;
+
                 int priority = (action.IsStarted ? 2 : 0) + (producing ? 1 : 0) + (trackerIsFooter ? 4 : 0);
                 int interval = ActualInterval(creating) ?? recipe.BaseInterval;
 
@@ -228,84 +235,91 @@ public sealed class MasteryEtaMod : IMod
                     int score = MatchScore(task.Task.Goal, recipe);
                     if (score < 0) continue;
 
-                    double remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress;
-                    double ratio = task.ActiveGoal.MaxProgress > 0
-                        ? task.ActiveGoal.CurrentProgress / task.ActiveGoal.MaxProgress
-                        : 0;
-                    if (best == null || score > best.Score ||
-                        (score == best.Score && (ratio > best.Ratio + 0.0001 ||
-                         (Math.Abs(ratio - best.Ratio) <= 0.0001 &&
-                          task.ActiveGoal.MaxProgress < best.Task.ActiveGoal!.MaxProgress))))
+                    Add(new Candidate
                     {
-                        best = new Candidate
-                        {
-                            Task = task,
-                            Entity = mastery,
-                            Priority = priority,
-                            Score = score,
-                            Remaining = remaining,
-                            Ratio = ratio,
-                            Recipe = recipe,
-                            ActionName = recipe.DisplayName.Text,
-                            Icon = recipe.Icon ?? task.Task.Media,
-                            BaseIntervalMs = interval,
-                            Passive = passive,
-                            Producing = producing
-                        };
-                    }
+                        Task = task,
+                        Entity = mastery,
+                        Priority = priority,
+                        Score = score,
+                        Remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress,
+                        Ratio = task.ActiveGoal.MaxProgress > 0
+                            ? task.ActiveGoal.CurrentProgress / task.ActiveGoal.MaxProgress
+                            : 0,
+                        Recipe = recipe,
+                        ActionName = recipe.DisplayName.Text,
+                        Icon = recipe.Icon ?? task.Task.Media,
+                        BaseIntervalMs = interval,
+                        Passive = passive,
+                        Producing = producing
+                    });
                 }
             }
 
-            // Gathering and other skills: match the tracked action against the task's data
-            // object properties (Recipe/Tree/Rock/Fish/Category).
             if (started && tracker?.ActionDescription is { } actionDescription &&
                 actionDescription is not ArtisanRecipe)
             {
                 int priority = (started ? 2 : 0) + (trackerIsFooter ? 4 : 0);
+
                 foreach (ActiveMasteryGuildTask task in mastery.MasteryGuild.ActiveTasks.Values)
                 {
                     if (task.IsComplete || task.ActiveGoal == null) continue;
                     if (!GoalMatchesAction(task.Task.Goal, actionDescription)) continue;
 
-                    int score = 3;
-
-                    double remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress;
-                    double ratio = task.ActiveGoal.MaxProgress > 0
-                        ? task.ActiveGoal.CurrentProgress / task.ActiveGoal.MaxProgress
-                        : 0;
-                    if (best == null || score > best.Score ||
-                        (score == best.Score && (ratio > best.Ratio + 0.0001 ||
-                         (Math.Abs(ratio - best.Ratio) <= 0.0001 &&
-                          task.ActiveGoal.MaxProgress < best.Task.ActiveGoal!.MaxProgress))))
+                    Add(new Candidate
                     {
-                        best = new Candidate
-                        {
-                            Task = task,
-                            Entity = mastery,
-                            Priority = priority,
-                            Score = score,
-                            Remaining = remaining,
-                            Ratio = ratio,
-                            Recipe = null,
-                            ActionName = actionDescription.DisplayName.Text,
-                            Icon = actionDescription.Icon ?? task.Task.Media,
-                            BaseIntervalMs = 0,
-                            Producing = false
-                        };
-                    }
+                        Task = task,
+                        Entity = mastery,
+                        Priority = priority,
+                        Score = 3,
+                        Remaining = task.ActiveGoal.MaxProgress - task.ActiveGoal.CurrentProgress,
+                        Ratio = task.ActiveGoal.MaxProgress > 0
+                            ? task.ActiveGoal.CurrentProgress / task.ActiveGoal.MaxProgress
+                            : 0,
+                        Recipe = null,
+                        ActionName = actionDescription.DisplayName.Text,
+                        Icon = actionDescription.Icon ?? task.Task.Media,
+                        BaseIntervalMs = 0,
+                        Producing = false
+                    });
                 }
             }
+        }
 
-            if (best != null) found.Add(best);
+        var found = new List<Candidate>();
+
+        foreach (var group in byTask.Values.GroupBy(c => c.Entity))
+        {
+            var active = group
+                .Where(c => IsRecentlyUpdated(c.Task) || c.Ratio > 0.001)
+                .OrderByDescending(c => IsRecentlyUpdated(c.Task))
+                .ThenByDescending(c => c.Ratio)
+                .ThenBy(c => c.Task.ActiveGoal!.MaxProgress)
+                .ToList();
+
+            if (active.Count == 0)
+            {
+                active.Add(group
+                    .OrderByDescending(c => c.Ratio)
+                    .ThenBy(c => c.Task.ActiveGoal!.MaxProgress)
+                    .First());
+            }
+
+            // Up to two simultaneous masteries for one skill.
+            found.AddRange(active.Take(2));
         }
 
         return found
             .OrderByDescending(c => c.Priority)
             .ThenByDescending(c => c.Score)
-            .ThenBy(c => c.Remaining)
+            .ThenByDescending(c => c.Ratio)
+            .ThenBy(c => c.Task.ActiveGoal!.MaxProgress)
             .Take(MaxTasks)
             .ToList();
     }
+
+    static bool IsRecentlyUpdated(ActiveMasteryGuildTask task) =>
+        task.LastUpdated is { } updated &&
+        (DateTime.UtcNow - updated).TotalMinutes <= 15;
 
     void OpenMastery(Candidate candidate)
     {
