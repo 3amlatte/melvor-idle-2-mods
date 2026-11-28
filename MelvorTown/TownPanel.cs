@@ -7,7 +7,6 @@ internal sealed class TownPanel : Control
 {
     readonly TownState _state;
     readonly Dictionary<string, Texture2D?> _art = new();
-    readonly Texture2D? _cogTexture;
 
     readonly Label _popLabel;
     readonly Label _foodLabel;
@@ -38,56 +37,36 @@ internal sealed class TownPanel : Control
         {
             _art[name] = Ui.Texture(ctx.Directory, name);
         }
-        _cogTexture = Ui.Texture(ctx.Directory, "cog");
+        // The town fills the whole page, like the Quests page does.
+        _view = new TownView(_art, _art.GetValueOrDefault("ground"));
+        _view.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        _view.SetState(_state);
+        _view.Clicked += OpenBuilding;
+        AddChild(_view);
 
-        var root = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
-        root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        AddChild(root);
-
-        var margin = new MarginContainer
-        {
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        margin.AddThemeConstantOverride("margin_left", 28);
-        margin.AddThemeConstantOverride("margin_right", 28);
-        margin.AddThemeConstantOverride("margin_top", 22);
-        margin.AddThemeConstantOverride("margin_bottom", 22);
-        root.AddChild(margin);
-
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Panel, Ui.Border, 6, 2));
-        margin.AddChild(panel);
-
-        var inner = new MarginContainer();
-        inner.AddThemeConstantOverride("margin_left", 14);
-        inner.AddThemeConstantOverride("margin_right", 14);
-        inner.AddThemeConstantOverride("margin_top", 12);
-        inner.AddThemeConstantOverride("margin_bottom", 10);
-        panel.AddChild(inner);
-
-        var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 8);
-        inner.AddChild(column);
+        // Top HUD floats over the town instead of framing it.
+        var top = new PanelContainer { MouseFilter = MouseFilterEnum.Stop };
+        top.AddThemeStyleboxOverride("panel", HudBox());
+        top.SetAnchorsAndOffsetsPreset(LayoutPreset.TopWide);
+        top.OffsetLeft = 10;
+        top.OffsetRight = -10;
+        top.OffsetTop = 8;
+        AddChild(top);
 
         var header = new HBoxContainer();
         header.AddThemeConstantOverride("separation", 10);
-        column.AddChild(header);
+        top.AddChild(header);
 
-        header.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
-
+        header.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         header.AddChild(Ui.Icon(_art.GetValueOrDefault("pop"), 20));
         _popLabel = Ui.Label("", 15);
         header.AddChild(_popLabel);
-
         header.AddChild(Ui.Icon(_art.GetValueOrDefault("food"), 20));
         _foodLabel = Ui.Label("", 15);
         header.AddChild(_foodLabel);
-
         header.AddChild(Ui.Icon(_art.GetValueOrDefault("seed"), 18));
         _seedLabel = Ui.Label("", 15);
         header.AddChild(_seedLabel);
-
         header.AddChild(Ui.Button("Upgrades", OpenUpgrades));
 
         var cog = new CogButton();
@@ -96,34 +75,31 @@ internal sealed class TownPanel : Control
         cog.Pressed += OpenSettings;
         header.AddChild(cog);
 
-
-
-        _view = new TownView(_art, _art.GetValueOrDefault("ground"))
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(0, 360),
-        };
-        _view.SetState(_state);
-        _view.Clicked += OpenBuilding;
-        column.AddChild(_view);
+        // Bottom HUD.
+        var bottom = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore };
+        bottom.AddThemeStyleboxOverride("panel", HudBox());
+        bottom.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomWide);
+        bottom.OffsetLeft = 10;
+        bottom.OffsetRight = -10;
+        bottom.OffsetBottom = -8;
+        AddChild(bottom);
 
         var footer = new HBoxContainer();
         footer.AddThemeConstantOverride("separation", 10);
-        column.AddChild(footer);
+        bottom.AddChild(footer);
 
         _hintLabel = Ui.Label("Click a building to open it. The town grows as you build.", 12, Ui.Muted);
         footer.AddChild(_hintLabel);
-        footer.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+        footer.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         _rateLabel = Ui.Label("", 12, Ui.Muted);
         footer.AddChild(_rateLabel);
 
-        _popupHost = new Control { Visible = false, MouseFilter = Control.MouseFilterEnum.Stop };
-        _popupHost.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        root.AddChild(_popupHost);
+        _popupHost = new Control { Visible = false, MouseFilter = MouseFilterEnum.Stop };
+        _popupHost.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        AddChild(_popupHost);
 
         var popDim = new ColorRect { Color = new Color(0, 0, 0, 0.45f) };
-        popDim.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        popDim.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         popDim.GuiInput += ev =>
         {
             if (ev is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
@@ -132,9 +108,20 @@ internal sealed class TownPanel : Control
         _popupHost.AddChild(popDim);
 
         _popupCenter = new CenterContainer();
-        _popupCenter.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        _popupCenter.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _popupHost.AddChild(_popupCenter);
 
+    }
+
+    static StyleBoxFlat HudBox()
+    {
+        var style = new StyleBoxFlat { BgColor = new Color(0.08f, 0.07f, 0.06f, 0.78f) };
+        style.SetCornerRadiusAll(5);
+        style.ContentMarginLeft = 10;
+        style.ContentMarginRight = 10;
+        style.ContentMarginTop = 4;
+        style.ContentMarginBottom = 4;
+        return style;
     }
 
     void ApplyGameFont()
