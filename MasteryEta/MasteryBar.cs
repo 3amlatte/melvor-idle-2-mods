@@ -122,8 +122,14 @@ internal sealed class MasteryBar
             if (divider != null)
             {
                 x = divider.GetGlobalRect().End.X + 14f;
+                // Keep clear of the buttons pinned to the right edge.
+                x = Math.Min(x, footerRect.End.X - width - 70f);
                 // Never let the cell slide back over the orange divider; trim instead.
-                width = Math.Min(width, Math.Max(120f, viewport.X - x - 8f));
+                if (x < divider.GetGlobalRect().End.X + 8f)
+                {
+                    x = divider.GetGlobalRect().End.X + 8f;
+                    width = Math.Min(width, Math.Max(120f, viewport.X - x - 8f));
+                }
             }
             else if (rate != null)
             {
@@ -314,7 +320,7 @@ internal sealed class MasteryBar
         _donorSize = size;
 
         // Match the footer text, but keep the cell inside the space next to the divider.
-        _fontSize = Math.Clamp(size, BaseFontSize, 15);
+        _fontSize = Math.Clamp(size, BaseFontSize, 13);
         _fontColor = donor.GetThemeColor("font_color");
         _height = Math.Max(BaseHeight, _fontSize * 1.2f + 10f);
     }
