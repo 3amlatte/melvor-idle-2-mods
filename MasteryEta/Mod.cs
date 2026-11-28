@@ -49,6 +49,8 @@ public sealed class MasteryEtaMod : IMod
         public double LastProgress;
         public long LastMs;
         public double Rate;
+        public double EtaSeconds;
+        public long EtaMs;
         public int Logs;
     }
 
@@ -93,7 +95,7 @@ public sealed class MasteryEtaMod : IMod
 
     void OnFrame()
     {
-        if (++_frame % 15 != 0) return;   // four times a second
+        if (++_frame % 6 != 0) return;   // about ten times a second
         try { Update(); }
         catch (Exception e)
         {
@@ -496,6 +498,12 @@ public sealed class MasteryEtaMod : IMod
         state.LastProgress = progress;
         state.LastMs = now;
 
+        if (state.Rate > 0)
+        {
+            state.EtaSeconds = Math.Max(0, goal.MaxProgress - progress) / state.Rate;
+            state.EtaMs = now;
+        }
+
         if (state.Logs < 5)
         {
             state.Logs++;
@@ -515,15 +523,15 @@ public sealed class MasteryEtaMod : IMod
             return "paused";
         }
 
-        if (state.Rate > 0)
+        if (state.Rate <= 0 || state.EtaMs == 0) return "Calculating ETA";
+
+        if (!candidate.Producing && state.LastMs > 0 && now - state.LastMs > 120_000)
         {
-            return FormatSeconds(remaining / state.Rate) + " left";
+            return "paused";
         }
 
-        if (candidate.BaseIntervalMs <= 0) return "estimating...";
-
-        double fallback = remaining * Math.Max(1, candidate.BaseIntervalMs) / 1000.0;
-        return "~" + FormatSeconds(fallback) + " left";
+        double eta = state.EtaSeconds - (now - state.EtaMs) / 1000.0;
+        return FormatSeconds(Math.Max(0, eta)) + " left";
     }
 
     static string FormatSeconds(double seconds)
