@@ -19,6 +19,7 @@ internal sealed class TownView : Control
     readonly Dictionary<string, TextureRect> _nodes = new();
     readonly Dictionary<string, Placement> _placements = new();
     readonly TextureRect _ground;
+    readonly Control _editOverlay;
     readonly string _layoutPath;
     TownState? _state;
 
@@ -47,6 +48,16 @@ internal sealed class TownView : Control
             MouseFilter = MouseFilterEnum.Ignore,
         };
         AddChild(_ground);
+
+        _editOverlay = new Control
+        {
+            Visible = false,
+            MouseFilter = MouseFilterEnum.Ignore,
+            MouseDefaultCursorShape = CursorShape.Drag,
+        };
+        _editOverlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        _editOverlay.GuiInput += OnEditInput;
+        AddChild(_editOverlay);
     }
 
     public void SetGroundVisible(bool visible) => _ground.Visible = visible;
@@ -61,9 +72,12 @@ internal sealed class TownView : Control
     {
         MelvorModLoader.Log.Write("[MelvorTown] editing " + editing);
         Editing = editing;
-        MouseFilter = editing ? MouseFilterEnum.Stop : MouseFilterEnum.Ignore;
         foreach (TextureRect node in _nodes.Values)
             if (GodotObject.IsInstanceValid(node)) node.MouseFilter = editing ? MouseFilterEnum.Ignore : MouseFilterEnum.Stop;
+
+        _editOverlay.Visible = editing;
+        _editOverlay.MouseFilter = editing ? MouseFilterEnum.Stop : MouseFilterEnum.Ignore;
+        if (editing) MoveChild(_editOverlay, GetChildCount() - 1);
 
         if (!editing) SaveLayout();
     }
@@ -119,6 +133,7 @@ internal sealed class TownView : Control
             _nodes.Remove(pair.Key);
         }
 
+        if (Editing) MoveChild(_editOverlay, GetChildCount() - 1);
         Layout();
     }
 
@@ -130,18 +145,17 @@ internal sealed class TownView : Control
     public override void _Input(InputEvent ev)
     {
         if (!IsInsideTree()) return;
-
         if (ev is InputEventKey { Pressed: true, Echo: false } f8 && f8.Keycode == Key.F8)
         {
             SetEditing(!Editing);
             GetViewport().SetInputAsHandled();
-            return;
         }
+    }
 
+    void OnEditInput(InputEvent ev)
+    {
         if (!Editing) return;
-
-        Vector2 mouse = GetLocalMousePosition();
-        if (!new Rect2(Vector2.Zero, Size).HasPoint(mouse)) return;
+        Vector2 mouse = _editOverlay.GetLocalMousePosition();
 
         if (ev is InputEventMouseButton button)
         {
@@ -149,33 +163,26 @@ internal sealed class TownView : Control
             {
                 if (button.Pressed)
                 {
-                    TextureRect? node = NodeAt(mouse);
-                    if (node != null)
-                    {
-                        _dragNode = node;
-                        _dragOffset = mouse - node.Position;
-                        GetViewport().SetInputAsHandled();
-                    }
+                    _dragNode = NodeAt(mouse);
+                    if (_dragNode != null) _dragOffset = mouse - _dragNode.Position;
                 }
                 else if (_dragNode != null)
                 {
                     _dragNode = null;
                     SaveLayout();
-                    GetViewport().SetInputAsHandled();
                 }
             }
             else if (button.Pressed && (button.ButtonIndex == MouseButton.WheelUp || button.ButtonIndex == MouseButton.WheelDown))
             {
                 TextureRect? node = NodeAt(mouse);
-                if (node != null && KeyOf(node) is { } key)
+                if (node != null && KeyOf(node) is { } nodeKey)
                 {
-                    Placement placement = PlacementFor(key);
+                    Placement placement = PlacementFor(nodeKey);
                     float factor = button.ButtonIndex == MouseButton.WheelUp ? 1.08f : 0.92f;
                     placement.Scale = Math.Clamp(placement.Scale * factor, 0.35f, 3f);
-                    Apply(node, key);
+                    Apply(node, nodeKey);
                     _dirty = true;
                     SaveLayout();
-                    GetViewport().SetInputAsHandled();
                 }
             }
         }
@@ -185,7 +192,6 @@ internal sealed class TownView : Control
             Clamp(_dragNode);
             Remember(_dragNode);
             _dirty = true;
-            GetViewport().SetInputAsHandled();
         }
     }
 
